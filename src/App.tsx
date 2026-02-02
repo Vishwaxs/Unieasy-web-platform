@@ -46,7 +46,7 @@ const App = () => (
             <Route path="/essentials" element={<EssentialsDetails />} />
             <Route path="/merchant" element={<MerchantAuth />} />
             <Route path="/merchant/dashboard" element={<MerchantDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

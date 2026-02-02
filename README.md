@@ -1,73 +1,114 @@
-# Welcome to your Lovable project
+# UniEasy
 
-## Project info
+A work-in-progress academic front-end prototype for helping university students explore campus-adjacent services (food, accommodation, study zones, essentials, and nearby places).
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Problem Statement
 
-## How can I edit this code?
+Students who are new to a campus often struggle to quickly identify trusted and convenient nearby options for daily needs (food, stay, study-friendly locations, and essential services). Information is usually scattered across maps, social media, and word-of-mouth.
 
-There are several ways of editing your application.
+## Project Objective
 
-**Use Lovable**
+To build a single, student-friendly web interface that organizes common campus-area needs into clear categories and presents listings and details in a simple, mobile-friendly UI.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Current Development Status
 
-Changes made via Lovable will be committed automatically to this repo.
+- Front-end UI and navigation are implemented using client-side routing.
+- Pages currently use mock/static data and demo UI flows.
+- No backend, database, or real authentication is connected yet.
 
-**Use your preferred IDE**
+## Implemented Components
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Based on the current source code, the following is implemented:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Routing & Pages (React Router)**
+	- Landing page with primary calls-to-action (Get Started / Explore as Guest)
+	- Home page with hero, category cards, highlights, and informational sections
+	- Category detail pages: Food, Accommodation, Explore Nearby, Study Zones, Essentials (currently mock data)
+	- Profile page (placeholder user information and UI sections)
+	- Contact form page (simulated submission with toast notification)
+	- Terms of Service and Privacy Policy pages (static content)
+	- Not Found (404) page
 
-Follow these steps:
+- **Signup Flow (2 steps)**
+	- Step 1: basic information + password rules
+	- Step 2: university details + terms agreement
+	- Client-side validation is implemented; navigation between steps uses session storage
+	- Account creation is currently simulated (no persistence)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Merchant Portal (UI prototype)**
+	- Merchant login/register UI (navigation-only)
+	- Advertisement dashboard with image upload preview (client-side FileReader), form entry, and “submitted” success state
+	- No real merchant authentication, approval workflow, or storage is connected
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- **UI/UX Utilities**
+	- Light/Dark theme toggle with persistence via local storage
+	- Toast notifications
+	- Reusable UI components (button/input/checkbox/etc.) using a component library pattern
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Planned Features / Future Scope
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+The following items are planned and will be implemented in later iterations:
+
+- Backend integration for listings, search, and filtering (replacing mock data)
+- Database-backed storage for users, merchants, advertisements, and listings
+- Real authentication and role-based access (student/merchant/admin)
+- Reviews/ratings submission and moderation
+- Admin tools for content verification and advertisement approvals
+- API-driven state management and caching (current data fetching is not wired)
+- Improved accessibility and automated test coverage
+
+## Tech Stack
+
+Derived from the current configuration and dependencies:
+
+- **Frontend:** React 18, TypeScript
+- **Routing:** React Router DOM
+- **Styling:** Tailwind CSS, tailwindcss-animate
+- **UI Components:** Radix UI primitives + local reusable UI components
+- **Forms & Validation:** React Hook Form, Zod (client-side validation)
+- **Notifications:** Sonner + toast/toaster components
+- **Build Tooling:** Vite (React SWC plugin)
+- **Testing:** Vitest, Testing Library, JSDOM
+- **Linting:** ESLint
+
+## Local Setup Instructions
+
+Prerequisites:
+
+- Node.js (LTS recommended)
+- npm
+
+Steps:
+
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Other scripts:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run build
+npm run preview
+npm run lint
+npm test
+```
 
-**Use GitHub Codespaces**
+## Project Structure Overview
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```text
+public/                 Static assets
+src/
+	components/           Reusable app components (Header/Footer/sections)
+		ui/                 Reusable UI primitives (button, input, etc.)
+	hooks/                Custom React hooks (theme, toast helpers)
+	lib/                  Shared utilities and validations
+	pages/                Route-level pages/screens
+	test/                 Vitest setup and sample test
+	App.tsx               Route definitions and providers
+	main.tsx              React entry point
+```
 
-## What technologies are used for this project?
+## Academic Note
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project is developed as an academic web application prototype. The current submission focuses on UI structure, routing, and front-end validation flows; data persistence and backend integration are planned for subsequent phases.
