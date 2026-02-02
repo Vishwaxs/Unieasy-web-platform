@@ -12,20 +12,20 @@ const contactInfo = [
   {
     icon: Mail,
     title: "Email Us",
-    value: "support@unieasy.com",
+    value: "vishwas.vashishta@mca.christuniversity.in",
     description: "We'll respond within 24 hours",
   },
   {
     icon: Phone,
     title: "Call Us",
-    value: "+91 98765 43210",
+    value: "+91 7060200434",
     description: "Mon-Fri, 9am-6pm IST",
   },
   {
     icon: MapPin,
     title: "Visit Us",
-    value: "Tech Hub, Bengaluru",
-    description: "Innovation Park, 560001",
+    value: "Christ University",
+    description: " Central Campus, Hosur Road, Bengaluru, Karnataka",
   },
   {
     icon: Clock,
@@ -143,7 +143,7 @@ const Contact = () => {
                         <Input
                           type="text"
                           name="name"
-                          placeholder="John Doe"
+                          placeholder="Vishwas Vashishtha"
                           value={formData.name}
                           onChange={handleChange}
                           className="pl-10"
@@ -158,7 +158,7 @@ const Contact = () => {
                         <Input
                           type="email"
                           name="email"
-                          placeholder="john@example.com"
+                          placeholder="vishwas.vashishta@mca.christuniversity.in"
                           value={formData.email}
                           onChange={handleChange}
                           className="pl-10"
@@ -176,7 +176,7 @@ const Contact = () => {
                         <Input
                           type="tel"
                           name="phone"
-                          placeholder="+91 98765 43210"
+                          placeholder="+91 7060200434"
                           value={formData.phone}
                           onChange={handleChange}
                           className="pl-10"

@@ -1,13 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 30% 15%;
+    /* Light mode: clean, academic */
+    --background: 210 40% 99%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 30% 15%;
@@ -18,11 +19,11 @@
     --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 96%;
+    --secondary: 210 30% 96%;
     --secondary-foreground: 222 30% 15%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 210 30% 96%;
+    --muted-foreground: 215 20% 40%;
 
     --accent: 160 84% 39%;
     --accent-foreground: 0 0% 100%;
@@ -30,8 +31,8 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 214 25% 88%;
+    --input: 214 25% 88%;
     --ring: 160 84% 39%;
 
     --radius: 0.75rem;
@@ -53,35 +54,36 @@
     --gradient-dark: linear-gradient(135deg, hsl(222 30% 15%) 0%, hsl(215 25% 20%) 100%);
 
     /* Shadows */
-    --shadow-sm: 0 2px 8px hsl(222 30% 15% / 0.06);
-    --shadow-md: 0 4px 20px hsl(222 30% 15% / 0.1);
-    --shadow-lg: 0 8px 40px hsl(222 30% 15% / 0.15);
-    --shadow-glow: 0 0 30px hsl(160 84% 39% / 0.3);
+    --shadow-sm: 0 2px 10px hsl(222 47% 11% / 0.06);
+    --shadow-md: 0 8px 24px hsl(222 47% 11% / 0.10);
+    --shadow-lg: 0 16px 48px hsl(222 47% 11% / 0.14);
+    --shadow-glow: 0 0 30px hsl(160 84% 39% / 0.25);
 
-    /* Footer dark colors */
-    --footer-bg: 222 47% 11%;
-    --footer-text: 210 40% 98%;
-    --footer-muted: 215 20% 65%;
-    --footer-border: 222 30% 20%;
+    /* Footer (light): should visibly differ from dark mode */
+    --footer-bg: 210 30% 97%;
+    --footer-text: 222 47% 11%;
+    --footer-muted: 215 20% 40%;
+    --footer-border: 214 25% 88%;
   }
 
   .dark {
-    --background: 222 30% 8%;
+    /* Dark mode: deep, high-contrast */
+    --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 222 30% 12%;
+    --card: 222 35% 10%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 30% 12%;
+    --popover: 222 35% 10%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 160 84% 45%;
     --primary-foreground: 222 30% 8%;
 
-    --secondary: 222 30% 16%;
+    --secondary: 222 30% 14%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 30% 16%;
+    --muted: 222 30% 14%;
     --muted-foreground: 215 20% 65%;
 
     --accent: 160 84% 45%;
@@ -90,8 +92,8 @@
     --destructive: 0 63% 45%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 222 30% 20%;
-    --input: 222 30% 20%;
+    --border: 222 25% 18%;
+    --input: 222 25% 18%;
     --ring: 160 84% 45%;
 
     /* Dark mode custom colors */
@@ -111,16 +113,16 @@
     --gradient-dark: linear-gradient(135deg, hsl(222 30% 8%) 0%, hsl(215 25% 12%) 100%);
 
     /* Dark Shadows */
-    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.3);
-    --shadow-md: 0 4px 20px hsl(0 0% 0% / 0.4);
-    --shadow-lg: 0 8px 40px hsl(0 0% 0% / 0.5);
+    --shadow-sm: 0 2px 12px hsl(0 0% 0% / 0.35);
+    --shadow-md: 0 10px 28px hsl(0 0% 0% / 0.45);
+    --shadow-lg: 0 18px 56px hsl(0 0% 0% / 0.55);
     --shadow-glow: 0 0 30px hsl(160 84% 45% / 0.4);
 
-    /* Footer dark colors - even darker for dark mode */
+    /* Footer (dark) */
     --footer-bg: 222 47% 6%;
     --footer-text: 210 40% 98%;
     --footer-muted: 215 20% 55%;
-    --footer-border: 222 30% 15%;
+    --footer-border: 222 25% 18%;
   }
 }
 
@@ -130,14 +132,14 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-md border border-white/20;
+    @apply bg-card/75 backdrop-blur-md border border-border/60;
     box-shadow: var(--shadow-md);
   }
 

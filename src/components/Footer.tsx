@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
-import { GraduationCap, Mail, Phone, MapPin, Github, Linkedin, Twitter } from "lucide-react";
+import { Mail, Phone, MapPin, Github, Linkedin, Twitter } from "lucide-react";
+
+import Logo from "@/components/Logo";
+import christLogoHref from "@/assets/Christ-logo.png";
 
 const developers = [
-  { name: "Developer One", role: "Full Stack Developer" },
-  { name: "Developer Two", role: "Frontend Developer" },
-  { name: "Developer Three", role: "Backend Developer" },
+  { name: "Vishwas Vashishtha", role: "Full Stack Developer" },
+  { name: "Nirupama Vincent", role: "Frontend Developer" },
+  { name: "Angel Blessy", role: "Backend Developer" },
 ];
 
 const Footer = () => {
@@ -14,17 +17,27 @@ const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
           {/* Company Info */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-[hsl(var(--footer-text))]">
-                Uni<span className="text-primary">Easy</span>
-              </span>
+            <div className="mb-4">
+              <Logo />
             </div>
             <p className="text-[hsl(var(--footer-muted))] mb-6 text-sm md:text-base">
-              Your trusted companion for discovering the best spots around your campus. Built by students, for students.
+              A student-focused companion for discovering food, stays, study zones and places around Christ University – Central Campus.
             </p>
+
+            <div className="flex items-center gap-3 rounded-xl border border-[hsl(var(--footer-border))] bg-[hsl(var(--footer-bg))] px-4 py-3 mb-6">
+              <img
+                src={christLogoHref}
+                alt="Christ University"
+                className="h-8 w-auto"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="text-xs leading-snug">
+                <div className="text-[hsl(var(--footer-text))] font-medium"> For Christ University</div>
+                <div className="text-[hsl(var(--footer-muted))] opacity-90">Central Campus </div>
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <a href="#" className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]">
                 <Twitter className="w-5 h-5" />
@@ -71,15 +84,15 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                <span className="truncate">support@unieasy.com</span>
+                <span className="truncate">vishwas.vashishta@mca.christuniversity.in</span>
               </li>
               <li className="flex items-center gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <Phone className="w-5 h-5 text-primary flex-shrink-0" />
-                +91 98765 43210
+                +91 7060200434
               </li>
               <li className="flex items-start gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span>Tech Hub, Innovation Park, Bengaluru, India 560001</span>
+                <span>Christ University – Central Campus, Hosur Road, Bengaluru, Karnataka</span>
               </li>
             </ul>
           </div>

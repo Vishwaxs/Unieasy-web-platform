@@ -1,15 +1,21 @@
 import { Link } from "react-router-dom";
-import { GraduationCap } from "lucide-react";
+
+import lightLogoHref from "@/assets/Light_Logo.png";
+import darkLogoHref from "@/assets/Dark_Logo.png";
+import { useTheme } from "@/hooks/useTheme";
 
 const Logo = () => {
+  const { theme } = useTheme();
+
   return (
-    <Link to="/" className="flex items-center gap-2 group">
-      <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md group-hover:shadow-glow transition-all duration-300">
-        <GraduationCap className="w-6 h-6 text-primary-foreground" />
-      </div>
-      <span className="text-xl font-bold text-foreground">
-        Uni<span className="text-primary">Easy</span>
-      </span>
+    <Link to="/" className="flex items-center gap-2 group" aria-label="UniEasy">
+      <img
+        src={theme === "dark" ? darkLogoHref : lightLogoHref}
+        alt="UniEasy"
+        className="h-8 md:h-9 w-auto drop-shadow-sm group-hover:drop-shadow transition-all duration-300"
+        loading="eager"
+        decoding="async"
+      />
     </Link>
   );
 };
