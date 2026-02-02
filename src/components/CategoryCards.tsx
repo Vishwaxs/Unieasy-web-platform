@@ -1,6 +1,7 @@
 import { Utensils, Home, MapPin, MoreHorizontal, BookOpen, ArrowRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { modulesEnabled, modulesDisabledHint } from "@/lib/featureFlags";
 
 const resolveVideoSrc = (video: string) => {
   if (!video) return video;
@@ -17,7 +18,6 @@ const categories = [
     name: "Food & Eating",
     description: "Cafes, restaurants & street food",
     icon: Utensils,
-    gradient: "",
     video: "/5780171-uhd_3840_2160_24fps.mp4",
     count: "150+",
     link: "/food",
@@ -27,7 +27,6 @@ const categories = [
     name: "Accommodation",
     description: "Hostels, PGs & rentals",
     icon: Home,
-    gradient: "from-violet-500 to-purple-500",
     video: "/11050698-uhd_3840_2160_30fps.mp4",
     count: "80+",
     link: "/accommodation",
@@ -37,7 +36,6 @@ const categories = [
     name: "Explore Nearby",
     description: "Parks & hangout spots",
     icon: MapPin,
-    gradient: "from-emerald-500 to-teal-500",
     video: "/18733706-uhd_3840_2160_60fps.mp4",
     count: "60+",
     link: "/explore",
@@ -47,7 +45,6 @@ const categories = [
     name: "Study Zones",
     description: "Libraries & quiet spaces",
     icon: BookOpen,
-    gradient: "from-blue-500 to-cyan-500",
     video: "7653221-hd_1080_1920_25fps.mp4",
     count: "40+",
     link: "/study",
@@ -57,7 +54,6 @@ const categories = [
     name: "Essentials",
     description: "Gyms, laundry & more",
     icon: MoreHorizontal,
-    gradient: "from-pink-500 to-rose-500",
     video: "/Video Project 3.mp4",
     count: "100+",
     link: "/essentials",
@@ -89,7 +85,18 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
   }, []);
 
   return (
-    <Link to={category.link}>
+    <Link
+      to={category.link}
+      aria-disabled={!modulesEnabled}
+      title={!modulesEnabled ? modulesDisabledHint : undefined}
+      onClick={(e) => {
+        if (modulesEnabled) return;
+        e.preventDefault();
+        e.stopPropagation();
+        // Non-blocking cue; safe to remove later.
+        console.info(modulesDisabledHint);
+      }}
+    >
       <div
         ref={cardRef}
         className={`group relative flex-shrink-0 w-72 sm:w-80 cursor-pointer snap-start transition-all duration-700 ${
