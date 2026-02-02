@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 const Profile = () => {
   const user = {
     name: "John Doe",
-    email: "john.doe@university.edu",
+    email: "vishwas.vashishtha@mca.christuniversity.in",
     phone: "+91 98765 43210",
     city: "Bengaluru",
     university: "Stanford University",

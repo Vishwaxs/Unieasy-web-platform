@@ -124,7 +124,7 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
         </video>
         
         {/* Gradient overlay */}
-        <div className={`absolute inset-0 bg-gradient-to-t ${category.gradient} opacity-60 mix-blend-multiply transition-opacity duration-500`} />
+        <div className={`absolute inset-0 bg-gradient-to-t ${category} opacity-60 mix-blend-multiply transition-opacity duration-500`} />
         <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-all duration-300 ${isHovered ? "from-black/90 via-black/50" : ""}`} />
         
         {/* Subtle darkening overlay on hover */}
