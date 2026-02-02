@@ -2,14 +2,23 @@ import { Utensils, Home, MapPin, MoreHorizontal, BookOpen, ArrowRight } from "lu
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
+const resolveVideoSrc = (video: string) => {
+  if (!video) return video;
+  // If it's an absolute URL (or protocol-relative), use as-is.
+  if (/^(https?:)?\/\//i.test(video)) return video;
+  // Treat non-URL strings as files served from Vite's /public folder.
+  // Example: put `5780171.mp4` in `public/` and reference it as "/5780171.mp4".
+  return video.startsWith("/") ? video : `/${video}`;
+};
+
 const categories = [
   {
     id: 1,
     name: "Food & Eating",
     description: "Cafes, restaurants & street food",
     icon: Utensils,
-    gradient: "from-orange-500 to-red-500",
-    video: "https://videos.pexels.com/video-files/3298432/3298432-sd_640_360_30fps.mp4",
+    gradient: "",
+    video: "/5780171-uhd_3840_2160_24fps.mp4",
     count: "150+",
     link: "/food",
   },
@@ -19,7 +28,7 @@ const categories = [
     description: "Hostels, PGs & rentals",
     icon: Home,
     gradient: "from-violet-500 to-purple-500",
-    video: "https://videos.pexels.com/video-files/5998210/5998210-sd_640_360_25fps.mp4",
+    video: "/11050698-uhd_3840_2160_30fps.mp4",
     count: "80+",
     link: "/accommodation",
   },
@@ -29,7 +38,7 @@ const categories = [
     description: "Parks & hangout spots",
     icon: MapPin,
     gradient: "from-emerald-500 to-teal-500",
-    video: "https://videos.pexels.com/video-files/3571264/3571264-sd_640_360_30fps.mp4",
+    video: "/18733706-uhd_3840_2160_60fps.mp4",
     count: "60+",
     link: "/explore",
   },
@@ -39,7 +48,7 @@ const categories = [
     description: "Libraries & quiet spaces",
     icon: BookOpen,
     gradient: "from-blue-500 to-cyan-500",
-    video: "https://videos.pexels.com/video-files/5676102/5676102-sd_640_360_25fps.mp4",
+    video: "7653221-hd_1080_1920_25fps.mp4",
     count: "40+",
     link: "/study",
   },
@@ -49,7 +58,7 @@ const categories = [
     description: "Gyms, laundry & more",
     icon: MoreHorizontal,
     gradient: "from-pink-500 to-rose-500",
-    video: "https://videos.pexels.com/video-files/3195394/3195394-sd_640_360_25fps.mp4",
+    video: "/Video Project 3.mp4",
     count: "100+",
     link: "/essentials",
   },
@@ -59,6 +68,8 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const videoSrc = resolveVideoSrc(category.video);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -96,11 +107,13 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
           loop
           muted
           playsInline
-          className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${
+          preload="metadata"
+          // Keep hover effects on the card (video shouldn't capture the mouse).
+          className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${
             isHovered ? "scale-110" : "scale-100"
           }`}
         >
-          <source src={category.video} type="video/mp4" />
+          <source src={videoSrc} type="video/mp4" />
         </video>
         
         {/* Gradient overlay */}
