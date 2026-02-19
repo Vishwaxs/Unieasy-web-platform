@@ -12,7 +12,7 @@ const Logo = () => {
       <img
         src={theme === "dark" ? darkLogoHref : lightLogoHref}
         alt="UniEasy"
-        className="h-8 md:h-9 w-auto drop-shadow-sm group-hover:drop-shadow transition-all duration-300"
+        className="h-9 md:h-10 w-auto drop-shadow-sm group-hover:drop-shadow transition-all duration-300"
         loading="eager"
         decoding="async"
       />
