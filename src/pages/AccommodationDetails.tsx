@@ -1,24 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-const mockAccommodations = [
-  { id: 1, name: "Sunrise Hostel", type: "Hostel", price: 8000, rating: 4.5, reviews: 89, distance: "0.5 km", amenities: ["wifi", "parking", "security"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Great community vibes!" },
-  { id: 2, name: "Green Valley PG", type: "PG", price: 12000, rating: 4.7, reviews: 156, distance: "1.2 km", amenities: ["wifi", "meals", "laundry"], image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400", comment: "Home-cooked meals included" },
-  { id: 3, name: "Student Villa", type: "Apartment", price: 15000, rating: 4.3, reviews: 67, distance: "0.8 km", amenities: ["wifi", "gym", "parking"], image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400", comment: "Modern amenities" },
-  { id: 4, name: "Campus Lodge", type: "Hostel", price: 6500, rating: 4.2, reviews: 203, distance: "0.3 km", amenities: ["wifi", "security"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Walking distance to campus" },
-  { id: 5, name: "Royal Residency", type: "PG", price: 18000, rating: 4.8, reviews: 45, distance: "2.0 km", amenities: ["wifi", "ac", "meals", "laundry"], image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400", comment: "Premium facilities" },
-  { id: 6, name: "Budget Bunks", type: "Hostel", price: 5000, rating: 4.0, reviews: 312, distance: "1.5 km", amenities: ["wifi"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Affordable and clean" },
-];
+import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations";
 
 type TypeFilter = "all" | "Hostel" | "PG" | "Apartment";
 type SortType = "default" | "price-low" | "price-high" | "rating" | "distance";
 
-const AccommodationCard = ({ item, index }: { item: typeof mockAccommodations[0]; index: number }) => {
+const AccommodationCard = ({ item, index }: { item: Accommodation; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -104,11 +96,12 @@ const AccommodationCard = ({ item, index }: { item: typeof mockAccommodations[0]
 };
 
 const AccommodationDetails = () => {
+  const { items: accommodations, loading } = useAccommodations();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [sort, setSort] = useState<SortType>("default");
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredItems = mockAccommodations
+  const filteredItems = accommodations
     .filter((item) => filter === "all" || item.type === filter)
     .sort((a, b) => {
       if (sort === "price-low") return a.price - b.price;
@@ -117,6 +110,14 @@ const AccommodationDetails = () => {
       if (sort === "distance") return parseFloat(a.distance) - parseFloat(b.distance);
       return 0;
     });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

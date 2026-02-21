@@ -1,23 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Clock, Users, SlidersHorizontal, X } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, Users, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-const mockPlaces = [
-  { id: 1, name: "Sunset Park", type: "Park", rating: 4.6, reviews: 234, distance: "1.2 km", timing: "6 AM - 9 PM", crowd: "Medium", image: "https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400", comment: "Perfect for evening walks" },
-  { id: 2, name: "Coffee Corner", type: "Cafe", rating: 4.8, reviews: 456, distance: "0.5 km", timing: "8 AM - 11 PM", crowd: "High", image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400", comment: "Best coffee in town!" },
-  { id: 3, name: "City Mall", type: "Mall", rating: 4.4, reviews: 789, distance: "2.5 km", timing: "10 AM - 10 PM", crowd: "High", image: "https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=400", comment: "Everything under one roof" },
-  { id: 4, name: "Lake View Point", type: "Scenic", rating: 4.9, reviews: 123, distance: "4.0 km", timing: "24/7", crowd: "Low", image: "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=400", comment: "Breathtaking sunsets" },
-  { id: 5, name: "Sports Complex", type: "Sports", rating: 4.5, reviews: 345, distance: "1.8 km", timing: "5 AM - 10 PM", crowd: "Medium", image: "https://images.unsplash.com/photo-1461896836934- voices0b05b?w=400", comment: "Great facilities" },
-  { id: 6, name: "Art Gallery", type: "Culture", rating: 4.7, reviews: 89, distance: "3.2 km", timing: "10 AM - 6 PM", crowd: "Low", image: "https://images.unsplash.com/photo-1531243269054-5ebf6f34081e?w=400", comment: "Inspiring exhibitions" },
-];
+import { useExplorePlaces, type ExplorePlace } from "@/hooks/useExplorePlaces";
 
 type TypeFilter = "all" | "Park" | "Cafe" | "Mall" | "Scenic" | "Sports" | "Culture";
 
-const PlaceCard = ({ item, index }: { item: typeof mockPlaces[0]; index: number }) => {
+const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -89,10 +81,19 @@ const PlaceCard = ({ item, index }: { item: typeof mockPlaces[0]; index: number 
 };
 
 const ExploreDetails = () => {
+  const { items: places, loading } = useExplorePlaces();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredItems = mockPlaces.filter((item) => filter === "all" || item.type === filter);
+  const filteredItems = places.filter((item) => filter === "all" || item.type === filter);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

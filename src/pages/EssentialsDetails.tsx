@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Shield, Tag, Calendar, Briefcase, Users, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Shield, Tag, Calendar, Briefcase, Users, ShoppingBag, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useEssentials, type EssentialItem } from "@/hooks/useEssentials";
 
 const categories = [
   { id: "essentials", name: "Student Essentials", icon: ShoppingBag, color: "from-pink-500 to-rose-500" },
@@ -14,34 +15,7 @@ const categories = [
   { id: "career", name: "Career & Skill Support", icon: Briefcase, color: "from-blue-500 to-cyan-500" },
 ];
 
-const mockItems = [
-  // Student Essentials
-  { id: 1, name: "Campus Gym", category: "essentials", rating: 4.5, reviews: 234, distance: "0.2 km", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400", comment: "Modern equipment, student rates" },
-  { id: 2, name: "Quick Laundry", category: "essentials", rating: 4.3, reviews: 156, distance: "0.5 km", image: "https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=400", comment: "24/7 self-service laundry" },
-  { id: 3, name: "Print & Copy Center", category: "essentials", rating: 4.6, reviews: 89, distance: "0.1 km", image: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=400", comment: "Cheap prints for students" },
-  
-  // Safety & Emergency
-  { id: 4, name: "Campus Security", category: "safety", rating: 4.8, reviews: 45, distance: "0 km", image: "https://images.unsplash.com/photo-1582139329536-e7284fece509?w=400", comment: "24/7 emergency response" },
-  { id: 5, name: "Health Center", category: "safety", rating: 4.7, reviews: 312, distance: "0.3 km", image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400", comment: "Free consultations for students" },
-  { id: 6, name: "Women's Safety Cell", category: "safety", rating: 4.9, reviews: 67, distance: "0.2 km", image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400", comment: "Safe space and support" },
-  
-  // Student Discounts
-  { id: 7, name: "Tech Store", category: "discounts", rating: 4.4, reviews: 178, distance: "1.5 km", image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=400", comment: "15% off with student ID" },
-  { id: 8, name: "Movie Theater", category: "discounts", rating: 4.5, reviews: 456, distance: "2.0 km", image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400", comment: "Student Tuesday specials" },
-  { id: 9, name: "Bookstore", category: "discounts", rating: 4.6, reviews: 234, distance: "0.8 km", image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=400", comment: "20% off textbooks" },
-  
-  // Events & Community
-  { id: 10, name: "Student Union", category: "events", rating: 4.7, reviews: 567, distance: "0.1 km", image: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400", comment: "Weekly events and meetups" },
-  { id: 11, name: "Cultural Center", category: "events", rating: 4.5, reviews: 123, distance: "0.4 km", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400", comment: "Festivals and celebrations" },
-  { id: 12, name: "Sports Club", category: "events", rating: 4.6, reviews: 345, distance: "0.6 km", image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400", comment: "Join teams and tournaments" },
-  
-  // Career & Skill Support
-  { id: 13, name: "Career Center", category: "career", rating: 4.8, reviews: 289, distance: "0.3 km", image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400", comment: "Resume help and job fairs" },
-  { id: 14, name: "Skill Workshop", category: "career", rating: 4.5, reviews: 167, distance: "0.5 km", image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400", comment: "Free coding bootcamps" },
-  { id: 15, name: "Mentorship Program", category: "career", rating: 4.9, reviews: 78, distance: "0.2 km", image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400", comment: "Connect with alumni" },
-];
-
-const ItemCard = ({ item, index }: { item: typeof mockItems[0]; index: number }) => {
+const ItemCard = ({ item, index }: { item: EssentialItem; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -86,10 +60,19 @@ const ItemCard = ({ item, index }: { item: typeof mockItems[0]; index: number })
 };
 
 const EssentialsDetails = () => {
+  const { items: essentialItems, loading } = useEssentials();
   const [filter, setFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredItems = mockItems.filter((item) => filter === "all" || item.category === filter);
+  const filteredItems = essentialItems.filter((item) => filter === "all" || item.category === filter);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

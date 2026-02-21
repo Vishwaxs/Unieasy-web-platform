@@ -1,29 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-// Mock food data - will be replaced with DB data
-const mockFoodItems = [
-  { id: 1, name: "Margherita Pizza", restaurant: "Pizza Palace", price: 249, rating: 4.5, reviews: 128, isVeg: true, image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400", comment: "Best cheese pizza in town!" },
-  { id: 2, name: "Butter Chicken", restaurant: "Spice Garden", price: 320, rating: 4.8, reviews: 256, isVeg: false, image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=400", comment: "Creamy and flavorful" },
-  { id: 3, name: "Paneer Tikka", restaurant: "Tandoor Express", price: 180, rating: 4.3, reviews: 89, isVeg: true, image: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400", comment: "Perfectly grilled!" },
-  { id: 4, name: "Chicken Biryani", restaurant: "Biryani House", price: 280, rating: 4.7, reviews: 312, isVeg: false, image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400", comment: "Authentic Hyderabadi taste" },
-  { id: 5, name: "Masala Dosa", restaurant: "South Cafe", price: 120, rating: 4.4, reviews: 156, isVeg: true, image: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400", comment: "Crispy and delicious" },
-  { id: 6, name: "Fish Curry", restaurant: "Coastal Kitchen", price: 350, rating: 4.6, reviews: 98, isVeg: false, image: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=400", comment: "Fresh catch daily" },
-  { id: 7, name: "Veg Thali", restaurant: "Annapurna", price: 150, rating: 4.2, reviews: 203, isVeg: true, image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400", comment: "Complete meal experience" },
-  { id: 8, name: "Egg Fried Rice", restaurant: "Wok Station", price: 160, rating: 4.1, reviews: 145, isVeg: false, image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400", comment: "Quick and tasty" },
-  { id: 9, name: "Chole Bhature", restaurant: "Punjab Dhaba", price: 130, rating: 4.5, reviews: 178, isVeg: true, image: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=400", comment: "Authentic Punjabi flavors" },
-  { id: 10, name: "Mutton Rogan Josh", restaurant: "Kashmir Flavors", price: 420, rating: 4.9, reviews: 87, isVeg: false, image: "https://images.unsplash.com/photo-1545247181-516773cae754?w=400", comment: "Rich and aromatic" },
-];
+import { useFoodItems, type FoodItem } from "@/hooks/useFoodItems";
 
 type FilterType = "all" | "veg" | "nonveg";
 type SortType = "default" | "price-low" | "price-high" | "rating";
 
-const FoodCard = ({ item, index }: { item: typeof mockFoodItems[0]; index: number }) => {
+const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -60,10 +47,10 @@ const FoodCard = ({ item, index }: { item: typeof mockFoodItems[0]; index: numbe
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <Badge 
-          className={`absolute top-3 left-3 ${item.isVeg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
+          className={`absolute top-3 left-3 ${item.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
         >
-          {item.isVeg ? <Leaf className="w-3 h-3 mr-1" /> : <Drumstick className="w-3 h-3 mr-1" />}
-          {item.isVeg ? "Veg" : "Non-Veg"}
+          {item.is_veg ? <Leaf className="w-3 h-3 mr-1" /> : <Drumstick className="w-3 h-3 mr-1" />}
+          {item.is_veg ? "Veg" : "Non-Veg"}
         </Badge>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -92,14 +79,15 @@ const FoodCard = ({ item, index }: { item: typeof mockFoodItems[0]; index: numbe
 };
 
 const FoodDetails = () => {
+  const { items: foodItems, loading } = useFoodItems();
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("default");
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredItems = mockFoodItems
+  const filteredItems = foodItems
     .filter((item) => {
-      if (filter === "veg") return item.isVeg;
-      if (filter === "nonveg") return !item.isVeg;
+      if (filter === "veg") return item.is_veg;
+      if (filter === "nonveg") return !item.is_veg;
       return true;
     })
     .sort((a, b) => {
@@ -108,6 +96,14 @@ const FoodDetails = () => {
       if (sort === "rating") return b.rating - a.rating;
       return 0;
     });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

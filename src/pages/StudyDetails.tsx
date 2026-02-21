@@ -1,23 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Clock, Wifi, Volume2, VolumeX, SlidersHorizontal, X } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, Wifi, Volume2, VolumeX, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-const mockStudySpots = [
-  { id: 1, name: "Central Library", type: "Library", rating: 4.8, reviews: 456, distance: "0.2 km", timing: "8 AM - 10 PM", noise: "Silent", hasWifi: true, image: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400", comment: "Best study spot on campus" },
-  { id: 2, name: "Study Cafe", type: "Cafe", rating: 4.5, reviews: 234, distance: "0.8 km", timing: "7 AM - 11 PM", noise: "Low", hasWifi: true, image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400", comment: "Great coffee while studying" },
-  { id: 3, name: "Reading Room", type: "Library", rating: 4.7, reviews: 178, distance: "0.5 km", timing: "9 AM - 9 PM", noise: "Silent", hasWifi: true, image: "https://images.unsplash.com/photo-1568667256549-094345857637?w=400", comment: "Peaceful atmosphere" },
-  { id: 4, name: "Co-working Hub", type: "Coworking", rating: 4.4, reviews: 89, distance: "1.5 km", timing: "24/7", noise: "Medium", hasWifi: true, image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=400", comment: "Modern facilities" },
-  { id: 5, name: "Garden Study Area", type: "Outdoor", rating: 4.3, reviews: 67, distance: "0.3 km", timing: "6 AM - 8 PM", noise: "Low", hasWifi: false, image: "https://images.unsplash.com/photo-1588072432836-e10032774350?w=400", comment: "Fresh air while studying" },
-  { id: 6, name: "Department Lab", type: "Lab", rating: 4.6, reviews: 145, distance: "0.1 km", timing: "9 AM - 6 PM", noise: "Low", hasWifi: true, image: "https://images.unsplash.com/photo-1562774053-701939374585?w=400", comment: "Access to resources" },
-];
+import { useStudySpots, type StudySpot } from "@/hooks/useStudySpots";
 
 type TypeFilter = "all" | "Library" | "Cafe" | "Coworking" | "Outdoor" | "Lab";
 
-const StudyCard = ({ item, index }: { item: typeof mockStudySpots[0]; index: number }) => {
+const StudyCard = ({ item, index }: { item: StudySpot; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -63,7 +55,7 @@ const StudyCard = ({ item, index }: { item: typeof mockStudySpots[0]; index: num
               {getNoiseIcon(item.noise)}
               <span className="text-muted-foreground">{item.noise}</span>
             </div>
-            {item.hasWifi && (
+            {item.has_wifi && (
               <div className="flex items-center gap-1 text-sm text-green-500">
                 <Wifi className="w-4 h-4" /><span>WiFi</span>
               </div>
@@ -78,10 +70,19 @@ const StudyCard = ({ item, index }: { item: typeof mockStudySpots[0]; index: num
 };
 
 const StudyDetails = () => {
+  const { items: studySpots, loading } = useStudySpots();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredItems = mockStudySpots.filter((item) => filter === "all" || item.type === filter);
+  const filteredItems = studySpots.filter((item) => filter === "all" || item.type === filter);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,22 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, Image, Eye, CheckCircle, Clock, X, LogOut } from "lucide-react";
+import { ArrowLeft, Upload, Image, Eye, CheckCircle, Clock, X, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useUser, useClerk } from "@clerk/clerk-react";
+import { supabase } from "@/lib/supabase";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
+import { toast } from "sonner";
+
+interface Ad {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  target_location: string;
+  duration_days: number;
+  status: string;
+  created_at: string;
+}
 
 const MerchantDashboard = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [adTitle, setAdTitle] = useState("");
   const [adDescription, setAdDescription] = useState("");
+  const [targetLocation, setTargetLocation] = useState("");
+  const [durationDays, setDurationDays] = useState(7);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [myAds, setMyAds] = useState<Ad[]>([]);
+  const [loadingAds, setLoadingAds] = useState(true);
   const navigate = useNavigate();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+
+  // Fetch user's existing ads
+  useEffect(() => {
+    if (!user) return;
+    const fetchAds = async () => {
+      setLoadingAds(true);
+      const { data, error } = await supabase
+        .from("ads")
+        .select("*")
+        .eq("clerk_user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setMyAds(data as Ad[]);
+      }
+      setLoadingAds(false);
+    };
+    fetchAds();
+  }, [user, submitted]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setUploadedImage(e.target?.result as string);
@@ -25,24 +67,74 @@ const MerchantDashboard = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (!imageFile || !user) return;
+    setIsSubmitting(true);
+
+    try {
+      // 1. Upload image to Supabase Storage
+      const fileExt = imageFile.name.split(".").pop();
+      const filePath = `ads/${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("ads-images")
+        .upload(filePath, imageFile, { upsert: false });
+
+      if (uploadError) {
+        toast.error("Image upload failed: " + uploadError.message);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 2. Get public URL
+      const { data: urlData } = supabase.storage
+        .from("ads-images")
+        .getPublicUrl(filePath);
+
+      const imageUrl = urlData.publicUrl;
+
+      // 3. Insert ad record into Supabase
+      const { error: insertError } = await supabase.from("ads").insert({
+        clerk_user_id: user.id,
+        title: adTitle,
+        description: adDescription,
+        image_url: imageUrl,
+        target_location: targetLocation,
+        duration_days: durationDays,
+        status: "pending",
+      });
+
+      if (insertError) {
+        toast.error("Failed to create ad: " + insertError.message);
+      } else {
+        toast.success("Advertisement submitted for review!");
+        setSubmitted(true);
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRemoveImage = () => {
     setUploadedImage(null);
+    setImageFile(null);
   };
 
   const handleNewAd = () => {
     setUploadedImage(null);
+    setImageFile(null);
     setAdTitle("");
     setAdDescription("");
+    setTargetLocation("");
+    setDurationDays(7);
     setSubmitted(false);
   };
 
   const handleLogout = () => {
-    navigate("/");
+    signOut({ redirectUrl: "/" });
   };
 
   return (
@@ -216,6 +308,8 @@ const MerchantDashboard = () => {
                     <Input
                       type="text"
                       placeholder="e.g., Near VIT University, Vellore"
+                      value={targetLocation}
+                      onChange={(e) => setTargetLocation(e.target.value)}
                       required
                     />
                   </div>
@@ -224,7 +318,11 @@ const MerchantDashboard = () => {
                     <label className="text-sm font-medium text-foreground">
                       Duration
                     </label>
-                    <select className="w-full px-4 py-3 bg-background border border-input rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <select
+                      className="w-full px-4 py-3 bg-background border border-input rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      value={durationDays}
+                      onChange={(e) => setDurationDays(Number(e.target.value))}
+                    >
                       <option value="7">7 Days</option>
                       <option value="14">14 Days</option>
                       <option value="30">30 Days</option>
@@ -235,9 +333,16 @@ const MerchantDashboard = () => {
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    disabled={!uploadedImage || !adTitle}
+                    disabled={!uploadedImage || !adTitle || isSubmitting}
                   >
-                    Submit for Review
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      "Submit for Review"
+                    )}
                   </Button>
 
                   <p className="text-xs text-muted-foreground text-center">
@@ -285,6 +390,45 @@ const MerchantDashboard = () => {
               </div>
             </div>
           )}
+          {/* My Ads Section */}
+          <div className="mt-8 md:mt-12 animate-fade-up stagger-2">
+            <h3 className="text-lg font-semibold text-foreground mb-4">My Advertisements</h3>
+            {loadingAds ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : myAds.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-8">
+                No advertisements yet. Create your first one above!
+              </p>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {myAds.map((ad) => (
+                  <div key={ad.id} className="bg-card rounded-xl border border-border overflow-hidden">
+                    {ad.image_url && (
+                      <img src={ad.image_url} alt={ad.title} className="w-full h-36 object-cover" />
+                    )}
+                    <div className="p-4">
+                      <h4 className="font-medium text-foreground mb-1">{ad.title}</h4>
+                      {ad.description && (
+                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{ad.description}</p>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          ad.status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                          ad.status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                          "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        }`}>
+                          {ad.status}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{ad.duration_days} days</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 

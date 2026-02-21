@@ -3,17 +3,13 @@ import { ArrowLeft, User, Mail, Phone, MapPin, GraduationCap, LogOut, Edit2, Cam
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Profile = () => {
-  const user = {
-    name: "John Doe",
-    email: "vishwas.vashishtha@mca.christuniversity.in",
-    phone: "+91 98765 43210",
-    city: "Bengaluru",
-    university: "Stanford University",
-    course: "Computer Science",
-    year: "3rd Year",
-  };
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const role = useUserRole();
 
   const menuItems = [
     { icon: Bell, label: "Notifications", href: "#" },
@@ -47,17 +43,21 @@ const Profile = () => {
                 {/* Avatar */}
                 <div className="relative">
                   <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-card border-4 border-card shadow-lg flex items-center justify-center overflow-hidden">
-                    <User className="w-12 h-12 sm:w-14 sm:h-14 text-primary" />
+                    {user?.imageUrl ? (
+                      <img src={user.imageUrl} alt={user.fullName ?? "User"} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-12 h-12 sm:w-14 sm:h-14 text-primary" />
+                    )}
                   </div>
                   <button className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
                     <Camera className="w-4 h-4" />
                   </button>
                 </div>
                 
-                {/* Name & Course */}
+                {/* Name & Role */}
                 <div className="flex-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">{user.name}</h1>
-                  <p className="text-muted-foreground text-sm sm:text-base">{user.course} • {user.year}</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">{user?.fullName ?? "User"}</h1>
+                  <p className="text-muted-foreground text-sm sm:text-base capitalize">{role ?? "student"}</p>
                 </div>
                 
                 {/* Edit Button */}
@@ -91,7 +91,7 @@ const Profile = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Email</p>
-                    <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{user?.primaryEmailAddress?.emailAddress ?? "—"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 sm:p-4 bg-muted/30 rounded-xl">
@@ -100,7 +100,7 @@ const Profile = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Phone</p>
-                    <p className="text-sm font-medium text-foreground truncate">{user.phone}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{user?.primaryPhoneNumber?.phoneNumber ?? "Not set"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 sm:p-4 bg-muted/30 rounded-xl">
@@ -108,8 +108,10 @@ const Profile = () => {
                     <MapPin className="w-5 h-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">City</p>
-                    <p className="text-sm font-medium text-foreground truncate">{user.city}</p>
+                    <p className="text-xs text-muted-foreground">Member Since</p>
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : "—"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 sm:p-4 bg-muted/30 rounded-xl">
@@ -117,8 +119,8 @@ const Profile = () => {
                     <GraduationCap className="w-5 h-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">University</p>
-                    <p className="text-sm font-medium text-foreground truncate">{user.university}</p>
+                    <p className="text-xs text-muted-foreground">Role</p>
+                    <p className="text-sm font-medium text-foreground truncate capitalize">{role ?? "student"}</p>
                   </div>
                 </div>
               </div>
@@ -147,6 +149,7 @@ const Profile = () => {
             <Button 
               variant="outline" 
               className="w-full text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
+              onClick={() => signOut({ redirectUrl: "/" })}
             >
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out

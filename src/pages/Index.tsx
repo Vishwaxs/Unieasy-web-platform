@@ -89,7 +89,7 @@ const Index = () => {
 
             <p className="mt-8 text-sm text-muted-foreground animate-fade-up stagger-3">
               Already have an account?{" "}
-              <Link to="/signup" className="text-primary font-medium hover:underline">
+              <Link to="/signin" className="text-primary font-medium hover:underline">
                 Sign in
               </Link>
             </p>

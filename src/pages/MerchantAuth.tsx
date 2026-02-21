@@ -1,24 +1,49 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Store, Mail, Lock, User, Phone, Building, Eye, EyeOff, LogOut } from "lucide-react";
+import { ArrowLeft, Store, LogOut, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useUser, useClerk, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/lib/supabase";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
+import { toast } from "sonner";
 
 const MerchantAuth = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+  const { user, isSignedIn } = useUser();
+  const { signOut } = useClerk();
+  const role = useUserRole();
   const navigate = useNavigate();
+  const [requesting, setRequesting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate("/merchant/dashboard");
-  };
+  // If user is already a merchant, redirect to dashboard
+  if (isSignedIn && role === "merchant") {
+    navigate("/merchant/dashboard", { replace: true });
+    return null;
+  }
 
-  const handleLogout = () => {
-    navigate("/");
+  const handleRequestMerchant = async () => {
+    if (!user) return;
+    setRequesting(true);
+    try {
+      const { error } = await supabase
+        .from("app_users")
+        .update({ role: "merchant" })
+        .eq("clerk_user_id", user.id);
+
+      if (error) {
+        toast.error("Failed to upgrade to merchant: " + error.message);
+      } else {
+        toast.success("You're now a merchant! Redirecting to dashboard...");
+        // Small delay so the toast is visible
+        setTimeout(() => navigate("/merchant/dashboard"), 1200);
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setRequesting(false);
+    }
   };
 
   return (
@@ -36,15 +61,17 @@ const MerchantAuth = () => {
           </Link>
         </div>
         <div className="flex items-center gap-2 md:gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
+          <SignedIn>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </SignedIn>
           <ThemeToggle />
         </div>
       </header>
@@ -60,117 +87,66 @@ const MerchantAuth = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
               Merchant Portal
             </h1>
-            <p className="text-muted-foreground text-sm md:text-base">
-              {isLogin ? "Sign in to manage your advertisements" : "Create your merchant account"}
-            </p>
           </div>
 
-          {/* Toggle */}
-          <div className="flex bg-muted rounded-xl p-1 mb-6 md:mb-8">
-            <button
-              onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2.5 md:py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                isLogin
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2.5 md:py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                !isLogin
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Register
-            </button>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Business Name</label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input type="text" placeholder="Your Business Name" className="pl-10" required />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Contact Person</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input type="text" placeholder="Full Name" className="pl-10" required />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Phone Number</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input type="tel" placeholder="+91 98765 43210" className="pl-10" required />
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input type="email" placeholder="merchant@business.com" className="pl-10" required />
-              </div>
+          <SignedOut>
+            {/* Not signed in — prompt to sign in first */}
+            <div className="text-center space-y-6">
+              <p className="text-muted-foreground">
+                Sign in to your UniEasy account to access the Merchant Portal.
+              </p>
+              <SignInButton mode="modal">
+                <Button size="lg" className="w-full">
+                  Sign in to continue
+                </Button>
+              </SignInButton>
             </div>
+          </SignedOut>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••" 
-                  className="pl-10 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          <SignedIn>
+            {/* Signed in but not a merchant yet */}
+            {role === null ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : role !== "merchant" ? (
+              <div className="text-center space-y-6">
+                <p className="text-muted-foreground">
+                  Welcome, <span className="font-medium text-foreground">{user?.fullName}</span>!
+                  Your current role is <span className="font-medium text-foreground capitalize">{role}</span>.
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  Upgrade to a merchant account to create and manage advertisements on UniEasy.
+                </p>
+
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={handleRequestMerchant}
+                  disabled={requesting}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+                  {requesting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Upgrading...
+                    </>
+                  ) : (
+                    "Become a Merchant"
+                  )}
+                </Button>
+
+                {/* Benefits */}
+                <div className="mt-6 md:mt-8 p-4 bg-muted/50 rounded-xl text-left">
+                  <p className="text-sm font-medium text-foreground mb-2">Why advertise with UniEasy?</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /> Reach thousands of university students</li>
+                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /> Targeted advertising near campuses</li>
+                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /> Affordable and flexible pricing</li>
+                  </ul>
+                </div>
               </div>
-            </div>
-
-            {isLogin && (
-              <div className="text-right">
-                <a href="#" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </a>
-              </div>
-            )}
-
-            <Button type="submit" className="w-full" size="lg">
-              {isLogin ? "Sign In" : "Create Account"}
-            </Button>
-          </form>
-
-          {/* Benefits */}
-          {!isLogin && (
-            <div className="mt-6 md:mt-8 p-4 bg-muted/50 rounded-xl">
-              <p className="text-sm font-medium text-foreground mb-2">Why advertise with UniEasy?</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Reach thousands of university students</li>
-                <li>• Targeted advertising near campuses</li>
-                <li>• Affordable and flexible pricing</li>
-              </ul>
-            </div>
-          )}
+            ) : null}
+          </SignedIn>
         </div>
       </main>
 
