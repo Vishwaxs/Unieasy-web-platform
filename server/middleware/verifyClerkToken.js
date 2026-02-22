@@ -5,16 +5,15 @@
 //   3. Attaches `req.clerkUserId` and `req.userRole` for downstream handlers.
 //   4. Optionally enforces a list of allowed roles.
 
-import { createClerkClient } from "@clerk/express";
+import { verifyToken } from "@clerk/express";
 import { supabaseAdmin } from "../lib/supabaseAdmin.js";
+import logger from "../lib/logger.js";
 import "dotenv/config";
 
 const clerkSecretKey = process.env.CLERK_SECRET_KEY;
 if (!clerkSecretKey) {
   throw new Error("Missing CLERK_SECRET_KEY in server environment.");
 }
-
-const clerk = createClerkClient({ secretKey: clerkSecretKey });
 
 /**
  * Returns an Express middleware that:
@@ -39,9 +38,11 @@ export function verifyClerkToken(allowedRoles = []) {
       // Verify JWT with Clerk
       let payload;
       try {
-        payload = await clerk.verifyToken(token);
+        payload = await verifyToken(token, {
+          secretKey: clerkSecretKey,
+        });
       } catch (err) {
-        console.error("[verifyClerkToken] Token verification failed:", err.message);
+        logger.error({ err }, "Token verification failed");
         return res.status(401).json({ error: "Invalid or expired token" });
       }
 
@@ -58,7 +59,7 @@ export function verifyClerkToken(allowedRoles = []) {
         .single();
 
       if (dbError || !userRow) {
-        console.error("[verifyClerkToken] User not found in app_users:", dbError?.message);
+        logger.error({ err: dbError }, "User not found in app_users");
         return res.status(403).json({ error: "User not found in database" });
       }
 
@@ -66,8 +67,9 @@ export function verifyClerkToken(allowedRoles = []) {
 
       // Enforce allowed roles if specified
       if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-        console.warn(
-          `[verifyClerkToken] Access denied for ${clerkUserId} (role=${role}), allowed=${allowedRoles}`
+        logger.warn(
+          { clerkUserId, role, allowedRoles },
+          "Access denied: insufficient role"
         );
         return res.status(403).json({ error: "Access denied: insufficient role" });
       }
@@ -77,7 +79,7 @@ export function verifyClerkToken(allowedRoles = []) {
       req.userRole = role;
       next();
     } catch (err) {
-      console.error("[verifyClerkToken] Unexpected error:", err);
+      logger.error({ err }, "verifyClerkToken unexpected error");
       return res.status(500).json({ error: "Internal authentication error" });
     }
   };

@@ -8,6 +8,9 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import logger from "./lib/logger.js";
+import "./lib/sentry.js";
+import { Sentry } from "./lib/sentry.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -48,6 +51,12 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "1mb" }));
 
+// ── Request logging ─────────────────────────────────────────────────────────
+app.use((req, _res, next) => {
+  logger.debug({ method: req.method, url: req.url }, "incoming request");
+  next();
+});
+
 // ── Health check ────────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", time: new Date().toISOString() });
@@ -59,6 +68,13 @@ app.use("/api/admin", adminRoutes);
 // ── Merchant routes (/api/merchant/*) ───────────────────────────────────────
 app.use("/api/merchant", merchantRoutes);
 
+// ── Global error handler ────────────────────────────────────────────────────
+app.use((err, _req, res, _next) => {
+  logger.error({ err }, "Unhandled error");
+  if (process.env.SENTRY_DSN) Sentry.captureException(err);
+  res.status(500).json({ error: "Internal server error" });
+});
+
 // ── 404 fallback ────────────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });
@@ -66,5 +82,5 @@ app.use((_req, res) => {
 
 // ── Start ───────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`[UniEasy Server] Running on http://localhost:${PORT}`);
+  logger.info(`UniEasy Server running on http://localhost:${PORT}`);
 });

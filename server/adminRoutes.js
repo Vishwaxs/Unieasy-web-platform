@@ -6,6 +6,7 @@ import { Router } from "express";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import { verifyClerkToken } from "./middleware/verifyClerkToken.js";
 import { notifyAdmins } from "./lib/notifyAdmins.js";
+import logger from "./lib/logger.js";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ async function auditLog(actorId, actorRole, action, targetType, targetId, detail
     target_id: targetId,
     details,
   });
-  if (error) console.error("[auditLog] Failed to write audit log:", error.message);
+  if (error) logger.error({ err: error }, "Failed to write audit log");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -45,12 +46,12 @@ router.get(
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("[GET /ads/pending]", error.message);
+        logger.error({ err: error }, "GET /ads/pending");
         return res.status(500).json({ error: error.message });
       }
       return res.json(data);
     } catch (err) {
-      console.error("[GET /ads/pending] Unexpected:", err);
+      logger.error({ err }, "GET /ads/pending unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -78,7 +79,7 @@ router.post(
         .single();
 
       if (error) {
-        console.error("[POST /ads/:id/approve]", error.message);
+        logger.error({ err: error, adId }, "POST /ads/:id/approve");
         return res.status(500).json({ error: error.message });
       }
 
@@ -88,7 +89,7 @@ router.post(
 
       return res.json({ message: "Ad approved", ad: data });
     } catch (err) {
-      console.error("[POST /ads/:id/approve] Unexpected:", err);
+      logger.error({ err }, "POST /ads/:id/approve unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -120,7 +121,7 @@ router.post(
         .single();
 
       if (error) {
-        console.error("[POST /ads/:id/reject]", error.message);
+        logger.error({ err: error, adId }, "POST /ads/:id/reject");
         return res.status(500).json({ error: error.message });
       }
 
@@ -131,7 +132,7 @@ router.post(
 
       return res.json({ message: "Ad rejected", ad: data });
     } catch (err) {
-      console.error("[POST /ads/:id/reject] Unexpected:", err);
+      logger.error({ err }, "POST /ads/:id/reject unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -156,12 +157,12 @@ router.get(
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("[GET /users]", error.message);
+        logger.error({ err: error }, "GET /users");
         return res.status(500).json({ error: error.message });
       }
       return res.json(data);
     } catch (err) {
-      console.error("[GET /users] Unexpected:", err);
+      logger.error({ err }, "GET /users unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -214,7 +215,7 @@ router.post(
         .single();
 
       if (error) {
-        console.error("[POST /users/role]", error.message);
+        logger.error({ err: error }, "POST /users/role");
         return res.status(500).json({ error: error.message });
       }
 
@@ -225,7 +226,7 @@ router.post(
 
       return res.json({ message: `Role changed to ${newRole}`, user: data });
     } catch (err) {
-      console.error("[POST /users/role] Unexpected:", err);
+      logger.error({ err }, "POST /users/role unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -251,12 +252,12 @@ router.get(
         .limit(100);
 
       if (error) {
-        console.error("[GET /audit-logs]", error.message);
+        logger.error({ err: error }, "GET /audit-logs");
         return res.status(500).json({ error: error.message });
       }
       return res.json(data);
     } catch (err) {
-      console.error("[GET /audit-logs] Unexpected:", err);
+      logger.error({ err }, "GET /audit-logs unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -283,7 +284,7 @@ router.post(
       );
       return res.json({ message: "Notification sent" });
     } catch (err) {
-      console.error("[POST /notify-new-ad]", err);
+      logger.error({ err }, "POST /notify-new-ad");
       // Non-blocking: don't fail the request if notification fails
       return res.json({ message: "Notification attempted (may have failed)" });
     }

@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: |
+            unieasy-explorer-hub-3c530f4e/package-lock.json
+            unieasy-explorer-hub-3c530f4e/server/package-lock.json
+
+      # ── Frontend ──────────────────────────────────────────────────────
+      - name: Install frontend dependencies
+        working-directory: unieasy-explorer-hub-3c530f4e
+        run: npm ci
+
+      - name: TypeScript check
+        working-directory: unieasy-explorer-hub-3c530f4e
+        run: npx tsc --noEmit
+
+      - name: Lint
+        working-directory: unieasy-explorer-hub-3c530f4e
+        run: npx eslint . --max-warnings 0 || true
+
+      - name: Build
+        working-directory: unieasy-explorer-hub-3c530f4e
+        run: npx vite build
+
+      - name: Frontend tests
+        working-directory: unieasy-explorer-hub-3c530f4e
+        run: npx vitest run --reporter=verbose
+
+      # ── Server ────────────────────────────────────────────────────────
+      - name: Install server dependencies
+        working-directory: unieasy-explorer-hub-3c530f4e/server
+        run: npm ci

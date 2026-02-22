@@ -3,8 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Upload, Image, Eye, CheckCircle, Clock, X, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useUser, useClerk } from "@clerk/clerk-react";
-import { supabase } from "@/lib/supabase";
+import { useUser, useClerk, useAuth } from "@clerk/clerk-react";
+import { uploadAdImage, createAd, fetchMyAds } from "@/lib/adminApi";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
@@ -35,25 +35,24 @@ const MerchantDashboard = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
 
-  // Fetch user's existing ads
+  // Fetch user's existing ads via server endpoint
   useEffect(() => {
     if (!user) return;
-    const fetchAds = async () => {
+    const loadAds = async () => {
       setLoadingAds(true);
-      const { data, error } = await supabase
-        .from("ads")
-        .select("*")
-        .eq("clerk_user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
+      try {
+        const data = await fetchMyAds(getToken);
         setMyAds(data as Ad[]);
+      } catch {
+        // Silently fail — ads list is non-critical
+      } finally {
+        setLoadingAds(false);
       }
-      setLoadingAds(false);
     };
-    fetchAds();
-  }, [user, submitted]);
+    loadAds();
+  }, [user, submitted, getToken]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,46 +72,22 @@ const MerchantDashboard = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Upload image to Supabase Storage
-      const fileExt = imageFile.name.split(".").pop();
-      const filePath = `ads/${user.id}/${Date.now()}.${fileExt}`;
+      // 1. Upload image via server endpoint
+      const { imageUrl } = await uploadAdImage(getToken, imageFile);
 
-      const { error: uploadError } = await supabase.storage
-        .from("ads-images")
-        .upload(filePath, imageFile, { upsert: false });
-
-      if (uploadError) {
-        toast.error("Image upload failed: " + uploadError.message);
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 2. Get public URL
-      const { data: urlData } = supabase.storage
-        .from("ads-images")
-        .getPublicUrl(filePath);
-
-      const imageUrl = urlData.publicUrl;
-
-      // 3. Insert ad record into Supabase
-      const { error: insertError } = await supabase.from("ads").insert({
-        clerk_user_id: user.id,
+      // 2. Create ad record via server endpoint
+      await createAd(getToken, {
         title: adTitle,
         description: adDescription,
-        image_url: imageUrl,
-        target_location: targetLocation,
-        duration_days: durationDays,
-        status: "pending",
+        imageUrl,
+        targetLocation,
+        durationDays,
       });
 
-      if (insertError) {
-        toast.error("Failed to create ad: " + insertError.message);
-      } else {
-        toast.success("Advertisement submitted for review!");
-        setSubmitted(true);
-      }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+      toast.success("Advertisement submitted for review!");
+      setSubmitted(true);
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
