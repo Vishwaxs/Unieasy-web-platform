@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Store, LogOut, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUser, useClerk, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
+import { useUser, useClerk, useAuth, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 import { useUserRole } from "@/hooks/useUserRole";
-import { supabase } from "@/lib/supabase";
+import { apiFetch } from "@/lib/adminApi";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 const MerchantAuth = () => {
   const { user, isSignedIn } = useUser();
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
   const role = useUserRole();
   const navigate = useNavigate();
   const [requesting, setRequesting] = useState(false);
@@ -27,20 +28,12 @@ const MerchantAuth = () => {
     if (!user) return;
     setRequesting(true);
     try {
-      const { error } = await supabase
-        .from("app_users")
-        .update({ role: "merchant" })
-        .eq("clerk_user_id", user.id);
-
-      if (error) {
-        toast.error("Failed to upgrade to merchant: " + error.message);
-      } else {
-        toast.success("You're now a merchant! Redirecting to dashboard...");
-        // Small delay so the toast is visible
-        setTimeout(() => navigate("/merchant/dashboard"), 1200);
-      }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+      await apiFetch(getToken, "/merchant/upgrade", { method: "POST" });
+      toast.success("You're now a merchant! Redirecting to dashboard...");
+      // Small delay so the toast is visible
+      setTimeout(() => navigate("/merchant/dashboard"), 1200);
+    } catch (err: any) {
+      toast.error("Failed to upgrade to merchant: " + err.message);
     } finally {
       setRequesting(false);
     }

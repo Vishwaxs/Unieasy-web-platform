@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 export interface Accommodation {
@@ -23,32 +23,26 @@ const mockAccommodations: Accommodation[] = [
   { id: "6", name: "Budget Bunks", type: "Hostel", price: 5000, rating: 4.0, reviews: 312, distance: "1.5 km", amenities: ["wifi"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Affordable and clean" },
 ];
 
+async function fetchAccommodations(): Promise<Accommodation[]> {
+  const { data, error } = await supabase
+    .from("accommodations")
+    .select("*")
+    .order("rating", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    console.warn("[useAccommodations] Using fallback mock data:", error?.message);
+    return mockAccommodations;
+  }
+  return data as Accommodation[];
+}
+
 export function useAccommodations() {
-  const [items, setItems] = useState<Accommodation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ["accommodations"],
+    queryFn: fetchAccommodations,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: mockAccommodations,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("accommodations")
-          .select("*")
-          .order("rating", { ascending: false });
-
-        if (error || !data || data.length === 0) {
-          console.warn("[useAccommodations] Using fallback mock data:", error?.message);
-          setItems(mockAccommodations);
-        } else {
-          setItems(data as Accommodation[]);
-        }
-      } catch {
-        setItems(mockAccommodations);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  return { items, loading };
+  return { items: data ?? mockAccommodations, loading: isLoading };
 }

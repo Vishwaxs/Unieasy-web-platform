@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 export interface FoodItem {
@@ -27,32 +27,26 @@ const mockFoodItems: FoodItem[] = [
   { id: "10", name: "Mutton Rogan Josh", restaurant: "Kashmir Flavors", price: 420, rating: 4.9, reviews: 87, is_veg: false, image: "https://images.unsplash.com/photo-1545247181-516773cae754?w=400", comment: "Rich and aromatic" },
 ];
 
+async function fetchFoodItems(): Promise<FoodItem[]> {
+  const { data, error } = await supabase
+    .from("food_items")
+    .select("*")
+    .order("rating", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    console.warn("[useFoodItems] Using fallback mock data:", error?.message);
+    return mockFoodItems;
+  }
+  return data as FoodItem[];
+}
+
 export function useFoodItems() {
-  const [items, setItems] = useState<FoodItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ["food_items"],
+    queryFn: fetchFoodItems,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: mockFoodItems,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("food_items")
-          .select("*")
-          .order("rating", { ascending: false });
-
-        if (error || !data || data.length === 0) {
-          console.warn("[useFoodItems] Using fallback mock data:", error?.message);
-          setItems(mockFoodItems);
-        } else {
-          setItems(data as FoodItem[]);
-        }
-      } catch {
-        setItems(mockFoodItems);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  return { items, loading };
+  return { items: data ?? mockFoodItems, loading: isLoading };
 }

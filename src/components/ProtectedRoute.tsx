@@ -1,6 +1,7 @@
 import { useAuth } from "@clerk/clerk-react";
 import { Navigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useRoleRefresh } from "@/hooks/useRoleRefresh";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,6 +19,13 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children, allowed }: ProtectedRouteProps) => {
   const { isSignedIn, isLoaded } = useAuth();
   const role = useUserRole();
+
+  // Auto-refresh role on window focus so admin role changes take effect
+  useRoleRefresh((newRole) => {
+    if (newRole !== role) {
+      window.location.reload();
+    }
+  });
 
   if (!isLoaded) {
     return (

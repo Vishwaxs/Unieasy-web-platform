@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 export interface ExplorePlace {
@@ -23,32 +23,26 @@ const mockPlaces: ExplorePlace[] = [
   { id: "6", name: "Art Gallery", type: "Culture", rating: 4.7, reviews: 89, distance: "3.2 km", timing: "10 AM - 6 PM", crowd: "Low", image: "https://images.unsplash.com/photo-1531243269054-5ebf6f34081e?w=400", comment: "Inspiring exhibitions" },
 ];
 
+async function fetchExplorePlaces(): Promise<ExplorePlace[]> {
+  const { data, error } = await supabase
+    .from("explore_places")
+    .select("*")
+    .order("rating", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    console.warn("[useExplorePlaces] Using fallback mock data:", error?.message);
+    return mockPlaces;
+  }
+  return data as ExplorePlace[];
+}
+
 export function useExplorePlaces() {
-  const [items, setItems] = useState<ExplorePlace[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ["explore_places"],
+    queryFn: fetchExplorePlaces,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: mockPlaces,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("explore_places")
-          .select("*")
-          .order("rating", { ascending: false });
-
-        if (error || !data || data.length === 0) {
-          console.warn("[useExplorePlaces] Using fallback mock data:", error?.message);
-          setItems(mockPlaces);
-        } else {
-          setItems(data as ExplorePlace[]);
-        }
-      } catch {
-        setItems(mockPlaces);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  return { items, loading };
+  return { items: data ?? mockPlaces, loading: isLoading };
 }

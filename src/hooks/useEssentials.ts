@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 export interface EssentialItem {
@@ -30,32 +30,26 @@ const mockItems: EssentialItem[] = [
   { id: "15", name: "Mentorship Program", category: "career", rating: 4.9, reviews: 78, distance: "0.2 km", image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400", comment: "Connect with alumni" },
 ];
 
+async function fetchEssentials(): Promise<EssentialItem[]> {
+  const { data, error } = await supabase
+    .from("essentials")
+    .select("*")
+    .order("rating", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    console.warn("[useEssentials] Using fallback mock data:", error?.message);
+    return mockItems;
+  }
+  return data as EssentialItem[];
+}
+
 export function useEssentials() {
-  const [items, setItems] = useState<EssentialItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ["essentials"],
+    queryFn: fetchEssentials,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: mockItems,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("essentials")
-          .select("*")
-          .order("rating", { ascending: false });
-
-        if (error || !data || data.length === 0) {
-          console.warn("[useEssentials] Using fallback mock data:", error?.message);
-          setItems(mockItems);
-        } else {
-          setItems(data as EssentialItem[]);
-        }
-      } catch {
-        setItems(mockItems);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  return { items, loading };
+  return { items: data ?? mockItems, loading: isLoading };
 }

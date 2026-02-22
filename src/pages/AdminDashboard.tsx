@@ -16,9 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
+import { adminFetch } from "@/lib/adminApi";
 import { toast } from "sonner";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 interface PendingAd {
   id: string;
@@ -30,34 +29,6 @@ interface PendingAd {
   duration_days: number;
   status: string;
   created_at: string;
-}
-
-/**
- * Helper to call admin API with Clerk token.
- */
-async function adminFetch(
-  getToken: () => Promise<string | null>,
-  path: string,
-  options: RequestInit = {}
-) {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
-
-  const res = await fetch(`${API_BASE}/api/admin${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
-    },
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `HTTP ${res.status}`);
-  }
-
-  return res.json();
 }
 
 const AdminDashboard = () => {

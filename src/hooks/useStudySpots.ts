@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 export interface StudySpot {
@@ -24,32 +24,26 @@ const mockStudySpots: StudySpot[] = [
   { id: "6", name: "Department Lab", type: "Lab", rating: 4.6, reviews: 145, distance: "0.1 km", timing: "9 AM - 6 PM", noise: "Low", has_wifi: true, image: "https://images.unsplash.com/photo-1562774053-701939374585?w=400", comment: "Access to resources" },
 ];
 
+async function fetchStudySpots(): Promise<StudySpot[]> {
+  const { data, error } = await supabase
+    .from("study_spots")
+    .select("*")
+    .order("rating", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    console.warn("[useStudySpots] Using fallback mock data:", error?.message);
+    return mockStudySpots;
+  }
+  return data as StudySpot[];
+}
+
 export function useStudySpots() {
-  const [items, setItems] = useState<StudySpot[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ["study_spots"],
+    queryFn: fetchStudySpots,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: mockStudySpots,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("study_spots")
-          .select("*")
-          .order("rating", { ascending: false });
-
-        if (error || !data || data.length === 0) {
-          console.warn("[useStudySpots] Using fallback mock data:", error?.message);
-          setItems(mockStudySpots);
-        } else {
-          setItems(data as StudySpot[]);
-        }
-      } catch {
-        setItems(mockStudySpots);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  return { items, loading };
+  return { items: data ?? mockStudySpots, loading: isLoading };
 }

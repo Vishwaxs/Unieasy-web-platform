@@ -17,9 +17,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
+import { adminFetch } from "@/lib/adminApi";
 import { toast } from "sonner";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 interface AppUser {
   id: string;
@@ -39,31 +38,6 @@ const roleConfig: Record<string, { icon: React.ElementType; color: string; label
   admin: { icon: Shield, color: "text-orange-500", label: "Admin" },
   superadmin: { icon: ShieldCheck, color: "text-red-500", label: "Super Admin" },
 };
-
-async function adminFetch(
-  getToken: () => Promise<string | null>,
-  path: string,
-  options: RequestInit = {}
-) {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
-
-  const res = await fetch(`${API_BASE}/api/admin${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
-    },
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `HTTP ${res.status}`);
-  }
-
-  return res.json();
-}
 
 const SuperAdminDashboard = () => {
   const { getToken } = useAuth();
