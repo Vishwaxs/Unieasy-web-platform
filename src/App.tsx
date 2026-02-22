@@ -23,6 +23,8 @@ import AccommodationDetails from "./pages/AccommodationDetails";
 import ExploreDetails from "./pages/ExploreDetails";
 import StudyDetails from "./pages/StudyDetails";
 import EssentialsDetails from "./pages/EssentialsDetails";
+import AdminDashboard from "./pages/AdminDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +82,22 @@ const App = () => {
                   <MerchantRoute>
                     <MerchantDashboard />
                   </MerchantRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowed={["admin", "superadmin"]}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/superadmin"
+                element={
+                  <ProtectedRoute allowed={["superadmin"]}>
+                    <SuperAdminDashboard />
+                  </ProtectedRoute>
                 }
               />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
