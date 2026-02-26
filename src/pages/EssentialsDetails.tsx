@@ -30,9 +30,8 @@ const ItemCard = ({ item, index }: { item: EssentialItem; index: number }) => {
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
+      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div className="relative h-40 overflow-hidden">
@@ -43,7 +42,7 @@ const ItemCard = ({ item, index }: { item: EssentialItem; index: number }) => {
           <span className="text-white text-sm">{item.rating}</span>
         </div>
       </div>
-      
+
       <div className="p-4">
         <div className="flex items-center gap-2 mb-2">
           {category && <category.icon className="w-4 h-4 text-primary" />}
@@ -77,14 +76,14 @@ const EssentialsDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-20 pb-8">
         <div className="relative h-48 md:h-64 overflow-hidden">
           <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200" alt="Essentials Banner" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-pink-600/80 to-rose-600/80" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
+              <Link to="/home" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
                 <ArrowLeft className="w-5 h-5" /><span>Back</span>
               </Link>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">Essentials & More</h1>
@@ -96,19 +95,19 @@ const EssentialsDetails = () => {
         <div className="container mx-auto px-4 py-6">
           {/* Category Pills */}
           <div className="flex flex-wrap gap-3 mb-8">
-            <Button 
-              variant={filter === "all" ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={filter === "all" ? "default" : "outline"}
+              size="sm"
               onClick={() => setFilter("all")}
               className="rounded-full"
             >
               All
             </Button>
             {categories.map((cat) => (
-              <Button 
+              <Button
                 key={cat.id}
-                variant={filter === cat.id ? "default" : "outline"} 
-                size="sm" 
+                variant={filter === cat.id ? "default" : "outline"}
+                size="sm"
                 onClick={() => setFilter(cat.id)}
                 className="rounded-full gap-2"
               >

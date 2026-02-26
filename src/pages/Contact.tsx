@@ -53,7 +53,7 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       const { error } = await supabase.from("contact_messages").insert({
         name: formData.name,
@@ -83,7 +83,7 @@ const Contact = () => {
           <div className="flex items-center gap-4 md:gap-6">
             <Logo />
             <Link
-              to="/"
+              to="/home"
               className="hidden sm:inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
             >
               <ArrowLeft className="w-4 h-4" />

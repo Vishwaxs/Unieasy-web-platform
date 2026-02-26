@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { user } = useUser();
@@ -12,9 +13,9 @@ const Profile = () => {
   const role = useUserRole();
 
   const menuItems = [
-    { icon: Bell, label: "Notifications", href: "#" },
-    { icon: Shield, label: "Privacy & Security", href: "#" },
-    { icon: Settings, label: "Settings", href: "#" },
+    { icon: Bell, label: "Notifications", action: () => toast.info("Notifications coming soon!") },
+    { icon: Shield, label: "Privacy & Security", action: () => toast.info("Privacy settings coming soon!") },
+    { icon: Settings, label: "Settings", action: () => toast.info("Settings coming soon!") },
   ];
 
   return (
@@ -36,7 +37,7 @@ const Profile = () => {
             <div className="h-24 sm:h-32 bg-gradient-to-r from-primary via-primary/80 to-mint relative">
               <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
             </div>
-            
+
             {/* Avatar & Info */}
             <div className="px-5 sm:px-6 pb-6 -mt-12 sm:-mt-14">
               <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
@@ -49,19 +50,19 @@ const Profile = () => {
                       <User className="w-12 h-12 sm:w-14 sm:h-14 text-primary" />
                     )}
                   </div>
-                  <button className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                  <button onClick={() => toast.info("Photo upload coming soon!")} className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
                     <Camera className="w-4 h-4" />
                   </button>
                 </div>
-                
+
                 {/* Name & Role */}
                 <div className="flex-1">
                   <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">{user?.fullName ?? "User"}</h1>
                   <p className="text-muted-foreground text-sm sm:text-base capitalize">{role ?? "student"}</p>
                 </div>
-                
+
                 {/* Edit Button */}
-                <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto" onClick={() => toast.info("Profile editing coming soon!")}>
                   <Edit2 className="w-4 h-4" />
                   Edit Profile
                 </Button>
@@ -130,24 +131,24 @@ const Profile = () => {
           {/* Menu Items */}
           <div className="mt-6 bg-card rounded-2xl shadow-sm overflow-hidden animate-fade-up stagger-1">
             {menuItems.map((item, index) => (
-              <a
+              <button
                 key={index}
-                href={item.href}
-                className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors border-b border-border last:border-0"
+                onClick={item.action}
+                className="flex items-center gap-4 p-4 w-full text-left hover:bg-muted/50 transition-colors border-b border-border last:border-0"
               >
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                   <item.icon className="w-5 h-5 text-primary" />
                 </div>
                 <span className="flex-1 font-medium text-foreground">{item.label}</span>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </a>
+              </button>
             ))}
           </div>
 
           {/* Sign Out */}
           <div className="mt-6 animate-fade-up stagger-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
               onClick={() => signOut({ redirectUrl: "/" })}
             >

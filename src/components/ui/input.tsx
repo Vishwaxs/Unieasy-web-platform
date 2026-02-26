@@ -9,7 +9,7 @@ const inputVariants = cva(
       variant: {
         default: "border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         accent: "border-accent/30 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30",
-        glass: "bg-card/80 backdrop-blur-md border-border/50 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20",
+        glass: "bg-[rgba(var(--glass-bg),var(--glass-opacity))] backdrop-blur-[var(--glass-blur)] border-[var(--glass-border)] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:shadow-[var(--glass-glow-hover)]",
       },
       inputSize: {
         default: "h-11",
@@ -26,7 +26,7 @@ const inputVariants = cva(
 
 export interface InputProps
   extends React.ComponentProps<"input">,
-    VariantProps<typeof inputVariants> {}
+  VariantProps<typeof inputVariants> { }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, variant, inputSize, ...props }, ref) => {

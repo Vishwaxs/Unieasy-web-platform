@@ -14,6 +14,7 @@ import { Sentry } from "./lib/sentry.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import adminRoutes from "./adminRoutes.js";
 import merchantRoutes from "./merchantRoutes.js";
 
@@ -57,9 +58,37 @@ app.use((req, _res, next) => {
   next();
 });
 
-// ── Health check ────────────────────────────────────────────────────────────
+// ── Health check (legacy) ───────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", time: new Date().toISOString() });
+});
+
+// ── Liveness probe — is the process up? ─────────────────────────────────────
+app.get("/healthz", (_req, res) => {
+  res.json({ ok: true, uptime: process.uptime(), time: new Date().toISOString() });
+});
+
+// ── Readiness probe — can we reach DB and storage? ──────────────────────────
+app.get("/readyz", async (_req, res) => {
+  const checks = { db: false, storage: false };
+  try {
+    // DB connectivity: query a small table
+    const { error: dbErr } = await supabaseAdmin
+      .from("app_users")
+      .select("id")
+      .limit(1);
+    checks.db = !dbErr;
+
+    // Storage connectivity: list buckets
+    const { error: storageErr } = await supabaseAdmin.storage.listBuckets();
+    checks.storage = !storageErr;
+
+    const allOk = checks.db && checks.storage;
+    res.status(allOk ? 200 : 503).json({ ok: allOk, checks });
+  } catch (err) {
+    logger.error({ err }, "/readyz failed");
+    res.status(503).json({ ok: false, checks, error: err.message });
+  }
 });
 
 // ── Admin routes (/api/admin/*) ─────────────────────────────────────────────

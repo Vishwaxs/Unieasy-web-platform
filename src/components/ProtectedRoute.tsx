@@ -1,5 +1,5 @@
 import { useAuth } from "@clerk/clerk-react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useRoleRefresh } from "@/hooks/useRoleRefresh";
 
@@ -58,9 +58,9 @@ const ProtectedRoute = ({ children, allowed }: ProtectedRouteProps) => {
             <p className="text-muted-foreground">
               You don't have permission to view this page.
             </p>
-            <a href="/home" className="text-primary hover:underline">
+            <Link to="/home" className="text-primary hover:underline">
               Go to Home
-            </a>
+            </Link>
           </div>
         </div>
       );

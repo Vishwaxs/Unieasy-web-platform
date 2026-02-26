@@ -43,9 +43,8 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
+      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div className="relative h-48 overflow-hidden">
@@ -62,17 +61,17 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
           <span className="text-white text-sm font-medium">{item.rating}</span>
         </div>
       </div>
-      
+
       <div className="p-4">
         <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
           {item.name}
         </h3>
-        
+
         <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
           <MapPin className="w-3 h-3" />
           <span>{item.distance} from campus</span>
         </div>
-        
+
         <div className="flex gap-2 mb-3">
           {item.amenities.slice(0, 3).map((amenity) => (
             <div key={amenity} className="p-1.5 bg-secondary rounded-lg" title={amenity}>
@@ -80,9 +79,9 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
             </div>
           ))}
         </div>
-        
+
         <p className="text-muted-foreground text-xs italic mb-3">"{item.comment}"</p>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xl font-bold text-primary">₹{item.price.toLocaleString()}</span>
@@ -122,7 +121,7 @@ const AccommodationDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-20 pb-8">
         <div className="relative h-48 md:h-64 overflow-hidden">
           <img
@@ -133,7 +132,7 @@ const AccommodationDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-violet-600/80 to-purple-600/80" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
+              <Link to="/home" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
               </Link>
@@ -146,7 +145,7 @@ const AccommodationDetails = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <span className="text-muted-foreground text-sm">{filteredItems.length} options found</span>
-            
+
             <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="md:hidden">
               <SlidersHorizontal className="w-4 h-4 mr-2" />
               Filters
@@ -161,7 +160,7 @@ const AccommodationDetails = () => {
                   </Button>
                 ))}
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Sort:</span>
                 <Button variant={sort === "price-low" ? "default" : "outline"} size="sm" onClick={() => setSort("price-low")}>Price ↑</Button>

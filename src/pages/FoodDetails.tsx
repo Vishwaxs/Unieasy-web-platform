@@ -34,9 +34,8 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
+      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div className="relative h-48 overflow-hidden">
@@ -46,7 +45,7 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <Badge 
+        <Badge
           className={`absolute top-3 left-3 ${item.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
         >
           {item.is_veg ? <Leaf className="w-3 h-3 mr-1" /> : <Drumstick className="w-3 h-3 mr-1" />}
@@ -57,18 +56,18 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           <span className="text-white text-sm font-medium">{item.rating}</span>
         </div>
       </div>
-      
+
       <div className="p-4">
         <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
           {item.name}
         </h3>
         <p className="text-muted-foreground text-sm mb-3">{item.restaurant}</p>
-        
+
         <div className="flex items-center gap-2 text-muted-foreground text-xs mb-3">
           <MessageSquare className="w-3 h-3" />
           <span className="italic">"{item.comment}"</span>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <span className="text-xl font-bold text-primary">₹{item.price}</span>
           <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
@@ -108,7 +107,7 @@ const FoodDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-20 pb-8">
         {/* Hero Banner */}
         <div className="relative h-48 md:h-64 overflow-hidden">
@@ -120,7 +119,7 @@ const FoodDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-red-600/80" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
+              <Link to="/home" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
               </Link>
@@ -136,7 +135,7 @@ const FoodDetails = () => {
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground text-sm">{filteredItems.length} items found</span>
             </div>
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -165,7 +164,7 @@ const FoodDetails = () => {
                   ))}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Sort:</span>
                 <div className="flex gap-1">
@@ -204,7 +203,7 @@ const FoodDetails = () => {
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <span className="text-sm text-muted-foreground mb-2 block">Type</span>
@@ -222,7 +221,7 @@ const FoodDetails = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 <div>
                   <span className="text-sm text-muted-foreground mb-2 block">Sort by</span>
                   <div className="flex flex-wrap gap-2">

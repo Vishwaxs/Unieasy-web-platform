@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Store, LogOut, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,13 @@ const MerchantAuth = () => {
   const [requesting, setRequesting] = useState(false);
 
   // If user is already a merchant, redirect to dashboard
+  useEffect(() => {
+    if (isSignedIn && role === "merchant") {
+      navigate("/merchant/dashboard", { replace: true });
+    }
+  }, [isSignedIn, role, navigate]);
+
   if (isSignedIn && role === "merchant") {
-    navigate("/merchant/dashboard", { replace: true });
     return null;
   }
 
@@ -46,7 +51,7 @@ const MerchantAuth = () => {
         <div className="flex items-center gap-3 md:gap-6">
           <Logo />
           <Link
-            to="/"
+            to="/home"
             className="hidden sm:inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />

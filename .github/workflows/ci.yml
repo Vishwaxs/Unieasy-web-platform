@@ -2,13 +2,30 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, experiment/modernize-unieasy]
   pull_request:
     branches: [master, main]
 
 jobs:
+  # ── Verify env templates & migration files ─────────────────────────────────
+  verify-env:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify env templates and migration files
+        working-directory: unieasy-explorer-hub-3c530f4e
+        run: node scripts/verify-env.js
+
+  # ── Build and test ─────────────────────────────────────────────────────────
   build-and-test:
     runs-on: ubuntu-latest
+    needs: verify-env
 
     strategy:
       matrix:
@@ -51,3 +68,17 @@ jobs:
       - name: Install server dependencies
         working-directory: unieasy-explorer-hub-3c530f4e/server
         run: npm ci
+
+      # ── Migration files check ─────────────────────────────────────────
+      - name: Ensure migrations 001..005 present
+        working-directory: unieasy-explorer-hub-3c530f4e
+        run: |
+          for f in \
+            supabase/migrations/001_create_app_users.sql \
+            supabase/migrations/002_create_listings_tables.sql \
+            supabase/migrations/003_seed_data.sql \
+            supabase/migrations/004_admin_audit_and_ads.sql \
+            supabase/migrations/005_rls_tighten_ads.sql; do
+            test -f "$f" || (echo "MISSING: $f" && exit 1)
+          done
+          echo "All migrations present ✓"
