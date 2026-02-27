@@ -38,6 +38,9 @@ const ESSENTIALS_CATEGORIES = ["services", "health", "fitness", "safety", "essen
  * Adapter: Map a Place record to the EssentialItem shape expected by UI components.
  */
 function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
+  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const hasPhoto = photoRefs.length > 0;
+
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
@@ -45,7 +48,9 @@ function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
     distance: (place.address as string) || "Nearby",
-    image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+    image: hasPhoto
+      ? `${API_BASE}/api/places/${place.id}/photo/0`
+      : "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
     comment: (place.address as string) || "",
   };
 }

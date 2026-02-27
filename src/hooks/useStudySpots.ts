@@ -36,6 +36,9 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
     ? (openingHours.weekday_text as string[] || [])[0] || "Check online"
     : "Check online";
 
+  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const hasPhoto = photoRefs.length > 0;
+
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
@@ -46,7 +49,9 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
     timing,
     noise: "Varies",
     has_wifi: true,
-    image: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400",
+    image: hasPhoto
+      ? `${API_BASE}/api/places/${place.id}/photo/0`
+      : "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400",
     comment: (place.address as string) || "",
   };
 }

@@ -303,9 +303,21 @@ def map_place_to_record(place: dict, google_type: str) -> dict | None:
     raw_id = place.get("id", "")
     google_place_id = raw_id  # Already in the right format for the new API
 
-    # Extract photo resource names (new API uses "name" field, not "photo_reference")
+    # Extract photo refs as objects: { ref, width, height, html_attributions }
     photos = place.get("photos", [])
-    photo_refs = [p.get("name", "") for p in photos if p.get("name")]
+    photo_refs = [
+        {
+            "ref": p.get("name", ""),
+            "width": p.get("widthPx"),
+            "height": p.get("heightPx"),
+            "html_attributions": [
+                a.get("displayName", "")
+                for a in (p.get("authorAttributions") or [])
+            ],
+        }
+        for p in photos
+        if p.get("name")
+    ]
 
     # Extract location (new API uses location.latitude / location.longitude)
     location = place.get("location", {})

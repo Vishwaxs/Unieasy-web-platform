@@ -37,6 +37,9 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
   const priceLevelMap: Record<number, number> = { 0: 50, 1: 100, 2: 200, 3: 350, 4: 500 };
   const priceLevel = typeof place.price_level === "number" ? place.price_level : 1;
 
+  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const hasPhoto = photoRefs.length > 0;
+
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
@@ -45,7 +48,9 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
     is_veg: true, // Default — Google Places doesn't provide veg/non-veg
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
+    image: hasPhoto
+      ? `${API_BASE}/api/places/${place.id}/photo/0`
+      : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
     comment: (place.address as string) || "",
   };
 }

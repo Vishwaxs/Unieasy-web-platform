@@ -235,4 +235,115 @@ router.get("/places/:id", async (req, res) => {
     }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// GET /api/places/:id/photo/:index — Photo proxy
+// Streams Google Place photo server-side. Never exposes API key to client.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
+const CACHE_PHOTOS = process.env.CACHE_PHOTOS_TO_STORAGE === "true";
+const PHOTO_CACHE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
+
+router.get("/places/:id/photo/:index", async (req, res) => {
+    const start = Date.now();
+    const { id, index: rawIndex } = req.params;
+
+    // Validate UUID
+    if (!isValidUUID(id)) {
+        return res.status(400).json({ error: "Invalid place ID format." });
+    }
+
+    // Validate index
+    const index = parseInt(rawIndex, 10);
+    if (isNaN(index) || index < 0 || index > 9) {
+        return res.status(400).json({ error: "Photo index must be 0-9." });
+    }
+
+    if (!GOOGLE_API_KEY) {
+        return res.status(503).json({ error: "Photo proxy not configured." });
+    }
+
+    try {
+        // 1. Fetch place row to get photo_refs
+        const { data: place, error } = await supabaseAdmin
+            .from("places")
+            .select("id, photo_refs")
+            .eq("id", id)
+            .single();
+
+        if (error || !place) {
+            return res.status(404).json({ error: "Place not found." });
+        }
+
+        const photoRefs = place.photo_refs || [];
+        if (index >= photoRefs.length) {
+            return res.status(404).json({ error: `No photo at index ${index}. Available: ${photoRefs.length}` });
+        }
+
+        const photoEntry = photoRefs[index];
+
+        // Support both old format (string) and new format (object with ref)
+        const photoName = typeof photoEntry === "string" ? photoEntry : photoEntry?.ref;
+        const attributions = typeof photoEntry === "object" ? (photoEntry?.html_attributions || []) : [];
+
+        if (!photoName) {
+            return res.status(404).json({ error: "Photo reference is empty." });
+        }
+
+        // 2. Build Google Places Photo Media URL (New API)
+        // New API format: GET https://places.googleapis.com/v1/{photoName}/media?maxWidthPx=800&key=...
+        // photoName is like "places/ChIJ.../photos/AUG..."
+        const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true&key=${GOOGLE_API_KEY}`;
+
+        const googleRes = await fetch(photoUrl);
+
+        if (!googleRes.ok) {
+            logger.warn(
+                { placeId: id, index, status: googleRes.status },
+                "Google Photo Media API error"
+            );
+            return res.status(502).json({ error: "Failed to fetch photo from Google." });
+        }
+
+        const photoData = await googleRes.json();
+        const imageUrl = photoData.photoUri;
+
+        if (!imageUrl) {
+            return res.status(502).json({ error: "No photo URI in Google response." });
+        }
+
+        // 3. Fetch the actual image
+        const imageRes = await fetch(imageUrl);
+
+        if (!imageRes.ok) {
+            return res.status(502).json({ error: "Failed to stream photo." });
+        }
+
+        // 4. Set headers and stream
+        const contentType = imageRes.headers.get("content-type") || "image/jpeg";
+        res.set("Content-Type", contentType);
+        res.set("Cache-Control", `public, max-age=${PHOTO_CACHE_MAX_AGE}`);
+        res.set("X-Photo-Attribution", JSON.stringify(attributions));
+        // Allow cross-origin loading (frontend on :5173, backend on :8080)
+        res.set("Cross-Origin-Resource-Policy", "cross-origin");
+
+        // Stream the image bytes to client
+        const arrayBuffer = await imageRes.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const latency = Date.now() - start;
+        logger.info(
+            { method: "GET", path: `/places/${id}/photo/${index}`, latency_ms: latency },
+            "photo proxy served"
+        );
+
+        return res.send(buffer);
+
+    } catch (err) {
+        const latency = Date.now() - start;
+        logger.error({ err, latency_ms: latency }, `GET /places/${id}/photo/${rawIndex} error`);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 export default router;

@@ -7,14 +7,17 @@
 /** Name and address fields are considered stable; refresh only manually. */
 export const NAME_ADDRESS_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-/** Rating refreshes every 6 hours for reasonably fresh data. */
-export const RATING_TTL = 6 * 60 * 60 * 1000; // 6 hours
+/** Rating refreshes every 24 hours — reduces API calls significantly. */
+export const RATING_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-/** Opening hours change frequently; refresh every 15 minutes on detail view. */
-export const OPENING_HOURS_TTL = 15 * 60 * 1000; // 15 minutes
+/** Opening hours refresh every 2 hours — balances freshness vs API cost. */
+export const OPENING_HOURS_TTL = 2 * 60 * 60 * 1000; // 2 hours
 
-/** Reviews refresh daily. */
-export const REVIEWS_TTL = 24 * 60 * 60 * 1000; // 24 hours
+/** Reviews refresh weekly — rarely changes significantly. */
+export const REVIEWS_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/** Photo references are stable; refresh every 30 days. */
+export const PHOTO_REFS_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 // ─── Valid Categories ────────────────────────────────────────────────────────
 
@@ -47,13 +50,22 @@ export const GOOGLE_TYPE_MAP = {
     store: { category: "services", type: "store" },
 };
 
-// ─── Google Place Details fields to request ─────────────────────────────────
+// ─── Google Places API (New) — Field mask for Place Details ─────────────────
+// Used by placesService.js for GET /v1/places/{id}
 
-export const DETAIL_FIELDS = [
+export const DETAIL_FIELD_MASK = [
+    "id",
+    "displayName",
+    "formattedAddress",
+    "location",
     "rating",
-    "user_ratings_total",
-    "opening_hours",
-    "business_status",
+    "userRatingCount",
+    "currentOpeningHours",
+    "businessStatus",
     "reviews",
     "photos",
-];
+    "internationalPhoneNumber",
+    "websiteUri",
+    "types",
+    "priceLevel",
+].join(",");

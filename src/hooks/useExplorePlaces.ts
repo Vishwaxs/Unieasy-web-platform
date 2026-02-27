@@ -34,6 +34,9 @@ function placeToExplorePlace(place: Record<string, unknown>): ExplorePlace {
     ? (openingHours.weekday_text as string[] || [])[0] || "Check online"
     : "Check online";
 
+  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const hasPhoto = photoRefs.length > 0;
+
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
@@ -43,7 +46,9 @@ function placeToExplorePlace(place: Record<string, unknown>): ExplorePlace {
     distance: (place.address as string) || "Nearby",
     timing,
     crowd: "Varies",
-    image: "https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400",
+    image: hasPhoto
+      ? `${API_BASE}/api/places/${place.id}/photo/0`
+      : "https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400",
     comment: (place.address as string) || "",
   };
 }

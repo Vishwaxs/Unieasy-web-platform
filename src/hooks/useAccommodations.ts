@@ -31,6 +31,9 @@ function placeToAccommodation(place: Record<string, unknown>): Accommodation {
   const priceLevelMap: Record<number, number> = { 0: 5000, 1: 7000, 2: 10000, 3: 15000, 4: 20000 };
   const priceLevel = typeof place.price_level === "number" ? place.price_level : 1;
 
+  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const hasPhoto = photoRefs.length > 0;
+
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
@@ -40,7 +43,9 @@ function placeToAccommodation(place: Record<string, unknown>): Accommodation {
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
     distance: (place.address as string) || "Nearby",
     amenities: ["wifi"],
-    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400",
+    image: hasPhoto
+      ? `${API_BASE}/api/places/${place.id}/photo/0`
+      : "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400",
     comment: (place.address as string) || "",
   };
 }

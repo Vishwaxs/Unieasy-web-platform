@@ -1,11 +1,9 @@
 // server/lib/placesService.js
-// Google Places live-fetch logic and TTL checks for place detail endpoint.
+// Google Places API (New) — live-fetch logic and TTL checks for place detail endpoint.
+// Uses the new REST API: GET https://places.googleapis.com/v1/places/{id}
 
 import logger from "./logger.js";
-import { RATING_TTL, OPENING_HOURS_TTL } from "./constants.js";
-
-const GOOGLE_PLACE_DETAILS_URL =
-    "https://maps.googleapis.com/maps/api/place/details/json";
+import { RATING_TTL, OPENING_HOURS_TTL, DETAIL_FIELD_MASK } from "./constants.js";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
@@ -13,7 +11,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
 /**
  * Check if live fields are stale based on last_fetched_at.
- * Returns true if any live field exceeds its TTL.
+ * Returns true if the shortest TTL (opening hours = 15 min) has expired.
  */
 export function isLiveDataStale(lastFetchedAt) {
     if (!lastFetchedAt) return true;
@@ -22,10 +20,8 @@ export function isLiveDataStale(lastFetchedAt) {
     const now = Date.now();
 
     // Check against the shortest TTL (opening hours = 15 min)
-    // If opening hours TTL is expired, we should refresh.
-    // Rating TTL is 6 hours — also check.
-    const ratingStale = now - lastFetch > RATING_TTL;
     const openingStale = now - lastFetch > OPENING_HOURS_TTL;
+    const ratingStale = now - lastFetch > RATING_TTL;
 
     return ratingStale || openingStale;
 }
@@ -33,12 +29,25 @@ export function isLiveDataStale(lastFetchedAt) {
 // ─── Exponential backoff fetch ───────────────────────────────────────────────
 
 /**
- * Fetch Google Place Details with exponential backoff.
+ * Fetch from Google Places API (New) with exponential backoff.
  * Max 3 retries. Returns parsed JSON or null on failure.
+ *
+ * Uses GET https://places.googleapis.com/v1/places/{placeId}
+ * with X-Goog-Api-Key and X-Goog-FieldMask headers.
  */
-async function fetchWithBackoff(url, params, retries = 3) {
-    const searchParams = new URLSearchParams({ ...params, key: GOOGLE_API_KEY });
-    const fullUrl = `${url}?${searchParams.toString()}`;
+async function fetchWithBackoff(placeId, retries = 3) {
+    // New API uses the place ID directly in the URL path
+    // If the placeId looks like a legacy ID (ChIJ...), prefix with "places/"
+    const resourceName = placeId.startsWith("places/")
+        ? placeId
+        : `places/${placeId}`;
+
+    const url = `https://places.googleapis.com/v1/${resourceName}`;
+
+    const headers = {
+        "X-Goog-Api-Key": GOOGLE_API_KEY,
+        "X-Goog-FieldMask": DETAIL_FIELD_MASK,
+    };
 
     let wait = 1000; // 1s initial
 
@@ -46,48 +55,69 @@ async function fetchWithBackoff(url, params, retries = 3) {
         const start = Date.now();
 
         try {
-            const response = await fetch(fullUrl);
-            const data = await response.json();
+            const response = await fetch(url, { headers });
             const latency = Date.now() - start;
 
-            logger.info(
-                {
-                    place_id: params.place_id,
-                    fields: params.fields,
-                    status: data.status,
-                    latency_ms: latency,
-                },
-                "Google Place Details API call"
-            );
-
-            if (data.status === "OK") {
-                return data;
+            // Rate limited
+            if (response.status === 429) {
+                logger.warn(
+                    { placeId, attempt, latency_ms: latency },
+                    "Google Places API rate limited (429)"
+                );
+                if (attempt < retries) {
+                    await new Promise((r) => setTimeout(r, wait));
+                    wait *= 2;
+                    continue;
+                }
+                return null;
             }
 
-            if (
-                data.status === "OVER_QUERY_LIMIT" ||
-                response.status === 500
-            ) {
-                logger.warn(
-                    { status: data.status, attempt },
-                    "Retryable Google API error"
-                );
-            } else {
-                // Non-retryable error
+            // Forbidden / auth error
+            if (response.status === 403) {
+                const errBody = await response.json().catch(() => ({}));
                 logger.error(
-                    {
-                        status: data.status,
-                        error: data.error_message,
-                        place_id: params.place_id,
-                    },
-                    "Google Place Details API error (non-retryable)"
+                    { placeId, status: 403, error: errBody?.error?.message },
+                    "Google Places API 403 Forbidden"
                 );
                 return null;
             }
+
+            // Other client errors — don't retry
+            if (response.status >= 400 && response.status < 500) {
+                const errBody = await response.json().catch(() => ({}));
+                logger.error(
+                    { placeId, status: response.status, error: errBody?.error?.message, latency_ms: latency },
+                    "Google Places API client error (non-retryable)"
+                );
+                return null;
+            }
+
+            // Server error — retry
+            if (response.status >= 500) {
+                logger.warn(
+                    { placeId, status: response.status, attempt, latency_ms: latency },
+                    "Google Places API server error (retryable)"
+                );
+                if (attempt < retries) {
+                    await new Promise((r) => setTimeout(r, wait));
+                    wait *= 2;
+                    continue;
+                }
+                return null;
+            }
+
+            // Success
+            const data = await response.json();
+            logger.info(
+                { placeId, latency_ms: latency },
+                "Google Place Details API call (New API)"
+            );
+            return data;
+
         } catch (err) {
             const latency = Date.now() - start;
             logger.error(
-                { err, attempt, latency_ms: latency, place_id: params.place_id },
+                { err, attempt, latency_ms: latency, placeId },
                 "Google Place Details fetch exception"
             );
         }
@@ -99,17 +129,34 @@ async function fetchWithBackoff(url, params, retries = 3) {
         }
     }
 
-    logger.error(
-        { place_id: params.place_id },
-        `Google Place Details: max retries (${retries}) exhausted`
-    );
+    logger.error({ placeId }, `Google Place Details: max retries (${retries}) exhausted`);
     return null;
 }
+
+// ─── Map priceLevel enum string to integer ───────────────────────────────────
+
+const PRICE_LEVEL_MAP = {
+    PRICE_LEVEL_FREE: 0,
+    PRICE_LEVEL_INEXPENSIVE: 1,
+    PRICE_LEVEL_MODERATE: 2,
+    PRICE_LEVEL_EXPENSIVE: 3,
+    PRICE_LEVEL_VERY_EXPENSIVE: 4,
+};
 
 // ─── Fetch and update place details ──────────────────────────────────────────
 
 /**
- * Fetch live data from Google Place Details API and update the Supabase row.
+ * Fetch live data from Google Places API (New) and update the Supabase row.
+ *
+ * New API response field names:
+ *   rating → rating (number, same name)
+ *   userRatingCount → rating_count
+ *   currentOpeningHours → opening_hours in extra
+ *   businessStatus → business_status in extra
+ *   reviews → top 3 reviews in extra
+ *   photos → photo_refs as objects { ref, width, height, html_attributions }
+ *   internationalPhoneNumber → phone
+ *   websiteUri → website
  *
  * @param {object} supabaseAdmin - Supabase client with service role
  * @param {object} place - The existing place row from DB
@@ -121,59 +168,66 @@ export async function fetchAndUpdatePlaceDetails(supabaseAdmin, place) {
         return { updatedPlace: place, liveFetch: false, liveFetchError: true };
     }
 
-    const fields = [
-        "rating",
-        "user_ratings_total",
-        "opening_hours",
-        "business_status",
-        "reviews",
-        "photos",
-    ].join(",");
+    const data = await fetchWithBackoff(place.google_place_id);
 
-    const data = await fetchWithBackoff(GOOGLE_PLACE_DETAILS_URL, {
-        place_id: place.google_place_id,
-        fields,
-    });
-
-    if (!data || data.status !== "OK") {
+    if (!data) {
         return { updatedPlace: place, liveFetch: false, liveFetchError: true };
     }
 
-    const result = data.result;
     const now = new Date().toISOString();
 
     // Build update payload — only live fields
     const extra = { ...(place.extra || {}) };
 
-    if (result.opening_hours) {
-        extra.opening_hours = result.opening_hours;
+    // Opening hours (New API: currentOpeningHours)
+    if (data.currentOpeningHours) {
+        extra.opening_hours = {
+            openNow: data.currentOpeningHours.openNow,
+            periods: data.currentOpeningHours.periods,
+            weekdayDescriptions: data.currentOpeningHours.weekdayDescriptions,
+        };
     }
-    if (result.business_status) {
-        extra.business_status = result.business_status;
+
+    // Business status (New API: businessStatus)
+    if (data.businessStatus) {
+        extra.business_status = data.businessStatus;
     }
-    if (result.reviews) {
-        // Store top 3 reviews
-        extra.reviews = result.reviews.slice(0, 3).map((r) => ({
-            author: r.author_name,
+
+    // Reviews — store top 3 (New API: reviews array)
+    if (data.reviews && data.reviews.length > 0) {
+        extra.reviews = data.reviews.slice(0, 3).map((r) => ({
+            author: r.authorAttribution?.displayName || "Anonymous",
             rating: r.rating,
-            text: r.text,
-            time: r.time,
-            relative_time: r.relative_time_description,
+            text: r.text?.text || "",
+            publishTime: r.publishTime,
+            relativePublishTime: r.relativePublishTimeDescription,
         }));
     }
 
-    // Photo refs — top 5
+    // Photo refs — top 5 as objects with attribution (New API: photos[].name)
     let photoRefs = place.photo_refs || [];
-    if (result.photos && result.photos.length > 0) {
-        photoRefs = result.photos
-            .slice(0, 5)
-            .map((p) => p.photo_reference)
-            .filter(Boolean);
+    if (data.photos && data.photos.length > 0) {
+        photoRefs = data.photos.slice(0, 5).map((p) => ({
+            ref: p.name || "",
+            width: p.widthPx || null,
+            height: p.heightPx || null,
+            html_attributions: (p.authorAttributions || []).map(
+                (a) => a.displayName || ""
+            ),
+        }));
     }
 
+    // Price level (New API: enum string → int)
+    const priceLevel = data.priceLevel
+        ? (PRICE_LEVEL_MAP[data.priceLevel] ?? place.price_level)
+        : place.price_level;
+
     const updatePayload = {
-        rating: result.rating ?? place.rating,
-        rating_count: result.user_ratings_total ?? place.rating_count,
+        rating: data.rating ?? place.rating,
+        rating_count: data.userRatingCount ?? place.rating_count,
+        price_level: priceLevel,
+        phone: data.internationalPhoneNumber || place.phone,
+        website: data.websiteUri || place.website,
         extra,
         photo_refs: photoRefs,
         last_fetched_at: now,
