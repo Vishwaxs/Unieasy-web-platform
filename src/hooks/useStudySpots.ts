@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 export interface StudySpot {
   id: string;
@@ -24,17 +23,49 @@ const mockStudySpots: StudySpot[] = [
   { id: "6", name: "Department Lab", type: "Lab", rating: 4.6, reviews: 145, distance: "0.1 km", timing: "9 AM - 6 PM", noise: "Low", has_wifi: true, image: "https://images.unsplash.com/photo-1562774053-701939374585?w=400", comment: "Access to resources" },
 ];
 
-async function fetchStudySpots(): Promise<StudySpot[]> {
-  const { data, error } = await supabase
-    .from("study_spots")
-    .select("*")
-    .order("rating", { ascending: false });
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-  if (error || !data || data.length === 0) {
-    console.warn("[useStudySpots] Using fallback mock data:", error?.message);
+/**
+ * Adapter: Map a Place record to the StudySpot shape expected by UI components.
+ */
+function placeToStudySpot(place: Record<string, unknown>): StudySpot {
+  // Try to extract opening hours from extra field
+  const extra = (place.extra as Record<string, unknown>) || {};
+  const openingHours = extra.opening_hours as Record<string, unknown> | undefined;
+  const timing = openingHours
+    ? (openingHours.weekday_text as string[] || [])[0] || "Check online"
+    : "Check online";
+
+  return {
+    id: place.id as string,
+    name: (place.name as string) || "Unknown",
+    type: ((place.type as string) || "library").charAt(0).toUpperCase() + ((place.type as string) || "library").slice(1),
+    rating: typeof place.rating === "number" ? place.rating : 0,
+    reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
+    distance: (place.address as string) || "Nearby",
+    timing,
+    noise: "Varies",
+    has_wifi: true,
+    image: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400",
+    comment: (place.address as string) || "",
+  };
+}
+
+async function fetchStudySpots(): Promise<StudySpot[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/places?category=study&limit=50`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const places = json.data;
+    if (!places || places.length === 0) {
+      console.warn("[useStudySpots] No places returned, using fallback mock data");
+      return mockStudySpots;
+    }
+    return places.map(placeToStudySpot);
+  } catch (err) {
+    console.warn("[useStudySpots] Backend fetch failed, using fallback mock data:", err);
     return mockStudySpots;
   }
-  return data as StudySpot[];
 }
 
 export function useStudySpots() {

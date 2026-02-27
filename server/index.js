@@ -17,6 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import adminRoutes from "./adminRoutes.js";
 import merchantRoutes from "./merchantRoutes.js";
+import placesRoutes from "./placesRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -90,6 +91,9 @@ app.get("/readyz", async (_req, res) => {
     res.status(503).json({ ok: false, checks, error: err.message });
   }
 });
+
+// ── Places routes (/api/places/*) — public, no auth required ────────────────
+app.use("/api", placesRoutes);
 
 // ── Admin routes (/api/admin/*) ─────────────────────────────────────────────
 app.use("/api/admin", adminRoutes);

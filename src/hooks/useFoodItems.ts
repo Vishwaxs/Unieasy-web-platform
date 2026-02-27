@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 export interface FoodItem {
   id: string;
@@ -13,7 +12,7 @@ export interface FoodItem {
   comment: string;
 }
 
-// Fallback mock data (used when Supabase table is empty or unavailable)
+// Fallback mock data (used when backend is unavailable or returns empty)
 const mockFoodItems: FoodItem[] = [
   { id: "1", name: "Margherita Pizza", restaurant: "Pizza Palace", price: 249, rating: 4.5, reviews: 128, is_veg: true, image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400", comment: "Best cheese pizza in town!" },
   { id: "2", name: "Butter Chicken", restaurant: "Spice Garden", price: 320, rating: 4.8, reviews: 256, is_veg: false, image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=400", comment: "Creamy and flavorful" },
@@ -27,17 +26,45 @@ const mockFoodItems: FoodItem[] = [
   { id: "10", name: "Mutton Rogan Josh", restaurant: "Kashmir Flavors", price: 420, rating: 4.9, reviews: 87, is_veg: false, image: "https://images.unsplash.com/photo-1545247181-516773cae754?w=400", comment: "Rich and aromatic" },
 ];
 
-async function fetchFoodItems(): Promise<FoodItem[]> {
-  const { data, error } = await supabase
-    .from("food_items")
-    .select("*")
-    .order("rating", { ascending: false });
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-  if (error || !data || data.length === 0) {
-    console.warn("[useFoodItems] Using fallback mock data:", error?.message);
+/**
+ * Adapter: Map a Place record from the unified places API to the FoodItem shape
+ * expected by existing UI components. No layout/component changes needed.
+ */
+function placeToFoodItem(place: Record<string, unknown>): FoodItem {
+  // Map price_level (0-4) to an approximate INR price for display
+  const priceLevelMap: Record<number, number> = { 0: 50, 1: 100, 2: 200, 3: 350, 4: 500 };
+  const priceLevel = typeof place.price_level === "number" ? place.price_level : 1;
+
+  return {
+    id: place.id as string,
+    name: (place.name as string) || "Unknown",
+    restaurant: (place.address as string) || "",
+    price: priceLevelMap[priceLevel] ?? 200,
+    rating: typeof place.rating === "number" ? place.rating : 0,
+    reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
+    is_veg: true, // Default — Google Places doesn't provide veg/non-veg
+    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
+    comment: (place.address as string) || "",
+  };
+}
+
+async function fetchFoodItems(): Promise<FoodItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/places?category=food&limit=50`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const places = json.data;
+    if (!places || places.length === 0) {
+      console.warn("[useFoodItems] No places returned, using fallback mock data");
+      return mockFoodItems;
+    }
+    return places.map(placeToFoodItem);
+  } catch (err) {
+    console.warn("[useFoodItems] Backend fetch failed, using fallback mock data:", err);
     return mockFoodItems;
   }
-  return data as FoodItem[];
 }
 
 export function useFoodItems() {

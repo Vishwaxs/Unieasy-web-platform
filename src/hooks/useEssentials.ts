@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 export interface EssentialItem {
   id: string;
@@ -30,17 +29,48 @@ const mockItems: EssentialItem[] = [
   { id: "15", name: "Mentorship Program", category: "career", rating: 4.9, reviews: 78, distance: "0.2 km", image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400", comment: "Connect with alumni" },
 ];
 
-async function fetchEssentials(): Promise<EssentialItem[]> {
-  const { data, error } = await supabase
-    .from("essentials")
-    .select("*")
-    .order("rating", { ascending: false });
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-  if (error || !data || data.length === 0) {
-    console.warn("[useEssentials] Using fallback mock data:", error?.message);
+// Essentials page shows items from multiple categories: services, health, fitness, safety, essentials
+const ESSENTIALS_CATEGORIES = ["services", "health", "fitness", "safety", "essentials"];
+
+/**
+ * Adapter: Map a Place record to the EssentialItem shape expected by UI components.
+ */
+function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
+  return {
+    id: place.id as string,
+    name: (place.name as string) || "Unknown",
+    category: (place.category as string) || "essentials",
+    rating: typeof place.rating === "number" ? place.rating : 0,
+    reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
+    distance: (place.address as string) || "Nearby",
+    image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+    comment: (place.address as string) || "",
+  };
+}
+
+async function fetchEssentials(): Promise<EssentialItem[]> {
+  try {
+    // Fetch from multiple categories in parallel
+    const fetches = ESSENTIALS_CATEGORIES.map((cat) =>
+      fetch(`${API_BASE}/api/places?category=${cat}&limit=20`).then((r) =>
+        r.ok ? r.json() : { data: [] }
+      )
+    );
+    const results = await Promise.all(fetches);
+    const allPlaces = results.flatMap((r) => r.data || []);
+
+    if (allPlaces.length === 0) {
+      console.warn("[useEssentials] No places returned, using fallback mock data");
+      return mockItems;
+    }
+
+    return allPlaces.map(placeToEssentialItem);
+  } catch (err) {
+    console.warn("[useEssentials] Backend fetch failed, using fallback mock data:", err);
     return mockItems;
   }
-  return data as EssentialItem[];
 }
 
 export function useEssentials() {

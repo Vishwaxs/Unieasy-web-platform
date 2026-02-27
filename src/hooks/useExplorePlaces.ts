@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 export interface ExplorePlace {
   id: string;
@@ -23,17 +22,47 @@ const mockPlaces: ExplorePlace[] = [
   { id: "6", name: "Art Gallery", type: "Culture", rating: 4.7, reviews: 89, distance: "3.2 km", timing: "10 AM - 6 PM", crowd: "Low", image: "https://images.unsplash.com/photo-1531243269054-5ebf6f34081e?w=400", comment: "Inspiring exhibitions" },
 ];
 
-async function fetchExplorePlaces(): Promise<ExplorePlace[]> {
-  const { data, error } = await supabase
-    .from("explore_places")
-    .select("*")
-    .order("rating", { ascending: false });
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-  if (error || !data || data.length === 0) {
-    console.warn("[useExplorePlaces] Using fallback mock data:", error?.message);
+/**
+ * Adapter: Map a Place record to the ExplorePlace shape expected by UI components.
+ */
+function placeToExplorePlace(place: Record<string, unknown>): ExplorePlace {
+  const extra = (place.extra as Record<string, unknown>) || {};
+  const openingHours = extra.opening_hours as Record<string, unknown> | undefined;
+  const timing = openingHours
+    ? (openingHours.weekday_text as string[] || [])[0] || "Check online"
+    : "Check online";
+
+  return {
+    id: place.id as string,
+    name: (place.name as string) || "Unknown",
+    type: ((place.type as string) || "place").charAt(0).toUpperCase() + ((place.type as string) || "place").slice(1),
+    rating: typeof place.rating === "number" ? place.rating : 0,
+    reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
+    distance: (place.address as string) || "Nearby",
+    timing,
+    crowd: "Varies",
+    image: "https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400",
+    comment: (place.address as string) || "",
+  };
+}
+
+async function fetchExplorePlaces(): Promise<ExplorePlace[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/places?category=hangout&limit=50`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const places = json.data;
+    if (!places || places.length === 0) {
+      console.warn("[useExplorePlaces] No places returned, using fallback mock data");
+      return mockPlaces;
+    }
+    return places.map(placeToExplorePlace);
+  } catch (err) {
+    console.warn("[useExplorePlaces] Backend fetch failed, using fallback mock data:", err);
     return mockPlaces;
   }
-  return data as ExplorePlace[];
 }
 
 export function useExplorePlaces() {

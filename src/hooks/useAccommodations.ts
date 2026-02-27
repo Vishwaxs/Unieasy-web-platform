@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 export interface Accommodation {
   id: string;
@@ -23,17 +22,44 @@ const mockAccommodations: Accommodation[] = [
   { id: "6", name: "Budget Bunks", type: "Hostel", price: 5000, rating: 4.0, reviews: 312, distance: "1.5 km", amenities: ["wifi"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Affordable and clean" },
 ];
 
-async function fetchAccommodations(): Promise<Accommodation[]> {
-  const { data, error } = await supabase
-    .from("accommodations")
-    .select("*")
-    .order("rating", { ascending: false });
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-  if (error || !data || data.length === 0) {
-    console.warn("[useAccommodations] Using fallback mock data:", error?.message);
+/**
+ * Adapter: Map a Place record to the Accommodation shape expected by UI components.
+ */
+function placeToAccommodation(place: Record<string, unknown>): Accommodation {
+  const priceLevelMap: Record<number, number> = { 0: 5000, 1: 7000, 2: 10000, 3: 15000, 4: 20000 };
+  const priceLevel = typeof place.price_level === "number" ? place.price_level : 1;
+
+  return {
+    id: place.id as string,
+    name: (place.name as string) || "Unknown",
+    type: ((place.type as string) || "hostel").charAt(0).toUpperCase() + ((place.type as string) || "hostel").slice(1),
+    price: priceLevelMap[priceLevel] ?? 10000,
+    rating: typeof place.rating === "number" ? place.rating : 0,
+    reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
+    distance: (place.address as string) || "Nearby",
+    amenities: ["wifi"],
+    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400",
+    comment: (place.address as string) || "",
+  };
+}
+
+async function fetchAccommodations(): Promise<Accommodation[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/places?category=accommodation&limit=50`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const places = json.data;
+    if (!places || places.length === 0) {
+      console.warn("[useAccommodations] No places returned, using fallback mock data");
+      return mockAccommodations;
+    }
+    return places.map(placeToAccommodation);
+  } catch (err) {
+    console.warn("[useAccommodations] Backend fetch failed, using fallback mock data:", err);
     return mockAccommodations;
   }
-  return data as Accommodation[];
 }
 
 export function useAccommodations() {
