@@ -211,6 +211,22 @@
     animation: gradientShift 3s ease infinite;
   }
 
+  .animate-card-in-1 {
+    animation: cardInBottom 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-card-in-2 {
+    animation: cardInLeft 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-card-in-3 {
+    animation: cardInRight 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-card-in-zoom {
+    animation: cardInZoom 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
   .stagger-1 { animation-delay: 0.1s; }
   .stagger-2 { animation-delay: 0.2s; }
   .stagger-3 { animation-delay: 0.3s; }
@@ -224,6 +240,197 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .home-progress-bar {
+    background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--mint)) 60%, hsl(var(--warm)) 100%);
+    box-shadow: 0 0 18px hsl(var(--primary) / 0.45);
+  }
+
+  .home-grid-overlay {
+    position: absolute;
+    inset: 0;
+    opacity: 0.18;
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.35) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.35) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+    animation: homeGridDrift 20s linear infinite;
+  }
+
+  .home-aurora {
+    position: absolute;
+    filter: blur(70px);
+    opacity: 0.42;
+    border-radius: 9999px;
+    will-change: transform;
+  }
+
+  .home-aurora-one {
+    width: 34rem;
+    height: 34rem;
+    left: -8rem;
+    top: 3rem;
+    background: radial-gradient(circle at center, hsl(var(--primary) / 0.52), transparent 68%);
+    animation: homeAuroraOne 16s ease-in-out infinite;
+  }
+
+  .home-aurora-two {
+    width: 30rem;
+    height: 30rem;
+    right: -7rem;
+    top: 16rem;
+    background: radial-gradient(circle at center, hsl(var(--mint) / 0.4), transparent 70%);
+    animation: homeAuroraTwo 14s ease-in-out infinite;
+  }
+
+  .home-aurora-three {
+    width: 26rem;
+    height: 26rem;
+    left: 34%;
+    bottom: -8rem;
+    background: radial-gradient(circle at center, hsl(var(--warm) / 0.35), transparent 72%);
+    animation: homeAuroraThree 18s ease-in-out infinite;
+  }
+
+  .home-pointer-glow {
+    position: absolute;
+    width: 22rem;
+    height: 22rem;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    background: radial-gradient(circle at center, hsl(var(--primary) / 0.24), transparent 70%);
+    filter: blur(55px);
+    transition: left 180ms ease-out, top 180ms ease-out;
+    opacity: 0.7;
+  }
+
+  .hero-bg-pan {
+    animation: heroPan 14s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .hero-bg-zoom {
+    animation: heroZoom 10s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  .hero-glow {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(70px);
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .hero-glow-one {
+    width: 30rem;
+    height: 30rem;
+    left: -8rem;
+    top: 8rem;
+    background: radial-gradient(circle at center, hsl(var(--primary) / 0.42), transparent 70%);
+    animation: heroFloatOne 11s ease-in-out infinite;
+  }
+
+  .hero-glow-two {
+    width: 28rem;
+    height: 28rem;
+    right: -9rem;
+    top: 3rem;
+    background: radial-gradient(circle at center, hsl(var(--warm) / 0.28), transparent 70%);
+    animation: heroFloatTwo 12s ease-in-out infinite;
+  }
+
+  .hero-bubble {
+    position: absolute;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 30% 30%, hsl(var(--mint) / 0.9), hsl(var(--primary) / 0.45) 55%, transparent 75%);
+    border: 1px solid hsl(var(--primary) / 0.45);
+    box-shadow: 0 0 22px hsl(var(--primary) / 0.45), inset 0 0 28px hsl(var(--mint) / 0.4);
+    opacity: 0.85;
+    animation: heroBubbleFloat 9s ease-in-out infinite;
+  }
+
+  .hero-bubble-one {
+    width: 6.5rem;
+    height: 6.5rem;
+    left: 10%;
+    top: 18%;
+    animation-delay: 0s;
+  }
+
+  .hero-bubble-two {
+    width: 4.75rem;
+    height: 4.75rem;
+    left: 24%;
+    top: 66%;
+    animation-delay: 1.2s;
+  }
+
+  .hero-bubble-three {
+    width: 7.25rem;
+    height: 7.25rem;
+    right: 13%;
+    top: 24%;
+    animation-delay: 0.8s;
+  }
+
+  .hero-bubble-four {
+    width: 5.25rem;
+    height: 5.25rem;
+    right: 22%;
+    top: 70%;
+    animation-delay: 1.8s;
+  }
+
+  .hero-orbit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--border) / 0.45);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .hero-orbit-one {
+    width: min(78vw, 760px);
+    height: min(78vw, 760px);
+    animation: heroOrbit 30s linear infinite;
+  }
+
+  .hero-orbit-two {
+    width: min(56vw, 540px);
+    height: min(56vw, 540px);
+    animation: heroOrbitReverse 22s linear infinite;
+  }
+
+  .hero-orbit-dot {
+    position: absolute;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    left: 50%;
+    top: -0.375rem;
+    transform: translateX(-50%);
+    background: hsl(var(--primary));
+    box-shadow: 0 0 18px hsl(var(--primary) / 0.65);
+  }
+
+  .hero-panel-in {
+    animation: heroPanelIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .hero-panel-shine {
+    background: linear-gradient(120deg, transparent 35%, hsl(var(--foreground) / 0.08) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: heroShine 5.2s ease-in-out infinite;
+  }
+
+  .hero-search-pulse {
+    animation: heroSearchPulse 2.8s ease-in-out infinite;
+  }
+
 }
 
 @keyframes fadeUp {
@@ -293,6 +500,141 @@
 @keyframes gradientShift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+}
+
+@keyframes cardInBottom {
+  0% {
+    opacity: 0;
+    transform: translateY(72px) scale(0.86);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-110px) rotate(-8deg) scale(0.9);
+  }
+  65% {
+    opacity: 1;
+    transform: translateX(8px) rotate(1deg) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) rotate(0) scale(1);
+  }
+}
+
+@keyframes cardInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(110px) rotate(8deg) scale(0.9);
+  }
+  65% {
+    opacity: 1;
+    transform: translateX(-8px) rotate(-1deg) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) rotate(0) scale(1);
+  }
+}
+
+@keyframes cardInZoom {
+  0% {
+    opacity: 0;
+    transform: scale(0.68);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes homeGridDrift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(44px, 44px, 0);
+  }
+}
+
+@keyframes homeAuroraOne {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(70px, -40px, 0) scale(1.12); }
+}
+
+@keyframes homeAuroraTwo {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-60px, 45px, 0) scale(1.1); }
+}
+
+@keyframes homeAuroraThree {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(45px, -35px, 0) scale(1.14); }
+}
+
+@keyframes heroPan {
+  0%, 100% { transform: scale(1) translate3d(0, 0, 0); }
+  50% { transform: scale(1.04) translate3d(18px, -16px, 0); }
+}
+
+@keyframes heroZoom {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+@keyframes heroFloatOne {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(55px, -35px, 0); }
+}
+
+@keyframes heroFloatTwo {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-60px, 38px, 0); }
+}
+
+@keyframes heroBubbleFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -18px, 0) scale(1.08); }
+}
+
+
+@keyframes heroOrbit {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes heroOrbitReverse {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+@keyframes heroPanelIn {
+  0% { opacity: 0; transform: translateY(34px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes heroShine {
+  0%, 72% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+@keyframes heroSearchPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
 }
 
 /* Custom scrollbar */

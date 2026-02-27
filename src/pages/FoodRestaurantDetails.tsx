@@ -313,31 +313,33 @@ const FoodRestaurantDetails = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-3">About</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                {item.restaurant} serves student-friendly meals with consistent quality and quick service. This place is known for practical portions, fair pricing, and reliable taste for both quick bites and proper meals.
-              </p>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {profile.bestFor.map((label) => (
-                  <div key={label} className="rounded-xl bg-muted/50 border border-border p-3">
-                    <p className="text-sm font-medium text-foreground">{label}</p>
-                  </div>
-                ))}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="rounded-2xl border border-border bg-card p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Flame className="w-5 h-5 text-orange-500" />
+                  <h2 className="text-xl font-semibold text-foreground">Menu Highlights</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {profile.popularDishes.map((dish) => (
+                    <div key={dish} className="rounded-xl border border-border p-3 bg-background/60">
+                      <p className="font-medium text-foreground">{dish}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="rounded-2xl border border-border bg-card p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Flame className="w-5 h-5 text-orange-500" />
-                <h2 className="text-xl font-semibold text-foreground">Menu Highlights</h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {profile.popularDishes.map((dish) => (
-                  <div key={dish} className="rounded-xl border border-border p-3 bg-background/60">
-                    <p className="font-medium text-foreground">{dish}</p>
-                  </div>
-                ))}
+              <div className="rounded-2xl border border-border bg-card p-6">
+                <h2 className="text-xl font-semibold text-foreground mb-3">About</h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  {item.restaurant} serves student-friendly meals with consistent quality and quick service. This place is known for practical portions, fair pricing, and reliable taste for both quick bites and proper meals.
+                </p>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {profile.bestFor.map((label) => (
+                    <div key={label} className="rounded-xl bg-muted/50 border border-border p-3">
+                      <p className="text-sm font-medium text-foreground">{label}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

@@ -127,15 +127,6 @@ const FoodDetails = () => {
   const [query, setQuery] = useState("");
 
   const normalizedQuery = query.trim().toLowerCase();
-  const totalVeg = foodItems.filter((item) => item.is_veg).length;
-  const avgRating =
-    foodItems.length > 0
-      ? (foodItems.reduce((sum, item) => sum + item.rating, 0) / foodItems.length).toFixed(1)
-      : "0.0";
-  const avgPrice =
-    foodItems.length > 0
-      ? Math.round(foodItems.reduce((sum, item) => sum + item.price, 0) / foodItems.length)
-      : 0;
 
   const filteredItems = foodItems
     .filter((item) => {
@@ -195,21 +186,6 @@ const FoodDetails = () => {
         </div>
 
         <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg Rating</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{avgRating}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg Price</p>
-              <p className="text-2xl font-bold text-foreground mt-1">Rs. {avgPrice}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Veg Friendly</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{totalVeg} places</p>
-            </div>
-          </div>
-
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground text-sm">{filteredItems.length} items found</span>

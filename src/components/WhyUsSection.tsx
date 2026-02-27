@@ -40,47 +40,37 @@ const features = [
   },
 ];
 
-const FeatureCard = ({ feature, index }: { feature: typeof features[0]; index: number }) => {
-  const [isVisible, setIsVisible] = useState(false);
+const getEntranceTypeClass = (index: number) => {
+  return "animate-card-in-zoom";
+};
+
+const FeatureCard = ({ feature, index, isVisible }: { feature: typeof features[0]; index: number; isVisible: boolean }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const entranceTypeClass = getEntranceTypeClass(index);
 
   return (
     <div
-      ref={cardRef}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={`group relative bg-card rounded-2xl p-5 md:p-6 shadow-sm border border-border overflow-hidden transition-all duration-700 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      } ${isHovered ? "shadow-xl -translate-y-2 border-primary/30" : ""}`}
-      style={{ transitionDelay: `${index * 100}ms` }}
+        isVisible ? `opacity-100 ${entranceTypeClass}` : "opacity-0"
+      } ${isHovered ? "shadow-2xl -translate-y-3 scale-[1.03] border-primary/50" : ""}`}
+      style={{
+        animationDelay: `${index * 140}ms`,
+      }}
     >
       {/* Gradient background on hover */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 transition-opacity duration-500 ${isHovered ? "opacity-5" : ""}`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 transition-opacity duration-500 ${isHovered ? "opacity-10" : ""}`} />
+
+      {/* Glow ring */}
+      <div className={`absolute inset-0 rounded-2xl transition-opacity duration-500 ${isHovered ? "opacity-100" : "opacity-0"} shadow-[inset_0_0_0_1px_rgba(16,185,129,0.45),0_0_35px_rgba(16,185,129,0.25)]`} />
       
       {/* Shimmer effect */}
       <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-1000 ${isHovered ? "translate-x-full" : "-translate-x-full"}`} />
       
       <div className="relative z-10">
         {/* Icon */}
-        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 transition-all duration-500 ${isHovered ? "scale-110 rotate-3 shadow-lg" : ""}`}>
+        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 transition-all duration-500 ${isHovered ? "scale-115 rotate-6 shadow-xl" : ""}`}>
           <feature.icon className="w-6 h-6 md:w-7 md:h-7 text-white" />
         </div>
         
@@ -93,7 +83,7 @@ const FeatureCard = ({ feature, index }: { feature: typeof features[0]; index: n
         </p>
         
         {/* Bottom accent line */}
-        <div className={`absolute bottom-0 left-0 h-1 bg-gradient-to-r ${feature.color} rounded-full transition-all duration-500 ${isHovered ? "w-full" : "w-0"}`} />
+        <div className={`absolute bottom-0 left-0 h-1.5 bg-gradient-to-r ${feature.color} rounded-full transition-all duration-500 ${isHovered ? "w-full opacity-100" : "w-10 opacity-70"}`} />
       </div>
     </div>
   );
@@ -110,7 +100,7 @@ const WhyUsSection = () => {
           setIsVisible(true);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.2 }
     );
 
     if (sectionRef.current) {
@@ -134,7 +124,7 @@ const WhyUsSection = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {features.map((feature, index) => (
-            <FeatureCard key={index} feature={feature} index={index} />
+            <FeatureCard key={index} feature={feature} index={index} isVisible={isVisible} />
           ))}
         </div>
       </div>
