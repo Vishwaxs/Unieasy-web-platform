@@ -1,6 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, ChevronDown, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Star,
+  MessageSquare,
+  Leaf,
+  Drumstick,
+  SlidersHorizontal,
+  X,
+  Loader2,
+  Bike,
+  Clock3,
+  MapPin,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
@@ -10,9 +22,23 @@ import { useFoodItems, type FoodItem } from "@/hooks/useFoodItems";
 type FilterType = "all" | "veg" | "nonveg";
 type SortType = "default" | "price-low" | "price-high" | "rating";
 
+const getCardMeta = (item: FoodItem) => {
+  const index = Math.max(0, (Number.parseInt(item.id, 10) || 1) - 1);
+  const distances = ["0.4 km", "0.6 km", "0.8 km", "1.1 km"];
+  const etas = ["12-18 min", "15-22 min", "20-28 min", "10-16 min"];
+  const offers = ["10% off", "Free delivery", "Student combo", "Buy 1 side"];
+
+  return {
+    distance: distances[index % distances.length],
+    eta: etas[index % etas.length],
+    offer: offers[index % offers.length],
+  };
+};
+
 const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const meta = getCardMeta(item);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -47,9 +73,7 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <Badge 
-          className={`absolute top-3 left-3 ${item.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
-        >
+        <Badge className={`absolute top-3 left-3 ${item.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}>
           {item.is_veg ? <Leaf className="w-3 h-3 mr-1" /> : <Drumstick className="w-3 h-3 mr-1" />}
           {item.is_veg ? "Veg" : "Non-Veg"}
         </Badge>
@@ -58,20 +82,35 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           <span className="text-white text-sm font-medium">{item.rating}</span>
         </div>
       </div>
-      
+
       <div className="p-4">
         <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
           {item.restaurant}
         </h3>
         <p className="text-muted-foreground text-sm mb-3">{item.name}</p>
-        
+
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
+            <MapPin className="w-3 h-3" />
+            {meta.distance}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
+            <Clock3 className="w-3 h-3" />
+            {meta.eta}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-1 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200">
+            <Bike className="w-3 h-3" />
+            {meta.offer}
+          </span>
+        </div>
+
         <div className="flex items-center gap-2 text-muted-foreground text-xs mb-3">
           <MessageSquare className="w-3 h-3" />
           <span className="italic">"{item.comment}"</span>
         </div>
-        
+
         <div className="flex items-center justify-between">
-          <span className="text-xl font-bold text-primary">₹{item.price}</span>
+          <span className="text-xl font-bold text-primary">Rs. {item.price}</span>
           <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
         </div>
       </div>
@@ -88,6 +127,16 @@ const FoodDetails = () => {
   const [query, setQuery] = useState("");
 
   const normalizedQuery = query.trim().toLowerCase();
+  const totalVeg = foodItems.filter((item) => item.is_veg).length;
+  const avgRating =
+    foodItems.length > 0
+      ? (foodItems.reduce((sum, item) => sum + item.rating, 0) / foodItems.length).toFixed(1)
+      : "0.0";
+  const avgPrice =
+    foodItems.length > 0
+      ? Math.round(foodItems.reduce((sum, item) => sum + item.price, 0) / foodItems.length)
+      : 0;
+
   const filteredItems = foodItems
     .filter((item) => {
       if (filter === "veg") return item.is_veg;
@@ -120,9 +169,8 @@ const FoodDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-20 pb-8">
-        {/* Hero Banner */}
         <div className="relative h-48 md:h-64 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200"
@@ -140,30 +188,38 @@ const FoodDetails = () => {
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
               </button>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">Food & Eating</h1>
-              <p className="text-white/90 mt-2">Discover the best food spots around campus</p>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">Food and Eating</h1>
+              <p className="text-white/90 mt-2">Discover top places around campus with prices, delivery time, and student offers</p>
             </div>
           </div>
         </div>
 
-        {/* Filters */}
         <div className="container mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg Rating</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{avgRating}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg Price</p>
+              <p className="text-2xl font-bold text-foreground mt-1">Rs. {avgPrice}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Veg Friendly</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{totalVeg} places</p>
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground text-sm">{filteredItems.length} items found</span>
             </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden"
-            >
+
+            <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="md:hidden">
               <SlidersHorizontal className="w-4 h-4 mr-2" />
               Filters
             </Button>
 
-            {/* Desktop Filters + Search */}
             <div className="hidden md:flex items-center gap-4 w-full">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">Type:</span>
@@ -181,29 +237,17 @@ const FoodDetails = () => {
                   ))}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">Sort:</span>
                 <div className="flex gap-1">
-                  <Button
-                    variant={sort === "price-low" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSort("price-low")}
-                  >
+                  <Button variant={sort === "price-low" ? "default" : "outline"} size="sm" onClick={() => setSort("price-low")}>
                     Price: Low to High
                   </Button>
-                  <Button
-                    variant={sort === "price-high" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSort("price-high")}
-                  >
+                  <Button variant={sort === "price-high" ? "default" : "outline"} size="sm" onClick={() => setSort("price-high")}>
                     Price: High to Low
                   </Button>
-                  <Button
-                    variant={sort === "rating" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSort("rating")}
-                  >
+                  <Button variant={sort === "rating" ? "default" : "outline"} size="sm" onClick={() => setSort("rating")}>
                     Top Rated
                   </Button>
                 </div>
@@ -222,7 +266,6 @@ const FoodDetails = () => {
             </div>
           </div>
 
-          {/* Mobile Filters Panel */}
           {showFilters && (
             <div className="md:hidden bg-card rounded-xl p-4 mb-6 border border-border animate-fade-in">
               <div className="flex items-center justify-between mb-4">
@@ -231,7 +274,7 @@ const FoodDetails = () => {
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <span className="text-sm text-muted-foreground mb-2 block">Type</span>
@@ -249,29 +292,17 @@ const FoodDetails = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 <div>
                   <span className="text-sm text-muted-foreground mb-2 block">Sort by</span>
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant={sort === "price-low" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("price-low")}
-                    >
-                      Price ↑
+                    <Button variant={sort === "price-low" ? "default" : "outline"} size="sm" onClick={() => setSort("price-low")}>
+                      Price up
                     </Button>
-                    <Button
-                      variant={sort === "price-high" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("price-high")}
-                    >
-                      Price ↓
+                    <Button variant={sort === "price-high" ? "default" : "outline"} size="sm" onClick={() => setSort("price-high")}>
+                      Price down
                     </Button>
-                    <Button
-                      variant={sort === "rating" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("rating")}
-                    >
+                    <Button variant={sort === "rating" ? "default" : "outline"} size="sm" onClick={() => setSort("rating")}>
                       Rating
                     </Button>
                   </div>
@@ -290,12 +321,18 @@ const FoodDetails = () => {
             </div>
           )}
 
-          {/* Food Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredItems.map((item, index) => (
-              <FoodCard key={item.id} item={item} index={index} />
-            ))}
-          </div>
+          {filteredItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredItems.map((item, index) => (
+                <FoodCard key={item.id} item={item} index={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border bg-card p-8 text-center">
+              <p className="text-lg font-semibold text-foreground">No matching items found</p>
+              <p className="text-sm text-muted-foreground mt-1">Try changing filters or search keywords.</p>
+            </div>
+          )}
         </div>
       </main>
 
