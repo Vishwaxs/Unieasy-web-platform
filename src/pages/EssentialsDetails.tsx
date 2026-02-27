@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Shield, Tag, Calendar, Briefcase, Users, ShoppingBag, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,11 +60,24 @@ const ItemCard = ({ item, index }: { item: EssentialItem; index: number }) => {
 };
 
 const EssentialsDetails = () => {
+  const navigate = useNavigate();
   const { items: essentialItems, loading } = useEssentials();
   const [filter, setFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [query, setQuery] = useState("");
 
-  const filteredItems = essentialItems.filter((item) => filter === "all" || item.category === filter);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredItems = essentialItems
+    .filter((item) => filter === "all" || item.category === filter)
+    .filter((item) => {
+      if (!normalizedQuery) return true;
+      return (
+        item.name.toLowerCase().includes(normalizedQuery) ||
+        item.category.toLowerCase().includes(normalizedQuery) ||
+        item.distance.toLowerCase().includes(normalizedQuery) ||
+        item.comment.toLowerCase().includes(normalizedQuery)
+      );
+    });
 
   if (loading) {
     return (
@@ -84,9 +97,13 @@ const EssentialsDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-pink-600/80 to-rose-600/80" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+              >
                 <ArrowLeft className="w-5 h-5" /><span>Back</span>
-              </Link>
+              </button>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">Essentials & More</h1>
               <p className="text-white/90 mt-2">Everything you need as a student</p>
             </div>
@@ -95,28 +112,61 @@ const EssentialsDetails = () => {
 
         <div className="container mx-auto px-4 py-6">
           {/* Category Pills */}
-          <div className="flex flex-wrap gap-3 mb-8">
-            <Button 
-              variant={filter === "all" ? "default" : "outline"} 
-              size="sm" 
-              onClick={() => setFilter("all")}
-              className="rounded-full"
-            >
-              All
-            </Button>
-            {categories.map((cat) => (
+          <div className="flex items-center gap-3 mb-8 w-full">
+            <div className="flex flex-wrap items-center gap-3">
               <Button 
-                key={cat.id}
-                variant={filter === cat.id ? "default" : "outline"} 
+                variant={filter === "all" ? "default" : "outline"} 
                 size="sm" 
-                onClick={() => setFilter(cat.id)}
-                className="rounded-full gap-2"
+                onClick={() => setFilter("all")}
+                className="rounded-full"
               >
-                <cat.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{cat.name}</span>
-                <span className="sm:hidden">{cat.name.split(' ')[0]}</span>
+                All
               </Button>
-            ))}
+              {categories.map((cat) => (
+                <Button 
+                  key={cat.id}
+                  variant={filter === cat.id ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setFilter(cat.id)}
+                  className="rounded-full gap-2"
+                >
+                  <cat.icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{cat.name}</span>
+                  <span className="sm:hidden">{cat.name.split(' ')[0]}</span>
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-sm text-muted-foreground">Search:</span>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Quick search"
+                className="h-9 w-48 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
+              />
+            </div>
+          </div>
+
+          {/* Other Essentials */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-foreground mb-3">Other Essentials</h3>
+            <Link
+              to="/study"
+              className="group block rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/40"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                    Study Zones
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Libraries, cafes, and quiet spots to focus.
+                  </p>
+                </div>
+                <div className="text-primary font-medium text-sm">Explore</div>
+              </div>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

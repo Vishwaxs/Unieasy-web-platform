@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, Github, Linkedin, Twitter } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 import Logo from "@/components/Logo";
 import christLogoHref from "@/assets/Christ-logo.png";
 
 const developers = [
-  { name: "Vishwas Vashishtha", role: "Full Stack Developer" },
-  { name: "Nirupama Vincent", role: "Frontend Developer" },
-  { name: "Angel Blessy", role: "Backend Developer" },
+  { name: "Vishwas Vashishtha", role: "Full Stack Developer", linkedin: "https://www.linkedin.com/in/angelblessy/" },
+  { name: "Nirupama Vincent", role: "Frontend Developer", linkedin: "https://www.linkedin.com/in/angelblessy/" },
+  { name: "Angel Blessy", role: "Backend Developer", linkedin: "https://www.linkedin.com/in/angelblessy/" },
 ];
 
 const Footer = () => {
@@ -38,17 +38,7 @@ const Footer = () => {
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <a href="#" className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]">
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]">
-                <Github className="w-5 h-5" />
-              </a>
-            </div>
+ 
           </div>
 
           {/* Quick Links */}
@@ -106,6 +96,17 @@ const Footer = () => {
                   <span className="font-medium text-[hsl(var(--footer-text))] text-sm md:text-base">{dev.name}</span>
                   <br />
                   <span className="text-xs md:text-sm opacity-80">{dev.role}</span>
+                  <div className="mt-2">
+                    <a
+                      href={dev.linkedin}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center rounded-full bg-[#0A66C2] px-3 py-1 text-xs md:text-sm font-semibold tracking-wide text-white transition-colors hover:bg-[#0B5CAD] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A66C2]/50"
+                      aria-label={`LinkedIn profile of ${dev.name}`}
+                    >
+                      LinkedIn
+                    </a>
+                  </div>
                 </li>
               ))}
             </ul>

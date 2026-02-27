@@ -4,7 +4,7 @@
 import "./loadEnv.js"
 import express from "express";
 import cors from "cors";
-import helmet from "helmet";
+import helmet from "helmet";// For security headers
 import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -74,6 +74,7 @@ app.use((err, _req, res, _next) => {
   if (process.env.SENTRY_DSN) Sentry.captureException(err);
   res.status(500).json({ error: "Internal server error" });
 });
+
 
 // ── 404 fallback ────────────────────────────────────────────────────────────
 app.use((_req, res) => {

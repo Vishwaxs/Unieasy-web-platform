@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +32,10 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
   }, []);
 
   return (
-    <div
+    <Link
+      to={`/food/${item.id}`}
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
+      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 block ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
       style={{ transitionDelay: `${index * 50}ms` }}
@@ -60,9 +61,9 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
       
       <div className="p-4">
         <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
-          {item.name}
+          {item.restaurant}
         </h3>
-        <p className="text-muted-foreground text-sm mb-3">{item.restaurant}</p>
+        <p className="text-muted-foreground text-sm mb-3">{item.name}</p>
         
         <div className="flex items-center gap-2 text-muted-foreground text-xs mb-3">
           <MessageSquare className="w-3 h-3" />
@@ -74,16 +75,19 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
 const FoodDetails = () => {
+  const navigate = useNavigate();
   const { items: foodItems, loading } = useFoodItems();
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("default");
   const [showFilters, setShowFilters] = useState(false);
+  const [query, setQuery] = useState("");
 
+  const normalizedQuery = query.trim().toLowerCase();
   const filteredItems = foodItems
     .filter((item) => {
       if (filter === "veg") return item.is_veg;
@@ -95,6 +99,14 @@ const FoodDetails = () => {
       if (sort === "price-high") return b.price - a.price;
       if (sort === "rating") return b.rating - a.rating;
       return 0;
+    })
+    .filter((item) => {
+      if (!normalizedQuery) return true;
+      return (
+        item.name.toLowerCase().includes(normalizedQuery) ||
+        item.restaurant.toLowerCase().includes(normalizedQuery) ||
+        item.comment.toLowerCase().includes(normalizedQuery)
+      );
     });
 
   if (loading) {
@@ -120,10 +132,14 @@ const FoodDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-red-600/80" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+              >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
-              </Link>
+              </button>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">Food & Eating</h1>
               <p className="text-white/90 mt-2">Discover the best food spots around campus</p>
             </div>
@@ -147,9 +163,9 @@ const FoodDetails = () => {
               Filters
             </Button>
 
-            {/* Desktop Filters */}
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-2">
+            {/* Desktop Filters + Search */}
+            <div className="hidden md:flex items-center gap-4 w-full">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">Type:</span>
                 <div className="flex gap-1">
                   {(["all", "veg", "nonveg"] as FilterType[]).map((f) => (
@@ -166,7 +182,7 @@ const FoodDetails = () => {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">Sort:</span>
                 <div className="flex gap-1">
                   <Button
@@ -191,6 +207,17 @@ const FoodDetails = () => {
                     Top Rated
                   </Button>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-sm text-muted-foreground">Search:</span>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Quick search"
+                  className="h-9 w-48 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
+                />
               </div>
             </div>
           </div>
@@ -249,6 +276,16 @@ const FoodDetails = () => {
                     </Button>
                   </div>
                 </div>
+              </div>
+              <div className="mt-4">
+                <span className="text-sm text-muted-foreground mb-2 block">Search</span>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Quick search"
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
+                />
               </div>
             </div>
           )}

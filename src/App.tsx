@@ -8,6 +8,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-reac
 import { useSyncUser } from "@/hooks/useSyncUser";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MerchantRoute from "@/components/MerchantRoute";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import SignupPage from "./pages/SignupPage";
 import SigninPage from "./pages/SigninPage";
@@ -19,10 +20,13 @@ import MerchantAuth from "./pages/MerchantAuth";
 import MerchantDashboard from "./pages/MerchantDashboard";
 import Contact from "./pages/Contact";
 import FoodDetails from "./pages/FoodDetails";
+import FoodRestaurantDetails from "./pages/FoodRestaurantDetails";
 import AccommodationDetails from "./pages/AccommodationDetails";
 import ExploreDetails from "./pages/ExploreDetails";
 import StudyDetails from "./pages/StudyDetails";
 import EssentialsDetails from "./pages/EssentialsDetails";
+import SearchResults from "./pages/SearchResults";
+import OnCampusDetails from "./pages/OnCampusDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -40,6 +44,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             {/* Clerk auth UI — fixed top-right, above header */}
             <div className="fixed top-3 right-4 z-[60] flex items-center gap-2">
               <SignedIn>
@@ -71,10 +76,13 @@ const App = () => {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/food" element={<FoodDetails />} />
+              <Route path="/food/:id" element={<FoodRestaurantDetails />} />
               <Route path="/accommodation" element={<AccommodationDetails />} />
               <Route path="/explore" element={<ExploreDetails />} />
               <Route path="/study" element={<StudyDetails />} />
               <Route path="/essentials" element={<EssentialsDetails />} />
+              <Route path="/campus" element={<OnCampusDetails />} />
+              <Route path="/search" element={<SearchResults />} />
               <Route path="/merchant" element={<MerchantAuth />} />
               <Route
                 path="/merchant/dashboard"

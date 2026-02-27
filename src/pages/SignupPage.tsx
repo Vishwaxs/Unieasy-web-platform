@@ -38,6 +38,14 @@ const SignupPage = () => {
               signInUrl="/"
               afterSignUpUrl="/home"
               appearance={{
+                variables: {
+                  colorText: "hsl(var(--foreground))",
+                  colorTextSecondary: "hsl(var(--muted-foreground))",
+                  colorInputText: "hsl(var(--foreground))",
+                  colorBackground: "hsl(var(--background))",
+                  colorInputBackground: "hsl(var(--background))",
+                  colorPrimary: "hsl(var(--primary))",
+                },
                 elements: {
                   rootBox: "w-full",
                   card: "shadow-none border border-border rounded-2xl bg-card",
@@ -47,10 +55,20 @@ const SignupPage = () => {
                     "border-border text-foreground hover:bg-muted",
                   formFieldLabel: "text-foreground",
                   formFieldInput:
-                    "bg-background border-input text-foreground rounded-xl",
+                    "bg-background border-input text-foreground rounded-xl placeholder:text-muted-foreground",
                   footerActionLink: "text-primary hover:text-primary/80",
                   formButtonPrimary:
                     "bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl",
+                  formFieldHintText: "text-muted-foreground",
+                  formFieldHintTextError: "text-destructive",
+                  formFieldAction: "text-primary hover:text-primary/80",
+                  formFieldInputShowPasswordButton: "text-muted-foreground hover:text-foreground",
+                  formFieldSuccessText: "text-emerald-500",
+                  formFieldErrorText: "text-destructive",
+                  formFieldInputText: "text-foreground",
+                  formFieldInputHintText: "text-muted-foreground",
+                  formFieldLabelRow: "text-foreground",
+                  formButtonReset: "text-primary hover:text-primary/80",
                 },
               }}
             />

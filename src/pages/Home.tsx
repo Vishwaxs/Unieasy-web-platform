@@ -12,8 +12,8 @@ const Home = () => {
       <main className="pt-16 md:pt-20">
         <HeroSection />
         <CategoryCards />
-        <WhyUsSection />
         <HighlightSection />
+        <WhyUsSection />
       </main>
       <Footer />
     </div>

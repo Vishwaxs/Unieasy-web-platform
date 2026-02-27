@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Clock, Users, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,11 +81,26 @@ const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
 };
 
 const ExploreDetails = () => {
+  const navigate = useNavigate();
   const { items: places, loading } = useExplorePlaces();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [query, setQuery] = useState("");
 
-  const filteredItems = places.filter((item) => filter === "all" || item.type === filter);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredItems = places
+    .filter((item) => filter === "all" || item.type === filter)
+    .filter((item) => {
+      if (!normalizedQuery) return true;
+      return (
+        item.name.toLowerCase().includes(normalizedQuery) ||
+        item.type.toLowerCase().includes(normalizedQuery) ||
+        item.distance.toLowerCase().includes(normalizedQuery) ||
+        item.timing.toLowerCase().includes(normalizedQuery) ||
+        item.crowd.toLowerCase().includes(normalizedQuery) ||
+        item.comment.toLowerCase().includes(normalizedQuery)
+      );
+    });
 
   if (loading) {
     return (
@@ -105,9 +120,13 @@ const ExploreDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/80 to-teal-600/80" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+              >
                 <ArrowLeft className="w-5 h-5" /><span>Back</span>
-              </Link>
+              </button>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">Explore Nearby</h1>
               <p className="text-white/90 mt-2">Discover amazing places around your campus</p>
             </div>
@@ -122,12 +141,24 @@ const ExploreDetails = () => {
               <SlidersHorizontal className="w-4 h-4 mr-2" />Filters
             </Button>
 
-            <div className="hidden md:flex flex-wrap gap-2">
-              {(["all", "Park", "Cafe", "Mall", "Scenic", "Sports", "Culture"] as TypeFilter[]).map((f) => (
-                <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)}>
-                  {f === "all" ? "All" : f}
-                </Button>
-              ))}
+            <div className="hidden md:flex items-center gap-3 w-full">
+              <div className="flex flex-wrap gap-2 items-center">
+                {(["all", "Park", "Cafe", "Mall", "Scenic", "Sports", "Culture"] as TypeFilter[]).map((f) => (
+                  <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)}>
+                    {f === "all" ? "All" : f}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-sm text-muted-foreground">Search:</span>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Quick search"
+                  className="h-9 w-48 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
+                />
+              </div>
             </div>
           </div>
 
@@ -143,6 +174,16 @@ const ExploreDetails = () => {
                     {f === "all" ? "All" : f}
                   </Button>
                 ))}
+              </div>
+              <div className="mt-4">
+                <span className="text-sm text-muted-foreground mb-2 block">Search</span>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Quick search"
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
+                />
               </div>
             </div>
           )}

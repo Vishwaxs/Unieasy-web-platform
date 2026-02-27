@@ -1,12 +1,23 @@
 import { Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+
   const scrollToCards = () => {
     const cardsSection = document.getElementById("category-cards");
     if (cardsSection) {
       cardsSection.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  const runSearch = () => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
   };
 
   return (
@@ -29,19 +40,27 @@ const HeroSection = () => {
 
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto animate-fade-up stagger-2">
-          <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-2 flex flex-col sm:flex-row items-center gap-2 shadow-xl border border-border">
+          <form
+            className="bg-card/80 backdrop-blur-xl rounded-2xl p-2 flex flex-col sm:flex-row items-center gap-2 shadow-xl border border-border"
+            onSubmit={(e) => {
+              e.preventDefault();
+              runSearch();
+            }}
+          >
             <div className="flex-1 flex items-center gap-3 px-4 w-full">
               <Search className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               <input
                 type="text"
                 placeholder="Search for food, hostels, places..."
                 className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground py-3 w-full"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
               />
             </div>
-            <Button size="lg" className="rounded-xl w-full sm:w-auto">
+            <Button size="lg" className="rounded-xl w-full sm:w-auto" type="submit">
               Search
             </Button>
-          </div>
+          </form>
         </div>
       </div>
 

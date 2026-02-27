@@ -6,8 +6,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { Megaphone, User, ChevronDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
-import lightLogoHref from "@/assets/Light_Logo.png";
-import darkLogoHref from "@/assets/Dark_Logo.png";
+import lightLogoHref from "@/assets/light.png";
+import darkLogoHref from "@/assets/dark.png";
 import christLogoHref from "@/assets/Christ-logo.png";
 
 const Index = () => {
@@ -33,8 +33,8 @@ const Index = () => {
 
         {/* Fixed Glassmorphism Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/50 shadow-sm">
-          <div className="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
-            <Logo />
+          <div className="w-full px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+            <Logo imgClassName="h-full max-h-16 md:max-h-20" />
             <div className="flex items-center gap-2 md:gap-3">
               <ThemeToggle />
               <Link to="/profile">
@@ -57,7 +57,7 @@ const Index = () => {
               <img
                 src={theme === "dark" ? darkLogoHref : lightLogoHref}
                 alt="UniEasy"
-                className="h-14 md:h-16 w-auto"
+                className="h-28 md:h-32 w-auto"
                 loading="eager"
                 decoding="async"
               />
@@ -80,14 +80,14 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="xl"
-                  className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-accent/10"
+                  className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-primary hover:text-primary-foreground dark:hover:bg-white/10 dark:hover:text-white"
                 >
                   Explore as Guest
                 </Button>
               </Link>
             </div>
 
-            <p className="mt-8 text-sm text-muted-foreground animate-fade-up stagger-3">
+            <p className="mt-16 text-sm text-muted-foreground animate-fade-up stagger-3">
               Already have an account?{" "}
               <Link to="/signin" className="text-primary font-medium hover:underline">
                 Sign in
@@ -99,7 +99,7 @@ const Index = () => {
         {/* Scroll indicator */}
         <button 
           onClick={scrollToContent}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer group transition-all duration-300 hover:translate-y-1 z-20"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer group transition-all duration-300 hover:translate-y-1 z-20"
         >
           <span className="text-muted-foreground text-sm font-medium group-hover:text-foreground transition-colors">
             Scroll down

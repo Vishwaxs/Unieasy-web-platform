@@ -1,4 +1,4 @@
-import { Utensils, Home, MapPin, MoreHorizontal, BookOpen, ArrowRight } from "lucide-react";
+import { Utensils, Home, MapPin, MoreHorizontal, BookOpen, ArrowRight, Store } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { modulesEnabled, modulesDisabledHint } from "@/lib/featureFlags";
@@ -13,6 +13,16 @@ const resolveVideoSrc = (video: string) => {
 };
 
 const categories = [
+  {
+    id: 0,
+    name: "On Campus",
+    description: "Campus essentials right here",
+    icon: Store,
+    video: "/5780171-uhd_3840_2160_24fps.mp4",
+    count: "Shops",
+    link: "/campus",
+    details: [],
+  },
   {
     id: 1,
     name: "Food & Eating",
@@ -42,15 +52,6 @@ const categories = [
   },
   {
     id: 4,
-    name: "Study Zones",
-    description: "Libraries & quiet spaces",
-    icon: BookOpen,
-    video: "7653221-hd_1080_1920_25fps.mp4",
-    count: "40+",
-    link: "/study",
-  },
-  {
-    id: 5,
     name: "Essentials",
     description: "Gyms, laundry & more",
     icon: MoreHorizontal,
@@ -163,6 +164,7 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
             <p className="text-white/90 text-sm drop-shadow-md">
               {category.description}
             </p>
+
             
             {/* Explore button that appears on hover */}
             <div className={`mt-4 flex items-center gap-2 text-white font-medium transition-all duration-500 ${isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
@@ -178,6 +180,24 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
 };
 
 const CategoryCards = () => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollNext = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = Math.max(280, Math.floor(el.clientWidth * 0.8));
+    el.scrollBy({ left: amount, behavior: "smooth" });
+  };
+
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    }
+  };
+
   return (
     <section id="category-cards" className="py-12 md:py-16 px-4 md:px-6 overflow-hidden">
       <div className="container mx-auto">
@@ -190,14 +210,23 @@ const CategoryCards = () => {
               Everything you need around campus
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
+          <button
+            type="button"
+            onClick={scrollNext}
+            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+            aria-label="Scroll categories"
+          >
             <span className="text-sm">Scroll</span>
-            <ArrowRight className="w-4 h-4 animate-pulse" />
-          </div>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Horizontal scrollable container */}
-        <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
+        <div
+          ref={scrollRef}
+          onWheel={handleWheel}
+          className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 overscroll-x-contain"
+        >
           {categories.map((category, index) => (
             <CategoryCard key={category.id} category={category} index={index} />
           ))}

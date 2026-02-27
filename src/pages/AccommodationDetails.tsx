@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,11 +96,14 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
 };
 
 const AccommodationDetails = () => {
+  const navigate = useNavigate();
   const { items: accommodations, loading } = useAccommodations();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [sort, setSort] = useState<SortType>("default");
   const [showFilters, setShowFilters] = useState(false);
+  const [query, setQuery] = useState("");
 
+  const normalizedQuery = query.trim().toLowerCase();
   const filteredItems = accommodations
     .filter((item) => filter === "all" || item.type === filter)
     .sort((a, b) => {
@@ -109,6 +112,16 @@ const AccommodationDetails = () => {
       if (sort === "rating") return b.rating - a.rating;
       if (sort === "distance") return parseFloat(a.distance) - parseFloat(b.distance);
       return 0;
+    })
+    .filter((item) => {
+      if (!normalizedQuery) return true;
+      return (
+        item.name.toLowerCase().includes(normalizedQuery) ||
+        item.type.toLowerCase().includes(normalizedQuery) ||
+        item.distance.toLowerCase().includes(normalizedQuery) ||
+        item.comment.toLowerCase().includes(normalizedQuery) ||
+        item.amenities.some((amenity) => amenity.toLowerCase().includes(normalizedQuery))
+      );
     });
 
   if (loading) {
@@ -133,10 +146,14 @@ const AccommodationDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-violet-600/80 to-purple-600/80" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+              >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
-              </Link>
+              </button>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">Accommodation</h1>
               <p className="text-white/90 mt-2">Find your perfect home away from home</p>
             </div>
@@ -152,8 +169,8 @@ const AccommodationDetails = () => {
               Filters
             </Button>
 
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-4 w-full">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">Type:</span>
                 {(["all", "Hostel", "PG", "Apartment"] as TypeFilter[]).map((f) => (
                   <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)}>
@@ -162,11 +179,22 @@ const AccommodationDetails = () => {
                 ))}
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">Sort:</span>
                 <Button variant={sort === "price-low" ? "default" : "outline"} size="sm" onClick={() => setSort("price-low")}>Price ↑</Button>
+                <Button variant={sort === "price-high" ? "default" : "outline"} size="sm" onClick={() => setSort("price-high")}>Price ↓</Button>
                 <Button variant={sort === "rating" ? "default" : "outline"} size="sm" onClick={() => setSort("rating")}>Rating</Button>
                 <Button variant={sort === "distance" ? "default" : "outline"} size="sm" onClick={() => setSort("distance")}>Nearest</Button>
+              </div>
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-sm text-muted-foreground">Search:</span>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Quick search"
+                  className="h-9 w-48 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
+                />
               </div>
             </div>
           </div>
@@ -190,10 +218,21 @@ const AccommodationDetails = () => {
                   <span className="text-sm text-muted-foreground mb-2 block">Sort</span>
                   <div className="flex flex-wrap gap-2">
                     <Button variant={sort === "price-low" ? "default" : "outline"} size="sm" onClick={() => setSort("price-low")}>Price ↑</Button>
+                    <Button variant={sort === "price-high" ? "default" : "outline"} size="sm" onClick={() => setSort("price-high")}>Price ↓</Button>
                     <Button variant={sort === "rating" ? "default" : "outline"} size="sm" onClick={() => setSort("rating")}>Rating</Button>
                     <Button variant={sort === "distance" ? "default" : "outline"} size="sm" onClick={() => setSort("distance")}>Nearest</Button>
                   </div>
                 </div>
+              </div>
+              <div className="mt-4">
+                <span className="text-sm text-muted-foreground mb-2 block">Search</span>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Quick search"
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
+                />
               </div>
             </div>
           )}
