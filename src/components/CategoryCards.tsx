@@ -18,7 +18,8 @@ const categories = [
     name: "On Campus",
     description: "Campus essentials right here",
     icon: Store,
-    video: "/5780171-uhd_3840_2160_24fps.mp4",
+    video: "/on-campus-portrait-8s.mp4",
+    playbackRate: 1.1,
     count: "Shops",
     link: "/campus",
     details: [],
@@ -65,6 +66,7 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const videoSrc = resolveVideoSrc(category.video);
 
@@ -84,6 +86,11 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    videoRef.current.playbackRate = category.playbackRate ?? 1;
+  }, [category.playbackRate]);
 
   return (
     <Link
@@ -111,15 +118,18 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
         <div className="relative h-80 sm:h-96 rounded-3xl overflow-hidden transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl">
         {/* Video Background */}
         <video
+          ref={videoRef}
           autoPlay
           loop
           muted
           playsInline
           preload="metadata"
+          style={{
+            objectPosition: category.videoPosition ?? "center center",
+            transform: `rotate(${category.videoRotate ?? 0}deg) scale(${(category.videoScale ?? 1) * (isHovered ? 1.1 : 1)})`,
+          }}
           // Keep hover effects on the card (video shouldn't capture the mouse).
-          className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${
-            isHovered ? "scale-110" : "scale-100"
-          }`}
+          className="pointer-events-none absolute inset-0 w-full h-full object-cover transition-transform duration-700"
         >
           <source src={videoSrc} type="video/mp4" />
         </video>
