@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -6,8 +6,6 @@ import {
   MapPin,
   Phone,
   Clock3,
-  Leaf,
-  Drumstick,
   MessageSquare,
   Bike,
   Wallet,
@@ -45,6 +43,8 @@ type MenuSection = {
   title: string;
   items: MenuItem[];
 };
+
+type MenuFilter = "all" | "veg" | "nonveg";
 
 const restaurantProfiles: RestaurantProfile[] = [
   {
@@ -199,6 +199,21 @@ const FoodRestaurantDetails = () => {
   const item = useMemo(() => items.find((x) => x.id === id), [items, id]);
   const profile = useMemo(() => getProfile(item?.id ?? "1"), [item?.id]);
   const menuSections = useMemo(() => getFullMenu(item?.id ?? "1"), [item?.id]);
+  const [menuFilter, setMenuFilter] = useState<MenuFilter>("all");
+  const filteredMenuSections = useMemo(
+    () =>
+      menuSections
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((menuItem) => {
+            if (menuFilter === "veg") return menuItem.isVeg;
+            if (menuFilter === "nonveg") return !menuItem.isVeg;
+            return true;
+          }),
+        }))
+        .filter((section) => section.items.length > 0),
+    [menuSections, menuFilter]
+  );
 
   if (!item) {
     return (
@@ -252,17 +267,6 @@ const FoodRestaurantDetails = () => {
                   <span className="text-sm font-medium">{item.rating}</span>
                   <span className="text-xs text-white/70">({item.reviews} reviews)</span>
                 </div>
-                <Badge className={item.is_veg ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
-                  {item.is_veg ? (
-                    <>
-                      <Leaf className="w-3 h-3 mr-1" /> Veg
-                    </>
-                  ) : (
-                    <>
-                      <Drumstick className="w-3 h-3 mr-1" /> Non-Veg
-                    </>
-                  )}
-                </Badge>
                 <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full text-sm">
                   <Bike className="w-4 h-4" />
                   <span>{profile.eta}</span>
@@ -338,9 +342,29 @@ const FoodRestaurantDetails = () => {
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Menu</h2>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-semibold text-foreground">Menu</h2>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={menuFilter === "veg" ? "default" : "outline"}
+                    onClick={() => setMenuFilter((prev) => (prev === "veg" ? "all" : "veg"))}
+                  >
+                    Veg
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={menuFilter === "nonveg" ? "default" : "outline"}
+                    onClick={() => setMenuFilter((prev) => (prev === "nonveg" ? "all" : "nonveg"))}
+                  >
+                    Non-Veg
+                  </Button>
+                </div>
+              </div>
               <div className="space-y-6">
-                {menuSections.map((section) => (
+                {filteredMenuSections.map((section) => (
                   <div key={section.title}>
                     <h3 className="text-lg font-semibold text-foreground mb-3">{section.title}</h3>
                     <div className="space-y-3">
@@ -364,6 +388,11 @@ const FoodRestaurantDetails = () => {
                     </div>
                   </div>
                 ))}
+                {filteredMenuSections.length === 0 && (
+                  <div className="rounded-xl border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                    No menu items found for this filter.
+                  </div>
+                )}
               </div>
             </div>
           </div>
