@@ -8,26 +8,26 @@ const images = [
   {
     src: highlightFood,
     alt: "Food court with delicious cuisines",
-    title: "Discover Amazing Food",
-    category: "Food & Dining",
+    title: "Promote Your Food Deals",
+    category: "Sponsored Ad",
   },
   {
     src: highlightHostel,
     alt: "Cozy student hostel room",
-    title: "Find Your Perfect Stay",
-    category: "Accommodation",
+    title: "Get More Stay Bookings",
+    category: "Sponsored Ad",
   },
   {
     src: highlightExplore,
     alt: "Students exploring scenic viewpoint",
-    title: "Explore New Places",
-    category: "Adventure",
+    title: "Reach Students Nearby",
+    category: "Sponsored Ad",
   },
   {
     src: highlightStudy,
     alt: "Students studying together",
-    title: "Perfect Study Spots",
-    category: "Study Zones",
+    title: "Advertise to Campus Audience",
+    category: "Sponsored Ad",
   },
 ];
 
@@ -54,10 +54,10 @@ const HighlightSection = () => {
       <div className="container mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 animate-fade-up">
-            Featured <span className="text-primary">Highlights</span>
+            Featured <span className="text-primary">Advertisements</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto animate-fade-up stagger-1">
-            See what other students are discovering around their campus
+            Showcase your brand, offers, and services to students across campus
           </p>
         </div>
 
