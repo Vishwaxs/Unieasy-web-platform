@@ -94,11 +94,16 @@ const Contact = () => {
         </div>
       </header>
 
-      <main className="flex-1 py-12 md:py-16 px-4 md:px-6">
+      <main className="relative overflow-hidden flex-1 py-12 md:py-16 px-4 md:px-6">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-16 -left-20 h-56 w-56 rounded-full bg-primary/15 blur-3xl animate-float" />
+          <div className="absolute top-1/3 -right-16 h-48 w-48 rounded-full bg-emerald-400/15 blur-3xl animate-pulse-soft" />
+          <div className="absolute -bottom-20 left-1/3 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl animate-float" />
+        </div>
         <div className="container max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12 md:mb-16 animate-fade-up">
-            <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary/10 mb-4">
+            <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary/10 mb-4 animate-pulse-soft">
               <MessageSquare className="w-7 h-7 md:w-8 md:h-8 text-primary" />
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
@@ -125,10 +130,13 @@ const Contact = () => {
                 {contactInfo.map((item, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border hover:border-primary/30 transition-all duration-300 animate-fade-up group"
-                    style={{ animationDelay: `${index * 100}ms` }}
+                    className="contact-info-card flex items-start gap-4 p-4 bg-card rounded-xl border border-border hover:border-primary/30 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 group"
+                    style={{
+                      animation: "fadeUp 0.6s ease-out forwards, contactCardFloatStrong 3.2s ease-in-out infinite",
+                      animationDelay: `${index * 100}ms, ${500 + index * 180}ms`,
+                    }}
                   >
-                    <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:scale-110 transition-all">
+                    <div className="contact-info-icon w-11 h-11 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:scale-110 transition-all">
                       <item.icon className="w-5 h-5 md:w-6 md:h-6 text-primary group-hover:text-primary-foreground transition-colors" />
                     </div>
                     <div>
@@ -143,7 +151,8 @@ const Contact = () => {
 
             {/* Contact Form */}
             <div className="lg:col-span-3 animate-fade-up stagger-1">
-              <div className="bg-card rounded-2xl border border-border p-6 md:p-8">
+              <div className="relative overflow-hidden bg-card rounded-2xl border border-border p-6 md:p-8 animate-scale-in">
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent -translate-x-full animate-shimmer" />
                 <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-6">
                   Send us a Message
                 </h2>
