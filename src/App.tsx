@@ -22,6 +22,7 @@ import Contact from "./pages/Contact";
 import FoodDetails from "./pages/FoodDetails";
 import FoodRestaurantDetails from "./pages/FoodRestaurantDetails";
 import AccommodationDetails from "./pages/AccommodationDetails";
+import AccommodationItemDetails from "./pages/AccommodationItemDetails";
 import ExploreDetails from "./pages/ExploreDetails";
 import StudyDetails from "./pages/StudyDetails";
 import EssentialsDetails from "./pages/EssentialsDetails";
@@ -78,6 +79,7 @@ const App = () => {
               <Route path="/food" element={<FoodDetails />} />
               <Route path="/food/:id" element={<FoodRestaurantDetails />} />
               <Route path="/accommodation" element={<AccommodationDetails />} />
+              <Route path="/accommodation/:id" element={<AccommodationItemDetails />} />
               <Route path="/explore" element={<ExploreDetails />} />
               <Route path="/study" element={<StudyDetails />} />
               <Route path="/essentials" element={<EssentialsDetails />} />

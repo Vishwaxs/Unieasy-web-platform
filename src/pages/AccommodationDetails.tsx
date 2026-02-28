@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ type SortType = "default" | "price-low" | "price-high" | "rating" | "distance";
 
 const AccommodationCard = ({ item, index }: { item: Accommodation; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -41,7 +41,8 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
   };
 
   return (
-    <div
+    <Link
+      to={`/accommodation/${item.id}`}
       ref={cardRef}
       className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
@@ -91,7 +92,7 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
           <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
