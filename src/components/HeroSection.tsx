@@ -29,10 +29,10 @@ const HeroSection = () => {
         <div className="hero-glow hero-glow-one" />
         <div className="hero-glow hero-glow-two" />
         <div className="hero-orbit hero-orbit-one">
-          <span className="hero-orbit-dot" />
+          <span className="hero-orbit-dot hero-orbit-dot-one" />
         </div>
         <div className="hero-orbit hero-orbit-two">
-          <span className="hero-orbit-dot" />
+          <span className="hero-orbit-dot hero-orbit-dot-two" />
         </div>
       </div>
 

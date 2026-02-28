@@ -417,6 +417,19 @@
     box-shadow: 0 0 18px hsl(var(--primary) / 0.65);
   }
 
+  .hero-orbit-dot-one {
+    left: 50%;
+    top: -0.375rem;
+    transform: translateX(-50%);
+  }
+
+  .hero-orbit-dot-two {
+    left: 14%;
+    top: calc(86% - 0.375rem);
+    transform: none;
+  }
+
+
   .hero-panel-in {
     animation: heroPanelIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
