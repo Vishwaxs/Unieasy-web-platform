@@ -19,7 +19,7 @@ const Logo = ({ className, imgClassName }: LogoProps) => {
         src={theme === "dark" ? darkLogoHref : lightLogoHref}
         alt="UniEasy"
         className={cn(
-          "h-14 md:h-16 w-auto drop-shadow-sm group-hover:drop-shadow transition-all duration-300",
+          "h-[5.25rem] md:h-24 w-auto drop-shadow-sm group-hover:drop-shadow transition-all duration-300",
           imgClassName
         )}
         loading="eager"

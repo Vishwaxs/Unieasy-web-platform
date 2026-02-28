@@ -18,7 +18,7 @@ const Footer = () => {
           {/* Company Info */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="mb-4">
-              <Logo />
+              <Logo imgClassName="h-[5.25rem] md:h-24 w-auto" />
             </div>
             <p className="text-[hsl(var(--footer-muted))] mb-6 text-sm md:text-base">
               A student-focused companion for discovering food, stays, study zones and places around Christ University – Central Campus.

@@ -17,10 +17,14 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      {/* Glassmorphism navbar - lighter and compact */}
-      <div className="bg-background/85 backdrop-blur-lg border-b border-border/60 shadow-sm">
-        <div className="w-full px-4 md:px-6 h-16 flex items-center justify-between">
-          <Logo imgClassName="w-28 md:w-32 h-12 md:h-14" />
+      {/* Mirror glass header */}
+      <div className="mirror-header-shell">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="mirror-header-overlay" />
+          <div className="mirror-header-sheen" />
+        </div>
+        <div className="relative w-full px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+          <Logo imgClassName="h-[5.25rem] md:h-24 w-auto" />
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-3">

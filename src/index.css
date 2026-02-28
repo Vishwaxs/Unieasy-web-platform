@@ -295,14 +295,14 @@
 
   .home-pointer-glow {
     position: absolute;
-    width: 22rem;
-    height: 22rem;
+    width: 16rem;
+    height: 16rem;
     transform: translate(-50%, -50%);
     border-radius: 9999px;
-    background: radial-gradient(circle at center, hsl(var(--primary) / 0.24), transparent 70%);
-    filter: blur(55px);
+    background: radial-gradient(circle at center, hsl(145 65% 14% / 0.5), transparent 68%);
+    filter: blur(42px);
     transition: left 180ms ease-out, top 180ms ease-out;
-    opacity: 0.7;
+    opacity: 0.42;
   }
 
   .hero-bg-pan {
@@ -439,6 +439,55 @@
   .contact-info-icon {
     animation: contactIconPulse 3.2s ease-in-out infinite;
     will-change: transform;
+  }
+
+  .mirror-header-shell {
+    position: relative;
+    overflow: hidden;
+    background: hsl(var(--background) / 0.42);
+    border-bottom: 1px solid hsl(0 0% 100% / 0.24);
+    box-shadow:
+      0 12px 28px hsl(var(--background) / 0.35),
+      inset 0 1px 0 hsl(0 0% 100% / 0.32),
+      inset 0 -1px 0 hsl(0 0% 0% / 0.12);
+    backdrop-filter: blur(22px) saturate(185%);
+    -webkit-backdrop-filter: blur(22px) saturate(185%);
+  }
+
+  .dark .mirror-header-shell {
+    border-bottom-color: hsl(0 0% 100% / 0.12);
+    box-shadow:
+      0 12px 30px hsl(0 0% 0% / 0.38),
+      inset 0 1px 0 hsl(0 0% 100% / 0.12),
+      inset 0 -1px 0 hsl(0 0% 0% / 0.28);
+  }
+
+  .mirror-header-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(to bottom, hsl(0 0% 100% / 0.3), hsl(0 0% 100% / 0.08) 36%, transparent 74%),
+      radial-gradient(120% 80% at 15% -20%, hsl(0 0% 100% / 0.22), transparent 52%),
+      radial-gradient(120% 80% at 85% -25%, hsl(0 0% 100% / 0.18), transparent 55%);
+  }
+
+  .dark .mirror-header-overlay {
+    background:
+      linear-gradient(to bottom, hsl(0 0% 100% / 0.14), hsl(0 0% 100% / 0.04) 36%, transparent 74%),
+      radial-gradient(120% 80% at 15% -20%, hsl(0 0% 100% / 0.1), transparent 52%),
+      radial-gradient(120% 80% at 85% -25%, hsl(0 0% 100% / 0.08), transparent 55%);
+  }
+
+  .mirror-header-sheen {
+    position: absolute;
+    inset: -300% auto -300% -40%;
+    width: 36%;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, hsl(0 0% 100% / 0.38), transparent);
+    transform: rotate(8deg);
+    animation: mirrorSweep 5.8s ease-in-out infinite;
+    filter: blur(0.5px);
   }
 
 }
@@ -683,6 +732,20 @@
   }
   50% {
     transform: scale(1.15) translateY(-2px);
+  }
+}
+
+@keyframes mirrorSweep {
+  0%, 65% {
+    left: -45%;
+    opacity: 0;
+  }
+  72% {
+    opacity: 0.9;
+  }
+  100% {
+    left: 125%;
+    opacity: 0;
   }
 }
 

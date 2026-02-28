@@ -32,9 +32,14 @@ const Index = () => {
         </div>
 
         {/* Fixed Glassmorphism Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/50 shadow-sm">
-          <div className="w-full px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
-            <Logo imgClassName="h-full max-h-16 md:max-h-20" />
+        <header className="fixed top-0 left-0 right-0 z-50">
+          <div className="mirror-header-shell">
+            <div className="pointer-events-none absolute inset-0">
+              <div className="mirror-header-overlay" />
+              <div className="mirror-header-sheen" />
+            </div>
+            <div className="relative w-full px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+            <Logo imgClassName="h-full max-h-24 md:max-h-28" />
             <div className="flex items-center gap-2 md:gap-3">
               <ThemeToggle />
               <Link to="/profile">
@@ -46,6 +51,7 @@ const Index = () => {
                   <User className="w-5 h-5 text-foreground" />
                 </Button>
               </Link>
+            </div>
             </div>
           </div>
         </header>
