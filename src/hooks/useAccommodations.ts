@@ -16,13 +16,16 @@ export interface Accommodation {
   lng: number;
 }
 
+const campusLat = 12.9358;
+const campusLng = 77.6058;
+
 const mockAccommodations: Accommodation[] = [
-  { id: "1", name: "Sunrise Hostel", type: "Hostel", price: 8000, rating: 4.5, reviews: 89, distance: "0.5 km", amenities: ["wifi", "parking", "security"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Great community vibes!", lat: 13.1950, lng: 77.6975 },
-  { id: "2", name: "Green Valley PG", type: "PG", price: 12000, rating: 4.7, reviews: 156, distance: "1.2 km", amenities: ["wifi", "meals", "laundry"], image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400", comment: "Home-cooked meals included", lat: 13.1880, lng: 77.6920 },
-  { id: "3", name: "Student Villa", type: "Apartment", price: 15000, rating: 4.3, reviews: 67, distance: "0.8 km", amenities: ["wifi", "gym", "parking"], image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400", comment: "Modern amenities", lat: 13.1920, lng: 77.7050 },
-  { id: "4", name: "Campus Lodge", type: "Hostel", price: 6500, rating: 4.2, reviews: 203, distance: "0.3 km", amenities: ["wifi", "security"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Walking distance to campus", lat: 13.1935, lng: 77.6965 },
-  { id: "5", name: "Royal Residency", type: "PG", price: 18000, rating: 4.8, reviews: 45, distance: "2.0 km", amenities: ["wifi", "ac", "meals", "laundry"], image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400", comment: "Premium facilities", lat: 13.1850, lng: 77.7100 },
-  { id: "6", name: "Budget Bunks", type: "Hostel", price: 5000, rating: 4.0, reviews: 312, distance: "1.5 km", amenities: ["wifi"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Affordable and clean", lat: 13.2000, lng: 77.6850 },
+  { id: "1", name: "Sunrise Hostel", type: "Hostel", price: 8000, rating: 4.5, reviews: 89, distance: "0.5 km", amenities: ["wifi", "parking", "security"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Great community vibes!", lat: 12.9346, lng: 77.6093 },
+  { id: "2", name: "Green Valley PG", type: "PG", price: 12000, rating: 4.7, reviews: 156, distance: "1.2 km", amenities: ["wifi", "meals", "laundry"], image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400", comment: "Home-cooked meals included", lat: 12.9434, lng: 77.6134 },
+  { id: "3", name: "Student Villa", type: "Apartment", price: 15000, rating: 4.3, reviews: 67, distance: "0.8 km", amenities: ["wifi", "gym", "parking"], image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400", comment: "Modern amenities", lat: 12.9358, lng: 77.6130 },
+  { id: "4", name: "Campus Lodge", type: "Hostel", price: 6500, rating: 4.2, reviews: 203, distance: "0.3 km", amenities: ["wifi", "security"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Walking distance to campus", lat: 12.9358, lng: 77.6087 },
+  { id: "5", name: "Royal Residency", type: "PG", price: 18000, rating: 4.8, reviews: 45, distance: "2.0 km", amenities: ["wifi", "ac", "meals", "laundry"], image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400", comment: "Premium facilities", lat: 12.9231, lng: 77.5931 },
+  { id: "6", name: "Budget Bunks", type: "Hostel", price: 5000, rating: 4.0, reviews: 312, distance: "1.5 km", amenities: ["wifi"], image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400", comment: "Affordable and clean", lat: 12.9358, lng: 77.5923 },
 ];
 
 async function fetchAccommodations(): Promise<Accommodation[]> {

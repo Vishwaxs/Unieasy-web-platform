@@ -124,7 +124,8 @@ const AccommodationDetails = () => {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   useEffect(() => {
-    // Get user's current location
+    
+    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -135,8 +136,7 @@ const AccommodationDetails = () => {
         },
         (error) => {
           console.warn("[AccommodationDetails] Geolocation error:", error.message);
-          // Continue without location - "Get Directions" button won't show
-        }
+                 }
       );
     }
   }, []);
@@ -258,7 +258,8 @@ const AccommodationDetails = () => {
           )}
 
           {viewMode === "map" ? (
-            <AccommodationMap items={filteredItems} userLocation={userLocation} />
+            
+            <AccommodationMap items={accommodations} userLocation={userLocation} />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredItems.map((item, index) => (
