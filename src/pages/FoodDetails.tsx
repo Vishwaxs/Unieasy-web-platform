@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, Loader2, Map as MapIcon, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { FoodMap } from "@/components/FoodMap";
 import { useFoodItems, type FoodItem } from "@/hooks/useFoodItems";
 
 type FilterType = "all" | "veg" | "nonveg";
@@ -46,7 +47,7 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <Badge 
+        <Badge
           className={`absolute top-3 left-3 ${item.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
         >
           {item.is_veg ? <Leaf className="w-3 h-3 mr-1" /> : <Drumstick className="w-3 h-3 mr-1" />}
@@ -57,20 +58,20 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           <span className="text-white text-sm font-medium">{item.rating}</span>
         </div>
       </div>
-      
+
       <div className="p-4">
         <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
           {item.name}
         </h3>
         <p className="text-muted-foreground text-sm mb-3">{item.restaurant}</p>
-        
+
         <div className="flex items-center gap-2 text-muted-foreground text-xs mb-3">
           <MessageSquare className="w-3 h-3" />
           <span className="italic">"{item.comment}"</span>
         </div>
-        
+
         <div className="flex items-center justify-between">
-          <span className="text-xl font-bold text-primary">₹{item.price}</span>
+          <span className="text-xl font-bold text-primary">?{item.price}</span>
           <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
         </div>
       </div>
@@ -83,6 +84,7 @@ const FoodDetails = () => {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("default");
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   const filteredItems = foodItems
     .filter((item) => {
@@ -108,9 +110,8 @@ const FoodDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-20 pb-8">
-        {/* Hero Banner */}
         <div className="relative h-48 md:h-64 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200"
@@ -130,13 +131,31 @@ const FoodDetails = () => {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground text-sm">{filteredItems.length} items found</span>
             </div>
-            
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="w-4 h-4 mr-2" />
+                List
+              </Button>
+              <Button
+                variant={viewMode === "map" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("map")}
+              >
+                <MapIcon className="w-4 h-4 mr-2" />
+                Map
+              </Button>
+            </div>
+
             <Button
               variant="outline"
               size="sm"
@@ -147,7 +166,6 @@ const FoodDetails = () => {
               Filters
             </Button>
 
-            {/* Desktop Filters */}
             <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Type:</span>
@@ -165,7 +183,7 @@ const FoodDetails = () => {
                   ))}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Sort:</span>
                 <div className="flex gap-1">
@@ -195,7 +213,6 @@ const FoodDetails = () => {
             </div>
           </div>
 
-          {/* Mobile Filters Panel */}
           {showFilters && (
             <div className="md:hidden bg-card rounded-xl p-4 mb-6 border border-border animate-fade-in">
               <div className="flex items-center justify-between mb-4">
@@ -204,7 +221,7 @@ const FoodDetails = () => {
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <span className="text-sm text-muted-foreground mb-2 block">Type</span>
@@ -222,7 +239,7 @@ const FoodDetails = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 <div>
                   <span className="text-sm text-muted-foreground mb-2 block">Sort by</span>
                   <div className="flex flex-wrap gap-2">
@@ -231,14 +248,14 @@ const FoodDetails = () => {
                       size="sm"
                       onClick={() => setSort("price-low")}
                     >
-                      Price ↑
+                      Price ?
                     </Button>
                     <Button
                       variant={sort === "price-high" ? "default" : "outline"}
                       size="sm"
                       onClick={() => setSort("price-high")}
                     >
-                      Price ↓
+                      Price ?
                     </Button>
                     <Button
                       variant={sort === "rating" ? "default" : "outline"}
@@ -253,12 +270,15 @@ const FoodDetails = () => {
             </div>
           )}
 
-          {/* Food Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredItems.map((item, index) => (
-              <FoodCard key={item.id} item={item} index={index} />
-            ))}
-          </div>
+          {viewMode === "map" ? (
+            <FoodMap items={filteredItems} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredItems.map((item, index) => (
+                <FoodCard key={item.id} item={item} index={index} />
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
