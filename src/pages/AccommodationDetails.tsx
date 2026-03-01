@@ -258,8 +258,7 @@ const AccommodationDetails = () => {
           )}
 
           {viewMode === "map" ? (
-            
-            <AccommodationMap items={accommodations} userLocation={userLocation} />
+            <AccommodationMap items={filteredItems} userLocation={userLocation} />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredItems.map((item, index) => (
