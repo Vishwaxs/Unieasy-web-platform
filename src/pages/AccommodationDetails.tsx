@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2, Navigation, Map as MapIcon, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { AccommodationMap } from "@/components/AccommodationMap";
 import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations";
 
 type TypeFilter = "all" | "Hostel" | "PG" | "Apartment";
 type SortType = "default" | "price-low" | "price-high" | "rating" | "distance";
 
-const AccommodationCard = ({ item, index }: { item: Accommodation; index: number }) => {
+const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation; index: number; userLocation: { lat: number; lng: number } | null }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +31,13 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
 
     return () => observer.disconnect();
   }, []);
+
+  const handleGetDirections = () => {
+    if (!userLocation) return;
+    
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${item.lat},${item.lng}`;
+    window.open(url, "_blank");
+  };
 
   const getAmenityIcon = (amenity: string) => {
     switch (amenity) {
@@ -83,13 +91,25 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
         
         <p className="text-muted-foreground text-xs italic mb-3">"{item.comment}"</p>
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <span className="text-xl font-bold text-primary">₹{item.price.toLocaleString()}</span>
             <span className="text-muted-foreground text-xs">/month</span>
           </div>
           <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
         </div>
+
+        {userLocation && (
+          <Button 
+            onClick={handleGetDirections}
+            variant="default"
+            size="sm"
+            className="w-full"
+          >
+            <Navigation className="w-4 h-4 mr-2" />
+            Get Directions
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -100,6 +120,26 @@ const AccommodationDetails = () => {
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [sort, setSort] = useState<SortType>("default");
   const [showFilters, setShowFilters] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+
+  useEffect(() => {
+    // Get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn("[AccommodationDetails] Geolocation error:", error.message);
+          // Continue without location - "Get Directions" button won't show
+        }
+      );
+    }
+  }, []);
 
   const filteredItems = accommodations
     .filter((item) => filter === "all" || item.type === filter)
@@ -146,6 +186,25 @@ const AccommodationDetails = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <span className="text-muted-foreground text-sm">{filteredItems.length} options found</span>
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                variant={viewMode === "list" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="w-4 h-4 mr-2" />
+                List
+              </Button>
+              <Button 
+                variant={viewMode === "map" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => setViewMode("map")}
+              >
+                <MapIcon className="w-4 h-4 mr-2" />
+                Map
+              </Button>
+            </div>
             
             <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="md:hidden">
               <SlidersHorizontal className="w-4 h-4 mr-2" />
@@ -198,11 +257,15 @@ const AccommodationDetails = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map((item, index) => (
-              <AccommodationCard key={item.id} item={item} index={index} />
-            ))}
-          </div>
+          {viewMode === "map" ? (
+            <AccommodationMap items={filteredItems} userLocation={userLocation} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredItems.map((item, index) => (
+                <AccommodationCard key={item.id} item={item} index={index} userLocation={userLocation} />
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
