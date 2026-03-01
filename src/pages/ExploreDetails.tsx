@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Clock, Users, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, Users, SlidersHorizontal, X, Loader2, Map as MapIcon, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ExploreMap } from "@/components/ExploreMap";
 import { useExplorePlaces, type ExplorePlace } from "@/hooks/useExplorePlaces";
 
 type TypeFilter = "all" | "Park" | "Cafe" | "Mall" | "Scenic" | "Sports" | "Culture";
@@ -84,6 +85,7 @@ const ExploreDetails = () => {
   const { items: places, loading } = useExplorePlaces();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   const filteredItems = places.filter((item) => filter === "all" || item.type === filter);
 
@@ -117,7 +119,26 @@ const ExploreDetails = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <span className="text-muted-foreground text-sm">{filteredItems.length} places found</span>
-            
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="w-4 h-4 mr-2" />
+                List
+              </Button>
+              <Button
+                variant={viewMode === "map" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("map")}
+              >
+                <MapIcon className="w-4 h-4 mr-2" />
+                Map
+              </Button>
+            </div>
+
             <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="md:hidden">
               <SlidersHorizontal className="w-4 h-4 mr-2" />Filters
             </Button>
@@ -147,11 +168,15 @@ const ExploreDetails = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map((item, index) => (
-              <PlaceCard key={item.id} item={item} index={index} />
-            ))}
-          </div>
+          {viewMode === "map" ? (
+            <ExploreMap items={filteredItems} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredItems.map((item, index) => (
+                <PlaceCard key={item.id} item={item} index={index} />
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
