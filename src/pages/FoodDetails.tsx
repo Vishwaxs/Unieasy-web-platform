@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, Loader2, Map as MapIcon, List } from "lucide-react";
+import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, Loader2, Map as MapIcon, List, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
@@ -14,6 +14,7 @@ type SortType = "default" | "price-low" | "price-high" | "rating";
 const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,12 +33,33 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const savedFood = JSON.parse(localStorage.getItem("savedFoodItems") || "[]");
+    setIsSaved(savedFood.some((food: FoodItem) => food.id === item.id));
+  }, [item.id]);
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const savedFood = JSON.parse(localStorage.getItem("savedFoodItems") || "[]");
+    let updatedFood;
+
+    if (isSaved) {
+      updatedFood = savedFood.filter((food: FoodItem) => food.id !== item.id);
+    } else {
+      updatedFood = [...savedFood, item];
+    }
+
+    localStorage.setItem("savedFoodItems", JSON.stringify(updatedFood));
+    setIsSaved(!isSaved);
+  };
+
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
+      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div className="relative h-48 overflow-hidden">
@@ -53,9 +75,17 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           {item.is_veg ? <Leaf className="w-3 h-3 mr-1" /> : <Drumstick className="w-3 h-3 mr-1" />}
           {item.is_veg ? "Veg" : "Non-Veg"}
         </Badge>
-        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
-          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-sm font-medium">{item.rating}</span>
+        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+          <button
+            onClick={handleSave}
+            className="p-1.5 bg-black/70 backdrop-blur-sm rounded-lg hover:bg-black/90 transition-colors"
+          >
+            <Heart className={`w-4 h-4 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-white"}`} />
+          </button>
+          <div className="bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 h-[28px]">
+            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            <span className="text-white text-sm font-medium">{item.rating}</span>
+          </div>
         </div>
       </div>
 

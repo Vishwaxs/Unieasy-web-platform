@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2, Navigation, Map as MapIcon, List } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2, Heart, Navigation, Map as MapIcon, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
@@ -13,7 +13,43 @@ type SortType = "default" | "price-low" | "price-high" | "rating" | "distance";
 
 const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation; index: number; userLocation: { lat: number; lng: number } | null }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bookmarkedAccommodations');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.includes(item.id);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
+  });
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const toggleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsBookmarked(prev => {
+      const newState = !prev;
+      try {
+        const saved = localStorage.getItem('bookmarkedAccommodations');
+        let parsed: string[] = saved ? JSON.parse(saved) : [];
+
+        if (newState) {
+          if (!parsed.includes(item.id)) parsed.push(item.id);
+        } else {
+          parsed = parsed.filter((id: string) => id !== item.id);
+        }
+
+        localStorage.setItem('bookmarkedAccommodations', JSON.stringify(parsed));
+      } catch (e) {
+        console.error(e);
+      }
+      return newState;
+    });
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -34,7 +70,7 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
 
   const handleGetDirections = () => {
     if (!userLocation) return;
-    
+
     const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${item.lat},${item.lng}`;
     window.open(url, "_blank");
   };
@@ -51,9 +87,8 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
+      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div className="relative h-48 overflow-hidden">
@@ -65,22 +100,31 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
         <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
           {item.type}
         </Badge>
-        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
-          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-sm font-medium">{item.rating}</span>
+        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+          <button
+            onClick={toggleBookmark}
+            className="p-1.5 bg-black/70 backdrop-blur-sm rounded-lg hover:bg-black/90 transition-colors"
+            aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+          >
+            <Heart className={`w-4 h-4 transition-colors ${isBookmarked ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+          </button>
+          <div className="bg-black/70 backdrop-blur-sm px-2 py-1 flex items-center gap-1 rounded-lg h-[28px]">
+            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            <span className="text-white text-sm font-medium">{item.rating}</span>
+          </div>
         </div>
       </div>
-      
+
       <div className="p-4">
         <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
           {item.name}
         </h3>
-        
+
         <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
           <MapPin className="w-3 h-3" />
           <span>{item.distance} from campus</span>
         </div>
-        
+
         <div className="flex gap-2 mb-3">
           {item.amenities.slice(0, 3).map((amenity) => (
             <div key={amenity} className="p-1.5 bg-secondary rounded-lg" title={amenity}>
@@ -88,9 +132,9 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
             </div>
           ))}
         </div>
-        
+
         <p className="text-muted-foreground text-xs italic mb-3">"{item.comment}"</p>
-        
+
         <div className="flex items-center justify-between mb-3">
           <div>
             <span className="text-xl font-bold text-primary">₹{item.price.toLocaleString()}</span>
@@ -100,7 +144,7 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
         </div>
 
         {userLocation && (
-          <Button 
+          <Button
             onClick={handleGetDirections}
             variant="default"
             size="sm"
@@ -124,8 +168,8 @@ const AccommodationDetails = () => {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   useEffect(() => {
-    
-    
+
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -136,7 +180,7 @@ const AccommodationDetails = () => {
         },
         (error) => {
           console.warn("[AccommodationDetails] Geolocation error:", error.message);
-                 }
+        }
       );
     }
   }, []);
@@ -162,7 +206,7 @@ const AccommodationDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-20 pb-8">
         <div className="relative h-48 md:h-64 overflow-hidden">
           <img
@@ -186,18 +230,18 @@ const AccommodationDetails = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <span className="text-muted-foreground text-sm">{filteredItems.length} options found</span>
-            
+
             <div className="flex items-center gap-2">
-              <Button 
-                variant={viewMode === "list" ? "default" : "outline"} 
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("list")}
               >
                 <List className="w-4 h-4 mr-2" />
                 List
               </Button>
-              <Button 
-                variant={viewMode === "map" ? "default" : "outline"} 
+              <Button
+                variant={viewMode === "map" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("map")}
               >
@@ -205,7 +249,7 @@ const AccommodationDetails = () => {
                 Map
               </Button>
             </div>
-            
+
             <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="md:hidden">
               <SlidersHorizontal className="w-4 h-4 mr-2" />
               Filters
@@ -220,7 +264,7 @@ const AccommodationDetails = () => {
                   </Button>
                 ))}
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Sort:</span>
                 <Button variant={sort === "price-low" ? "default" : "outline"} size="sm" onClick={() => setSort("price-low")}>Price ↑</Button>
