@@ -6,60 +6,30 @@
 import { Router } from "express";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import { isLiveDataStale, fetchAndUpdatePlaceDetails } from "./lib/placesService.js";
-import { VALID_CATEGORIES } from "./lib/constants.js";
 import logger from "./lib/logger.js";
+import { listLimiter, detailLimiter, photoLimiter } from "./middleware/rateLimiter.js";
+import { listQuerySchema, idParamSchema, photoParamSchema } from "./lib/validation.js";
 
 const router = Router();
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/**
- * Validate UUID format.
- */
-function isValidUUID(str) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-}
-
-/**
- * Parse integer with fallback.
- */
-function parseIntParam(value, defaultValue, min = 0, max = Infinity) {
-    if (value === undefined || value === null) return defaultValue;
-    const parsed = parseInt(value, 10);
-    if (isNaN(parsed)) return defaultValue;
-    return Math.max(min, Math.min(parsed, max));
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET /api/places — List places with filters
 // ═══════════════════════════════════════════════════════════════════════════════
 
-router.get("/places", async (req, res) => {
+router.get("/places", listLimiter, async (req, res) => {
     const start = Date.now();
 
     try {
-        const {
-            category,
-            type,
-            bbox,
-            is_on_campus,
-        } = req.query;
-
-        const limit = parseIntParam(req.query.limit, 50, 1, 200);
-        const offset = parseIntParam(req.query.offset, 0, 0);
-
-        // ── Validate params ────────────────────────────────────────────────────
-        if (category && !VALID_CATEGORIES.includes(category)) {
+        // ── Validate query params with Zod ──────────────────────────────────
+        const parsed = listQuerySchema.safeParse(req.query);
+        if (!parsed.success) {
             return res.status(400).json({
-                error: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(", ")}`,
+                error: "Invalid query parameters",
+                details: parsed.error.flatten(),
             });
         }
 
-        if (is_on_campus !== undefined && !["true", "false"].includes(is_on_campus)) {
-            return res.status(400).json({
-                error: "is_on_campus must be 'true' or 'false'.",
-            });
-        }
+        const { category, type, bbox, is_on_campus, limit, offset } = parsed.data;
 
         // ── Build query ────────────────────────────────────────────────────────
         let query = supabaseAdmin
@@ -81,11 +51,6 @@ router.get("/places", async (req, res) => {
         // Bounding box filter: "lat1,lng1,lat2,lng2" (SW corner, NE corner)
         if (bbox) {
             const parts = bbox.split(",").map((s) => parseFloat(s.trim()));
-            if (parts.length !== 4 || parts.some(isNaN)) {
-                return res.status(400).json({
-                    error: 'Invalid bbox format. Use "lat1,lng1,lat2,lng2".',
-                });
-            }
             const [lat1, lng1, lat2, lng2] = parts;
             const minLat = Math.min(lat1, lat2);
             const maxLat = Math.max(lat1, lat2);
@@ -135,14 +100,15 @@ router.get("/places", async (req, res) => {
 // GET /api/places/:id — Single place with optional live Google fetch
 // ═══════════════════════════════════════════════════════════════════════════════
 
-router.get("/places/:id", async (req, res) => {
+router.get("/places/:id", detailLimiter, async (req, res) => {
     const start = Date.now();
-    const { id } = req.params;
 
-    // Validate UUID
-    if (!isValidUUID(id)) {
-        return res.status(400).json({ error: "Invalid place ID format. Must be a UUID." });
+    // ── Validate params with Zod ────────────────────────────────────────────
+    const parsed = idParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid place ID format" });
     }
+    const { id } = parsed.data;
 
     try {
         // 1. Fetch the row from Supabase
@@ -241,23 +207,17 @@ router.get("/places/:id", async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
-const CACHE_PHOTOS = process.env.CACHE_PHOTOS_TO_STORAGE === "true";
 const PHOTO_CACHE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
-router.get("/places/:id/photo/:index", async (req, res) => {
+router.get("/places/:id/photo/:index", photoLimiter, async (req, res) => {
     const start = Date.now();
-    const { id, index: rawIndex } = req.params;
 
-    // Validate UUID
-    if (!isValidUUID(id)) {
-        return res.status(400).json({ error: "Invalid place ID format." });
+    // ── Validate params with Zod ────────────────────────────────────────────
+    const parsed = photoParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid parameters" });
     }
-
-    // Validate index
-    const index = parseInt(rawIndex, 10);
-    if (isNaN(index) || index < 0 || index > 9) {
-        return res.status(400).json({ error: "Photo index must be 0-9." });
-    }
+    const { id, index } = parsed.data;
 
     if (!GOOGLE_API_KEY) {
         return res.status(503).json({ error: "Photo proxy not configured." });
@@ -291,8 +251,6 @@ router.get("/places/:id/photo/:index", async (req, res) => {
         }
 
         // 2. Build Google Places Photo Media URL (New API)
-        // New API format: GET https://places.googleapis.com/v1/{photoName}/media?maxWidthPx=800&key=...
-        // photoName is like "places/ChIJ.../photos/AUG..."
         const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true&key=${GOOGLE_API_KEY}`;
 
         const googleRes = await fetch(photoUrl);
@@ -341,7 +299,7 @@ router.get("/places/:id/photo/:index", async (req, res) => {
 
     } catch (err) {
         const latency = Date.now() - start;
-        logger.error({ err, latency_ms: latency }, `GET /places/${id}/photo/${rawIndex} error`);
+        logger.error({ err, latency_ms: latency }, `GET /places/${id}/photo/${index} error`);
         return res.status(500).json({ error: "Internal server error" });
     }
 });

@@ -8,6 +8,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-reac
 import { useSyncUser } from "@/hooks/useSyncUser";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MerchantRoute from "@/components/MerchantRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import SignupPage from "./pages/SignupPage";
 import SigninPage from "./pages/SigninPage";
@@ -27,7 +28,17 @@ import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// ── Item 14: TanStack Query global defaults ─────────────────────────────────
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,   // 5 minutes
+      gcTime: 10 * 60 * 1000,  // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => {
   // Sync Clerk user → Supabase app_users on sign-in
@@ -39,7 +50,8 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          {/* Item 8: React Router v6 future flags */}
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             {/* Clerk auth UI — fixed top-right, above header */}
             <div className="fixed top-3 right-4 z-[60] flex items-center gap-2">
               <SignedIn>
@@ -55,32 +67,32 @@ const App = () => {
             </div>
 
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/signup/*" element={<SignupPage />} />
-              <Route path="/signin/*" element={<SigninPage />} />
-              <Route path="/home" element={<Home />} />
+              <Route path="/" element={<ErrorBoundary><Index /></ErrorBoundary>} />
+              <Route path="/signup/*" element={<ErrorBoundary><SignupPage /></ErrorBoundary>} />
+              <Route path="/signin/*" element={<ErrorBoundary><SigninPage /></ErrorBoundary>} />
+              <Route path="/home" element={<ErrorBoundary><Home /></ErrorBoundary>} />
               <Route
                 path="/profile"
                 element={
                   <ProtectedRoute>
-                    <Profile />
+                    <ErrorBoundary><Profile /></ErrorBoundary>
                   </ProtectedRoute>
                 }
               />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/food" element={<FoodDetails />} />
-              <Route path="/accommodation" element={<AccommodationDetails />} />
-              <Route path="/explore" element={<ExploreDetails />} />
-              <Route path="/study" element={<StudyDetails />} />
-              <Route path="/essentials" element={<EssentialsDetails />} />
-              <Route path="/merchant" element={<MerchantAuth />} />
+              <Route path="/terms" element={<ErrorBoundary><Terms /></ErrorBoundary>} />
+              <Route path="/privacy" element={<ErrorBoundary><Privacy /></ErrorBoundary>} />
+              <Route path="/contact" element={<ErrorBoundary><Contact /></ErrorBoundary>} />
+              <Route path="/food" element={<ErrorBoundary><FoodDetails /></ErrorBoundary>} />
+              <Route path="/accommodation" element={<ErrorBoundary><AccommodationDetails /></ErrorBoundary>} />
+              <Route path="/explore" element={<ErrorBoundary><ExploreDetails /></ErrorBoundary>} />
+              <Route path="/study" element={<ErrorBoundary><StudyDetails /></ErrorBoundary>} />
+              <Route path="/essentials" element={<ErrorBoundary><EssentialsDetails /></ErrorBoundary>} />
+              <Route path="/merchant" element={<ErrorBoundary><MerchantAuth /></ErrorBoundary>} />
               <Route
                 path="/merchant/dashboard"
                 element={
                   <MerchantRoute>
-                    <MerchantDashboard />
+                    <ErrorBoundary><MerchantDashboard /></ErrorBoundary>
                   </MerchantRoute>
                 }
               />
@@ -88,7 +100,7 @@ const App = () => {
                 path="/admin"
                 element={
                   <ProtectedRoute allowed={["admin", "superadmin"]}>
-                    <AdminDashboard />
+                    <ErrorBoundary><AdminDashboard /></ErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -96,7 +108,7 @@ const App = () => {
                 path="/superadmin"
                 element={
                   <ProtectedRoute allowed={["superadmin"]}>
-                    <SuperAdminDashboard />
+                    <ErrorBoundary><SuperAdminDashboard /></ErrorBoundary>
                   </ProtectedRoute>
                 }
               />

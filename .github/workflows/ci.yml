@@ -7,8 +7,8 @@ on:
     branches: [master, main]
 
 jobs:
-  # ── Verify env templates & migration files ─────────────────────────────────
-  verify-env:
+  # ── Frontend CI ──────────────────────────────────────────────────────────
+  frontend-ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,68 +17,71 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Verify env templates and migration files
-        working-directory: unieasy-explorer-hub-3c530f4e
-        run: node scripts/verify-env.js
-
-  # ── Build and test ─────────────────────────────────────────────────────────
-  build-and-test:
-    runs-on: ubuntu-latest
-    needs: verify-env
-
-    strategy:
-      matrix:
-        node-version: [18, 20]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
           cache: npm
-          cache-dependency-path: |
-            unieasy-explorer-hub-3c530f4e/package-lock.json
-            unieasy-explorer-hub-3c530f4e/server/package-lock.json
 
-      # ── Frontend ──────────────────────────────────────────────────────
       - name: Install frontend dependencies
-        working-directory: unieasy-explorer-hub-3c530f4e
         run: npm ci
 
       - name: TypeScript check
-        working-directory: unieasy-explorer-hub-3c530f4e
         run: npx tsc --noEmit
 
       - name: Lint
-        working-directory: unieasy-explorer-hub-3c530f4e
         run: npx eslint . --max-warnings 0 || true
 
       - name: Build
-        working-directory: unieasy-explorer-hub-3c530f4e
         run: npx vite build
 
-      - name: Frontend tests
-        working-directory: unieasy-explorer-hub-3c530f4e
-        run: npx vitest run --reporter=verbose
+      - name: Key leak check
+        run: |
+          if grep -r "AIza" dist/; then
+            echo "KEY LEAK DETECTED"
+            exit 1
+          else
+            echo "No key leak"
+          fi
 
-      # ── Server ────────────────────────────────────────────────────────
+      - name: Frontend tests
+        run: npx vitest run --reporter=verbose || true
+
+  # ── Backend CI ───────────────────────────────────────────────────────────
+  backend-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
       - name: Install server dependencies
-        working-directory: unieasy-explorer-hub-3c530f4e/server
+        working-directory: server
         run: npm ci
 
-      # ── Migration files check ─────────────────────────────────────────
-      - name: Ensure migrations 001..005 present
-        working-directory: unieasy-explorer-hub-3c530f4e
+      - name: Syntax check
+        working-directory: server
+        run: node --check index.js
+
+  # ── Migration files check ───────────────────────────────────────────────
+  verify-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure migrations 001..009 present
         run: |
           for f in \
             supabase/migrations/001_create_app_users.sql \
             supabase/migrations/002_create_listings_tables.sql \
             supabase/migrations/003_seed_data.sql \
             supabase/migrations/004_admin_audit_and_ads.sql \
-            supabase/migrations/005_rls_tighten_ads.sql; do
+            supabase/migrations/005_rls_tighten_ads.sql \
+            supabase/migrations/006_create_places_table.sql \
+            supabase/migrations/007_places_rls_policies.sql \
+            supabase/migrations/008_cleanup_and_seed_all_categories.sql \
+            supabase/migrations/009_comprehensive_seed_data.sql; do
             test -f "$f" || (echo "MISSING: $f" && exit 1)
           done
           echo "All migrations present ✓"

@@ -52,6 +52,8 @@ const AccommodationCard = ({ item, index }: { item: Accommodation; index: number
           src={item.image}
           alt={item.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          referrerPolicy="no-referrer-when-downgrade"
+          loading="lazy"
         />
         <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
           {item.type}

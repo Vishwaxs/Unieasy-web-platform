@@ -1,0 +1,34 @@
+UNIEASY EXPLORER HUB — DELIVERABLES SUMMARY
+=============================================
+
+MIGRATIONS
+  migrations/006_create_places_table.sql    — Unified places table with 23 columns, indexes, trigger
+  migrations/007_places_rls_policies.sql    — Row Level Security: public read, service-role write
+  migrations/008_cleanup_and_seed_all_categories.sql — Drop legacy tables, seed 13 categories, on-campus skeletons
+
+SCRIPTS
+  scripts/seed_offcampus.py                 — Production Python seeder (Places API New, CLI, idempotent)
+  scripts/requirements.txt                  — Pinned Python dependencies (supabase, requests, python-dotenv)
+
+SERVER (Express.js)
+  server/lib/constants.js                   — TTL constants, category map, detail field mask
+  server/lib/placesService.js               — Google Places API (New) live-fetch + TTL check
+  server/placesRoutes.js                    — GET /places, GET /places/:id, GET /places/:id/photo/:index
+  server/index.js                           — Route registration (placesRoutes under /api)
+
+FRONTEND HOOKS (data wiring only, no layout changes)
+  src/hooks/useFoodItems.ts                 — Fetches from /api/places?category=food
+  src/hooks/useAccommodations.ts            — Fetches from /api/places?category=accommodation
+  src/hooks/useStudySpots.ts                — Fetches from /api/places?category=study
+  src/hooks/useEssentials.ts                — Fetches from /api/places?category=services,health,fitness,safety,essentials
+  src/hooks/useExplorePlaces.ts             — Fetches from /api/places?category=hangout
+
+DOCUMENTATION
+  README_EXECUTE.md                         — Step-by-step execution guide (10 sections)
+  CHECKLIST.md                              — Safety & QA checklist (10 manual checks)
+  DECISIONS.md                              — Architecture decision records with rationale
+  SUMMARY.txt                               — This file
+
+ENV FILES (not committed)
+  server/.env.local                         — SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_PLACES_API_KEY
+  .env                                      — VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_BASE_URL

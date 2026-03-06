@@ -17,4 +17,24 @@ export default defineConfig(() => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // ── Item 13: Build optimisation ───────────────────────────────────────────
+  build: {
+    sourcemap: false,
+    chunkSizeWarningLimit: 500,
+    rollupOptions: {
+      output: {
+        manualChunks: (id: string) => {
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/react-router-dom")) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/@radix-ui") || id.includes("node_modules/shadcn")) {
+            return "vendor-ui";
+          }
+          if (id.includes("node_modules/@tanstack")) {
+            return "vendor-tanstack";
+          }
+        },
+      },
+    },
+  },
 }));
