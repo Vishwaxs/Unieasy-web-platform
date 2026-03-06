@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import Footer from "@/components/Footer";
 import ThemeToggle from "@/components/ThemeToggle";
-import { Megaphone, User, ChevronDown } from "lucide-react";
+import { Megaphone, User, ChevronDown, LogIn } from "lucide-react";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 import { useTheme } from "@/hooks/useTheme";
 
-import lightLogoHref from "@/assets/Light_Logo.png";
-import darkLogoHref from "@/assets/Dark_Logo.png";
+import lightLogoHref from "@/assets/light.png";
+import darkLogoHref from "@/assets/dark.png";
 import christLogoHref from "@/assets/Christ-logo.png";
 
 const Index = () => {
@@ -28,7 +29,7 @@ const Index = () => {
             alt="University Campus"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/50 to-background/90 dark:from-black/60 dark:via-black/35 dark:to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/50 to-background/90 dark:from-background/70 dark:via-background/40 dark:to-background/80" />
         </div>
 
         {/* Fixed Glassmorphism Header */}
@@ -37,15 +38,30 @@ const Index = () => {
             <Logo />
             <div className="flex items-center gap-2 md:gap-3">
               <ThemeToggle />
-              <Link to="/profile">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300"
-                >
-                  <User className="w-5 h-5 text-foreground" />
-                </Button>
-              </Link>
+              <SignedIn>
+                <Link to="/profile">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300"
+                  >
+                    <User className="w-5 h-5 text-foreground" />
+                  </Button>
+                </Link>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 gap-2 transition-all duration-300"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Sign in
+                  </Button>
+                </SignInButton>
+              </SignedOut>
             </div>
           </div>
         </header>

@@ -24,8 +24,6 @@ dist-ssr
 *.sw?
 
 # env
-.env
-.env.local
 server/.env.local
 .env.*.local
 *.pem

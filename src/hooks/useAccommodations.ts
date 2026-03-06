@@ -11,6 +11,8 @@ export interface Accommodation {
   amenities: string[];
   image: string;
   comment: string;
+  lat?: number;
+  lng?: number;
 }
 
 const mockAccommodations: Accommodation[] = [

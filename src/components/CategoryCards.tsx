@@ -1,4 +1,4 @@
-import { Utensils, Home, MapPin, MoreHorizontal, BookOpen, ArrowRight } from "lucide-react";
+import { Utensils, Home, MapPin, MoreHorizontal, BookOpen, ArrowRight, Store } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { modulesEnabled, modulesDisabledHint } from "@/lib/featureFlags";
@@ -8,11 +8,20 @@ const resolveVideoSrc = (video: string) => {
   // If it's an absolute URL (or protocol-relative), use as-is.
   if (/^(https?:)?\/\//i.test(video)) return video;
   // Treat non-URL strings as files served from Vite's /public folder.
-  // Example: put `5780171.mp4` in `public/` and reference it as "/5780171.mp4".
   return video.startsWith("/") ? video : `/${video}`;
 };
 
 const categories = [
+  {
+    id: 0,
+    name: "On Campus",
+    description: "Campus essentials right here",
+    icon: Store,
+    video: "/on-campus-portrait-8s.mp4",
+    playbackRate: 1.1,
+    count: "Shops",
+    link: "/campus",
+  },
   {
     id: 1,
     name: "Food & Eating",
@@ -64,6 +73,7 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const videoSrc = resolveVideoSrc(category.video);
 
@@ -83,6 +93,11 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    videoRef.current.playbackRate = category.playbackRate ?? 1;
+  }, [category.playbackRate]);
 
   return (
     <Link
@@ -110,12 +125,12 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
         <div className="relative h-80 sm:h-96 rounded-3xl overflow-hidden transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl">
         {/* Video Background */}
         <video
+          ref={videoRef}
           autoPlay
           loop
           muted
           playsInline
           preload="metadata"
-          // Keep hover effects on the card (video shouldn't capture the mouse).
           className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${
             isHovered ? "scale-110" : "scale-100"
           }`}
@@ -178,6 +193,24 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
 };
 
 const CategoryCards = () => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollNext = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = Math.max(280, Math.floor(el.clientWidth * 0.8));
+    el.scrollBy({ left: amount, behavior: "smooth" });
+  };
+
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    }
+  };
+
   return (
     <section id="category-cards" className="py-12 md:py-16 px-4 md:px-6 overflow-hidden">
       <div className="container mx-auto">
@@ -190,14 +223,23 @@ const CategoryCards = () => {
               Everything you need around campus
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
+          <button
+            type="button"
+            onClick={scrollNext}
+            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+            aria-label="Scroll categories"
+          >
             <span className="text-sm">Scroll</span>
-            <ArrowRight className="w-4 h-4 animate-pulse" />
-          </div>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Horizontal scrollable container */}
-        <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
+        <div
+          ref={scrollRef}
+          onWheel={handleWheel}
+          className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 overscroll-x-contain"
+        >
           {categories.map((category, index) => (
             <CategoryCard key={category.id} category={category} index={index} />
           ))}

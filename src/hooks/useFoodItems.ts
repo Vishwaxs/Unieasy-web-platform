@@ -10,6 +10,8 @@ export interface FoodItem {
   is_veg: boolean;
   image: string;
   comment: string;
+  lat?: number;
+  lng?: number;
 }
 
 // Fallback mock data (used when backend is unavailable or returns empty)

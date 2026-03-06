@@ -73,7 +73,7 @@ const HighlightSection = () => {
             />
             
             {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent dark:from-background/90 dark:via-background/30 dark:to-transparent" />
             
             {/* Content */}
             <div className={`absolute bottom-0 left-0 right-0 p-8 md:p-12 transition-all duration-500 ${

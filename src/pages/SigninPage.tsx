@@ -45,12 +45,22 @@ const SigninPage = () => {
                   headerSubtitle: "text-muted-foreground",
                   socialButtonsBlockButton:
                     "border-border text-foreground hover:bg-muted",
+                  socialButtonsBlockButtonText: "text-foreground",
+                  socialButtonsProviderIcon: "dark:[filter:brightness(0)_invert(1)]",
                   formFieldLabel: "text-foreground",
                   formFieldInput:
-                    "bg-background border-input text-foreground rounded-xl",
+                    "bg-background border-input text-foreground rounded-xl !text-foreground [&]:!text-[hsl(var(--foreground))] placeholder:text-muted-foreground",
                   footerActionLink: "text-primary hover:text-primary/80",
+                  footerActionText: "text-muted-foreground",
                   formButtonPrimary:
                     "bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl",
+                  dividerLine: "bg-border",
+                  dividerText: "text-muted-foreground",
+                  identityPreviewText: "text-foreground",
+                  identityPreviewEditButton: "text-primary hover:text-primary/80",
+                  formFieldAction: "text-primary hover:text-primary/80",
+                  alertText: "text-foreground",
+                  otpCodeFieldInput: "border-input text-foreground bg-background",
                 },
               }}
             />

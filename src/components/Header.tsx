@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { User, Menu, X, Home, Mail, FileText, Shield } from "lucide-react";
+import { User, Menu, X, Home, Mail, FileText, Shield, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -17,24 +18,43 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      {/* Glassmorphism navbar - lighter and compact */}
-      <div className="bg-background/85 backdrop-blur-lg border-b border-border/60 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Logo />
+      {/* Mirror glass header */}
+      <div className="mirror-header-shell">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="mirror-header-overlay" />
+          <div className="mirror-header-sheen" />
+        </div>
+        <div className="relative w-full px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+          <Logo imgClassName="h-[5.25rem] md:h-24 w-auto" />
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
             
-            <Link to="/profile">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300"
-              >
-                <User className="w-5 h-5 text-foreground" />
-              </Button>
-            </Link>
+            <SignedIn>
+              <Link to="/profile">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300"
+                >
+                  <User className="w-5 h-5 text-foreground" />
+                </Button>
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 gap-2 transition-all duration-300"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign in
+                </Button>
+              </SignInButton>
+            </SignedOut>
           </div>
 
           {/* Mobile Menu Button */}
@@ -63,14 +83,27 @@ const Header = () => {
           }`}
         >
           <div className="px-4 py-4 space-y-2 bg-background/90 backdrop-blur-xl border-t border-border/60">
-            <Link 
-              to="/profile" 
-              className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <User className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground">Profile</span>
-            </Link>
+            <SignedIn>
+              <Link 
+                to="/profile" 
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <User className="w-5 h-5 text-primary" />
+                <span className="font-medium text-foreground">Profile</span>
+              </Link>
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button 
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors w-full text-left"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <LogIn className="w-5 h-5 text-primary" />
+                  <span className="font-medium text-foreground">Sign in</span>
+                </button>
+              </SignInButton>
+            </SignedOut>
             
             {navLinks.map((link) => (
               <Link

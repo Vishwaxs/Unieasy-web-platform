@@ -101,7 +101,7 @@ const ExploreDetails = () => {
       <main className="pt-20 pb-8">
         <div className="relative h-48 md:h-64 overflow-hidden">
           <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200" alt="Explore Banner" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/80 to-teal-600/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/80 to-teal-600/80 dark:from-emerald-700/70 dark:to-teal-800/70" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
               <Link to="/home" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">

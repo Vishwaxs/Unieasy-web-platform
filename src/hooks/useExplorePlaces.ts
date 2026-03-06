@@ -11,6 +11,8 @@ export interface ExplorePlace {
   crowd: string;
   image: string;
   comment: string;
+  lat?: number;
+  lng?: number;
 }
 
 const mockPlaces: ExplorePlace[] = [

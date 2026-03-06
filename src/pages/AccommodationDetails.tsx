@@ -131,7 +131,7 @@ const AccommodationDetails = () => {
             alt="Accommodation Banner"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-600/80 to-purple-600/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-600/80 to-purple-600/80 dark:from-violet-700/70 dark:to-purple-800/70" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
               <Link to="/home" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">

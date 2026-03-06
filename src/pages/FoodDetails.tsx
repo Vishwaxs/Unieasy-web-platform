@@ -46,7 +46,7 @@ const FoodCard = ({ item, index }: { item: FoodItem; index: number }) => {
           referrerPolicy="no-referrer-when-downgrade"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent dark:from-background/70 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <Badge
           className={`absolute top-3 left-3 ${item.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
         >
@@ -118,7 +118,7 @@ const FoodDetails = () => {
             alt="Food Banner"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-red-600/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-red-600/80 dark:from-orange-700/70 dark:to-red-800/70" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
               <Link to="/home" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
