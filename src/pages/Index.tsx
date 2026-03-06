@@ -29,7 +29,7 @@ const Index = () => {
             alt="University Campus"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/50 to-background/90 dark:from-background/70 dark:via-background/40 dark:to-background/80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/30 to-background/70 dark:from-background/70 dark:via-background/40 dark:to-background/80" />
         </div>
 
         {/* Fixed Glassmorphism Header */}
@@ -43,7 +43,7 @@ const Index = () => {
                   <Button 
                     variant="outline" 
                     size="icon" 
-                    className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300"
+                    className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary w-10 h-10 transition-all duration-300"
                   >
                     <User className="w-5 h-5 text-foreground" />
                   </Button>
@@ -55,7 +55,7 @@ const Index = () => {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 gap-2 transition-all duration-300"
+                    className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2 transition-all duration-300"
                   >
                     <LogIn className="w-4 h-4" />
                     Sign in
@@ -68,12 +68,12 @@ const Index = () => {
 
         {/* Main Content */}
         <main className="relative z-10 min-h-screen flex items-center justify-center px-4 md:px-6 pt-20">
-          <div className="text-center max-w-2xl mx-auto rounded-3xl bg-background/75 dark:bg-background/35 backdrop-blur-xl border border-border/60 shadow-lg px-6 py-10 md:px-10 md:py-12">
+          <div className="text-center max-w-2xl mx-auto rounded-3xl dark:bg-background/35 backdrop-blur-xl border border-white/40 dark:border-border/80 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-lg px-6 py-10 md:px-10 md:py-12">
             <div className="flex justify-center mb-6 animate-fade-up">
               <img
                 src={theme === "dark" ? darkLogoHref : lightLogoHref}
                 alt="UniEasy"
-                className="h-14 md:h-16 w-auto"
+                className="h-24 md:h-32 w-auto"
                 loading="eager"
                 decoding="async"
               />
@@ -96,7 +96,7 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="xl"
-                  className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-accent/10"
+                  className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
                 >
                   Explore as Guest
                 </Button>

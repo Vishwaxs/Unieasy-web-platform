@@ -35,7 +35,7 @@ const SignupPage = () => {
             <SignUp
               routing="path"
               path="/signup"
-              signInUrl="/"
+              signInUrl="/signin"
               afterSignUpUrl="/home"
               appearance={{
                 elements: {
