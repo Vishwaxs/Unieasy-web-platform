@@ -175,29 +175,24 @@ const ESSENTIALS_CATEGORIES = [
   "essentials",
 ];
 
+// Per-card fallback images (B4 fix)
+const ESSENTIALS_FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+  "https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=400",
+  "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=400",
+  "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400",
+  "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=400",
+  "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400",
+];
+
 /**
  * Adapter: Map a Place record to the EssentialItem shape expected by UI components.
  */
 function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
   const hasPhoto = photoRefs.length > 0;
-  const extra =
-    typeof place.extra === "object" && place.extra !== null
-      ? (place.extra as Record<string, unknown>)
-      : null;
-  const reviews =
-    extra && Array.isArray(extra.reviews)
-      ? (extra.reviews as Array<Record<string, unknown>>)
-      : [];
-  const firstReview = reviews.length > 0 ? reviews[0] : null;
-  const reviewSnippet =
-    firstReview && typeof firstReview.text === "string"
-      ? firstReview.text.trim()
-      : "";
-  const address =
-    typeof place.address === "string" && place.address.trim().length > 0
-      ? place.address
-      : "Nearby";
+  const idStr = (place.id as string) || "a";
+  const fallbackIndex = idStr.charCodeAt(0) % ESSENTIALS_FALLBACK_IMAGES.length;
 
   return {
     id: place.id as string,
@@ -205,11 +200,11 @@ function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
     category: (place.category as string) || "essentials",
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: address,
+    distance: (place.distance_from_campus as string) || (place.address as string) || "Nearby",
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
-      : "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
-    comment: reviewSnippet,
+      : ESSENTIALS_FALLBACK_IMAGES[fallbackIndex],
+    comment: (place.address as string) || "",
   };
 }
 

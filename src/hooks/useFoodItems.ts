@@ -5,11 +5,13 @@ export interface FoodItem {
   name: string;
   restaurant: string;
   price: number;
+  display_price_label?: string;
   rating: number;
   reviews: number;
-  is_veg: boolean;
+  is_veg: boolean | null;
   image: string;
   comment: string;
+  cuisine_tags?: string[];
   lat?: number;
   lng?: number;
 }
@@ -130,22 +132,27 @@ const mockFoodItems: FoodItem[] = [
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+// Category-specific fallback images so different cards show different images (B4 fix)
+const FOOD_FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
+  "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400",
+  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",
+  "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400",
+  "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=400",
+  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400",
+];
+
+/** Map price_level (0-4) to approx INR — used only when price_inr is null */
+function priceLevelToINR(level: number): number {
+  const map: Record<number, number> = { 0: 50, 1: 150, 2: 350, 3: 800, 4: 2000 };
+  return map[level] ?? 200;
+}
+
 /**
  * Adapter: Map a Place record from the unified places API to the FoodItem shape
- * expected by existing UI components. No layout/component changes needed.
+ * expected by existing UI components.
  */
 function placeToFoodItem(place: Record<string, unknown>): FoodItem {
-  // Map price_level (0-4) to an approximate INR price for display
-  const priceLevelMap: Record<number, number> = {
-    0: 50,
-    1: 100,
-    2: 200,
-    3: 350,
-    4: 500,
-  };
-  const priceLevel =
-    typeof place.price_level === "number" ? place.price_level : 1;
-
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
   const hasPhoto = photoRefs.length > 0;
   const address = (place.address as string) || "";
@@ -161,18 +168,30 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
   const reviewSnippet =
     firstReview && typeof firstReview.text === "string" ? firstReview.text : "";
 
+  // B4 fix: deterministic per-card fallback using id
+  const idStr = (place.id as string) || "a";
+  const fallbackIndex = idStr.charCodeAt(0) % FOOD_FALLBACK_IMAGES.length;
+
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
-    restaurant: address,
-    price: priceLevelMap[priceLevel] ?? 200,
+    restaurant: (place.address as string) || "",
+    // B5 fix: prefer actual price_inr from DB, fall back to price_level mapping
+    price: typeof place.price_inr === "number"
+      ? place.price_inr
+      : priceLevelToINR(typeof place.price_level === "number" ? place.price_level : 1),
+    display_price_label: (place.display_price_label as string) || undefined,
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    is_veg: true, // Default — Google Places doesn't provide veg/non-veg
+    // B2 fix: read actual is_veg from DB; null means unknown/mixed
+    is_veg: typeof place.is_veg === "boolean" ? place.is_veg : null,
+    cuisine_tags: Array.isArray(place.cuisine_tags) ? (place.cuisine_tags as string[]) : undefined,
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
-      : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
-    comment: reviewSnippet,
+      : FOOD_FALLBACK_IMAGES[fallbackIndex],
+    comment: (place.address as string) || "",
+    lat: typeof place.lat === "number" ? place.lat : undefined,
+    lng: typeof place.lng === "number" ? place.lng : undefined,
   };
 }
 
@@ -202,7 +221,7 @@ export function useFoodItems() {
   const { data, isLoading } = useQuery({
     queryKey: ["food_items"],
     queryFn: fetchFoodItems,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     placeholderData: mockFoodItems,
   });
 

@@ -97,50 +97,53 @@ const mockStudySpots: StudySpot[] = [
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+// Per-card fallback images (B4 fix)
+const STUDY_FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400",
+  "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400",
+  "https://images.unsplash.com/photo-1568667256549-094345857637?w=400",
+  "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=400",
+  "https://images.unsplash.com/photo-1562774053-701939374585?w=400",
+];
+
+function formatNoise(raw: string | null | undefined): string {
+  const labels: Record<string, string> = { quiet: "Silent", moderate: "Medium", loud: "Loud" };
+  return raw ? labels[raw] || "Varies" : "Varies";
+}
+
 /**
  * Adapter: Map a Place record to the StudySpot shape expected by UI components.
  */
 function placeToStudySpot(place: Record<string, unknown>): StudySpot {
-  // Try to extract opening hours from extra field
-  const extra = (place.extra as Record<string, unknown>) || {};
-  const openingHours = extra.opening_hours as
-    | Record<string, unknown>
-    | undefined;
-  const timing = openingHours
-    ? ((openingHours.weekday_text as string[]) || [])[0] || "Check online"
-    : "Check online";
+  let timing = (place.timing as string) || "";
+  if (!timing) {
+    const extra = (place.extra as Record<string, unknown>) || {};
+    const openingHours = extra.opening_hours as Record<string, unknown> | undefined;
+    timing = openingHours
+      ? (openingHours.weekday_text as string[] || [])[0] || "Check online"
+      : "Check online";
+  }
 
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
   const hasPhoto = photoRefs.length > 0;
-  const address =
-    typeof place.address === "string" && place.address.trim().length > 0
-      ? place.address
-      : "Nearby";
-  const reviews = Array.isArray(extra.reviews)
-    ? (extra.reviews as Array<Record<string, unknown>>)
-    : [];
-  const firstReview = reviews.length > 0 ? reviews[0] : null;
-  const reviewSnippet =
-    firstReview && typeof firstReview.text === "string"
-      ? firstReview.text.trim()
-      : "";
+  const idStr = (place.id as string) || "a";
+  const fallbackIndex = idStr.charCodeAt(0) % STUDY_FALLBACK_IMAGES.length;
+  const rawType = (place.sub_type as string) || (place.type as string) || "library";
 
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
-    type:
-      ((place.type as string) || "library").charAt(0).toUpperCase() +
-      ((place.type as string) || "library").slice(1),
+    type: rawType.charAt(0).toUpperCase() + rawType.slice(1),
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: address,
+    distance: (place.distance_from_campus as string) || (place.address as string) || "Nearby",
     timing,
-    noise: "Varies",
-    has_wifi: true,
+    noise: formatNoise(place.noise_level as string | null),
+    has_wifi: typeof place.has_wifi === "boolean" ? place.has_wifi : true,
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
-      : "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400",
-    comment: reviewSnippet,
+      : STUDY_FALLBACK_IMAGES[fallbackIndex],
+    comment: (place.address as string) || "",
   };
 }
 

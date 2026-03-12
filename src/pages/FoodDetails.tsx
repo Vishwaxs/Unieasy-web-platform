@@ -79,14 +79,10 @@ const FoodCard = ({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent dark:from-background/70 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <Badge
-          className={`absolute top-3 left-3 ${item.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
+          className={`absolute top-3 left-3 ${item.is_veg === true ? "bg-green-500" : item.is_veg === false ? "bg-red-500" : "bg-amber-500"} text-white border-0`}
         >
-          {item.is_veg ? (
-            <Leaf className="w-3 h-3 mr-1" />
-          ) : (
-            <Drumstick className="w-3 h-3 mr-1" />
-          )}
-          {item.is_veg ? "Veg" : "Non-Veg"}
+          {item.is_veg === true ? <Leaf className="w-3 h-3 mr-1" /> : item.is_veg === false ? <Drumstick className="w-3 h-3 mr-1" /> : null}
+          {item.is_veg === true ? "Veg" : item.is_veg === false ? "Non-Veg" : "Mixed"}
         </Badge>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -156,8 +152,8 @@ const FoodDetails = () => {
 
   const filteredItems = foodItems
     .filter((item) => {
-      if (filter === "veg") return item.is_veg;
-      if (filter === "nonveg") return !item.is_veg;
+      if (filter === "veg") return item.is_veg === true || item.is_veg === null;
+      if (filter === "nonveg") return item.is_veg === false || item.is_veg === null;
       return true;
     })
     .sort((a, b) => {

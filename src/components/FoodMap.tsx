@@ -49,7 +49,7 @@ interface MarkerFood {
   id: string;
   name: string;
   restaurant: string;
-  is_veg: boolean;
+  is_veg: boolean | null;
   price: number;
   position: [number, number];
 }
@@ -131,8 +131,8 @@ export function FoodMap({ items }: FoodMapProps) {
                 <p className="font-semibold text-sm">{marker.name}</p>
                 <p className="text-xs text-muted-foreground">{marker.restaurant}</p>
                 <p className="text-xs">
-                  <span className={marker.is_veg ? "text-green-600" : "text-red-600"}>
-                    {marker.is_veg ? "Veg" : "Non-Veg"}
+                  <span className={marker.is_veg === true ? "text-green-600" : marker.is_veg === false ? "text-red-600" : "text-amber-600"}>
+                    {marker.is_veg === true ? "Veg" : marker.is_veg === false ? "Non-Veg" : "Mixed"}
                   </span>
                   {" · "}
                   <span className="font-medium">₹{marker.price}</span>

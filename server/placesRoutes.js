@@ -104,14 +104,88 @@ router.get("/campus/shops", (_req, res) => {
 router.get("/places", listLimiter, async (req, res) => {
   const start = Date.now();
 
-  try {
-    // ── Validate query params with Zod ──────────────────────────────────
-    const parsed = listQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: "Invalid query parameters",
-        details: parsed.error.flatten(),
-      });
+    try {
+        // ── Validate query params with Zod ──────────────────────────────────
+        const parsed = listQuerySchema.safeParse(req.query);
+        if (!parsed.success) {
+            return res.status(400).json({
+                error: "Invalid query parameters",
+                details: parsed.error.flatten(),
+            });
+        }
+
+        const { category, type, sub_type, is_veg, bbox, is_on_campus, limit, offset } = parsed.data;
+
+        // ── Build query ────────────────────────────────────────────────────────
+        let query = supabaseAdmin
+            .from("places")
+            .select("*", { count: "exact" });
+
+        if (category) {
+            query = query.eq("category", category);
+        }
+
+        if (type) {
+            query = query.eq("type", type);
+        }
+
+        if (sub_type) {
+            query = query.eq("sub_type", sub_type);
+        }
+
+        if (is_veg !== undefined) {
+            query = query.eq("is_veg", is_veg === "true");
+        }
+
+        if (is_on_campus !== undefined) {
+            query = query.eq("is_on_campus", is_on_campus === "true");
+        }
+
+        // Bounding box filter: "lat1,lng1,lat2,lng2" (SW corner, NE corner)
+        if (bbox) {
+            const parts = bbox.split(",").map((s) => parseFloat(s.trim()));
+            const [lat1, lng1, lat2, lng2] = parts;
+            const minLat = Math.min(lat1, lat2);
+            const maxLat = Math.max(lat1, lat2);
+            const minLng = Math.min(lng1, lng2);
+            const maxLng = Math.max(lng1, lng2);
+
+            query = query
+                .gte("lat", minLat)
+                .lte("lat", maxLat)
+                .gte("lng", minLng)
+                .lte("lng", maxLng);
+        }
+
+        // Pagination
+        query = query
+            .order("rating", { ascending: false, nullsFirst: false })
+            .range(offset, offset + limit - 1);
+
+        const { data, error, count } = await query;
+
+        if (error) {
+            logger.error({ err: error }, "GET /places query error");
+            return res.status(500).json({ error: error.message });
+        }
+
+        const latency = Date.now() - start;
+        logger.info(
+            { method: "GET", path: "/places", params: req.query, status: 200, latency_ms: latency },
+            "places list"
+        );
+
+        return res.json({
+            data: data || [],
+            count: count || 0,
+            offset,
+            limit,
+        });
+
+    } catch (err) {
+        const latency = Date.now() - start;
+        logger.error({ err, latency_ms: latency }, "GET /places unexpected error");
+        return res.status(500).json({ error: "Internal server error" });
     }
 
     const { category, type, bbox, is_on_campus, limit, offset } = parsed.data;
