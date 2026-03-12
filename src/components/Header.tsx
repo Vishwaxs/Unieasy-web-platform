@@ -61,16 +61,14 @@ const Header = () => {
             <ThemeToggle />
             
             <SignedIn>
-              <Link to="/profile">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300"
-                >
-                  <User className="w-5 h-5 text-foreground" />
-                </Button>
-              </Link>
-              <UserButton afterSignOutUrl="/" />
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: "w-10 h-10 rounded-full border-2 border-border/60"
+                  }
+                }}
+              />
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">

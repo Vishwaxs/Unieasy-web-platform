@@ -28,3 +28,5 @@ server/.env.local
 .env.*.local
 *.pem
 *.key
+UNIEASY_FULL_DOCUMENTATION.md
+PRODUCTION_PASS_REPORT.md

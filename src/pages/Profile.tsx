@@ -16,12 +16,22 @@ import {
   Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { getUserReviewCount } from "@/lib/reviewStats";
+
+interface ProfileData {
+  phone: string;
+  student_id: string;
+  programme: string;
+  year_of_study: string;
+  bio: string;
+}
 
 const Profile = () => {
   const { user } = useUser();
@@ -37,6 +47,107 @@ const Profile = () => {
 
     setReviewCount(getUserReviewCount(user.id));
   }, [user?.id]);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [profileData, setProfileData] = useState<ProfileData>({
+    phone: "",
+    student_id: "",
+    programme: "",
+    year_of_study: "",
+    bio: "",
+  });
+  const [editData, setEditData] = useState<ProfileData>(profileData);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("app_users")
+          .select("phone, student_id, programme, year_of_study, bio")
+          .eq("clerk_user_id", user.id)
+          .single();
+
+        if (error) {
+          console.error("[Profile] Fetch error:", error.message);
+        } else if (data) {
+          const fetched: ProfileData = {
+            phone: data.phone ?? "",
+            student_id: data.student_id ?? "",
+            programme: data.programme ?? "",
+            year_of_study: data.year_of_study ?? "",
+            bio: data.bio ?? "",
+          };
+          setProfileData(fetched);
+          setEditData(fetched);
+        }
+      } catch (err) {
+        console.error("[Profile] Unexpected error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("app_users")
+        .update({
+          phone: editData.phone || null,
+          student_id: editData.student_id || null,
+          programme: editData.programme || null,
+          year_of_study: editData.year_of_study || null,
+          bio: editData.bio || null,
+        })
+        .eq("clerk_user_id", user.id);
+
+      if (error) {
+        toast.error("Failed to save profile: " + error.message);
+        return;
+      }
+
+      setProfileData(editData);
+      setIsEditing(false);
+      toast.success("Profile updated successfully!");
+    } catch (err) {
+      toast.error("An unexpected error occurred");
+      console.error("[Profile] Save error:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditData(profileData);
+    setIsEditing(false);
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!user) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        await user.setProfileImage({ file });
+        toast.success("Profile photo updated!");
+      } catch (err) {
+        toast.error("Failed to update photo");
+        console.error("[Profile] Avatar upload error:", err);
+      }
+    };
+    input.click();
+  };
 
   const menuItems = [
     {

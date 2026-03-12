@@ -24,7 +24,103 @@ const upload = multer({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MERCHANT UPGRADE
+// MERCHANT UPGRADE REQUEST (admin-verified flow)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/merchant/upgrade-request/status
+ * Returns the most recent upgrade request status for the current user.
+ */
+router.get(
+  "/upgrade-request/status",
+  verifyClerkToken(),
+  async (req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("merchant_upgrade_requests")
+        .select("status, review_note")
+        .eq("clerk_user_id", req.clerkUserId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        logger.error({ err: error }, "GET /merchant/upgrade-request/status");
+        return res.status(500).json({ error: error.message });
+      }
+
+      if (!data) {
+        return res.json({ status: null });
+      }
+
+      return res.json({ status: data.status, review_note: data.review_note });
+    } catch (err) {
+      logger.error({ err }, "GET /merchant/upgrade-request/status unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/merchant/upgrade-request
+ * Submits a new merchant upgrade request for admin review.
+ * Body: { businessName, businessType, contactNumber?, description? }
+ */
+router.post(
+  "/upgrade-request",
+  verifyClerkToken(),
+  async (req, res) => {
+    const { businessName, businessType, contactNumber, description } = req.body || {};
+
+    if (!businessName || typeof businessName !== "string" || !businessName.trim()) {
+      return res.status(400).json({ error: "businessName is required" });
+    }
+    if (!businessType || typeof businessType !== "string" || !businessType.trim()) {
+      return res.status(400).json({ error: "businessType is required" });
+    }
+
+    // Check for existing pending request
+    try {
+      const { data: existing } = await supabaseAdmin
+        .from("merchant_upgrade_requests")
+        .select("id, status")
+        .eq("clerk_user_id", req.clerkUserId)
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (existing) {
+        return res.status(409).json({ error: "You already have a pending request" });
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from("merchant_upgrade_requests")
+        .insert({
+          clerk_user_id: req.clerkUserId,
+          business_name: businessName.trim(),
+          business_type: businessType.trim(),
+          contact_number: contactNumber?.trim() || null,
+          description: description?.trim() || null,
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error }, "POST /merchant/upgrade-request insert failed");
+        return res.status(500).json({ error: error.message });
+      }
+
+      logger.info({ requestId: data.id, clerkUserId: req.clerkUserId }, "Merchant upgrade request submitted");
+      return res.status(201).json(data);
+    } catch (err) {
+      logger.error({ err }, "POST /merchant/upgrade-request unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MERCHANT UPGRADE (legacy — direct upgrade, kept for backward compat)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**

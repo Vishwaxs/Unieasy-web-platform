@@ -25,6 +25,7 @@ const SignupStep1 = () => {
   });
 
   const password = watch("password", "");
+  const confirmPassword = watch("confirmPassword", "");
 
   const passwordRequirements = [
     { label: "At least 8 characters", met: password.length >= 8 },
@@ -33,6 +34,24 @@ const SignupStep1 = () => {
     { label: "One number", met: /[0-9]/.test(password) },
     { label: "One special character", met: /[^A-Za-z0-9]/.test(password) },
   ];
+
+  const metCount = passwordRequirements.filter((r) => r.met).length;
+  const strengthPercent = (metCount / passwordRequirements.length) * 100;
+  const strengthColor =
+    metCount <= 1 ? "bg-destructive" :
+    metCount <= 2 ? "bg-orange-500" :
+    metCount <= 3 ? "bg-yellow-500" :
+    metCount <= 4 ? "bg-lime-500" :
+    "bg-green-500";
+  const strengthLabel =
+    metCount <= 1 ? "Weak" :
+    metCount <= 2 ? "Fair" :
+    metCount <= 3 ? "Good" :
+    metCount <= 4 ? "Strong" :
+    "Excellent";
+
+  const confirmPasswordMatches = confirmPassword.length > 0 && password === confirmPassword;
+  const confirmPasswordMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   const onSubmit = (data: SignupStep1Data) => {
     // Store data temporarily for step 2
@@ -116,6 +135,22 @@ const SignupStep1 = () => {
                 <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
               )}
               
+              {/* Password strength bar */}
+              {password.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Password strength</span>
+                    <span className={`text-xs font-medium ${metCount === 5 ? "text-green-500" : "text-muted-foreground"}`}>{strengthLabel}</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${strengthColor}`}
+                      style={{ width: `${strengthPercent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Password requirements */}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {passwordRequirements.map((req, index) => (
@@ -143,6 +178,11 @@ const SignupStep1 = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
                   variant="accent"
+                  className={
+                    confirmPasswordMatches ? "border-green-500 focus-visible:ring-green-500" :
+                    confirmPasswordMismatch ? "border-destructive focus-visible:ring-destructive" :
+                    ""
+                  }
                 />
                 <button
                   type="button"

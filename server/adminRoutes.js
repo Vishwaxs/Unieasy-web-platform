@@ -264,6 +264,148 @@ router.get(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// MERCHANT UPGRADE REQUESTS (admin + superadmin)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/admin/merchant-requests
+ * Returns all merchant upgrade requests, newest first.
+ */
+router.get(
+  "/merchant-requests",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("merchant_upgrade_requests")
+        .select("*, app_users!merchant_upgrade_requests_clerk_user_id_fkey(email, full_name)")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        logger.error({ err: error }, "GET /merchant-requests");
+        return res.status(500).json({ error: error.message });
+      }
+      return res.json(data);
+    } catch (err) {
+      logger.error({ err }, "GET /merchant-requests unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/merchant-requests/:id/approve
+ * Approves a merchant upgrade request and sets the user role to merchant.
+ */
+router.post(
+  "/merchant-requests/:id/approve",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const requestId = req.params.id;
+    try {
+      const { data: request, error: fetchErr } = await supabaseAdmin
+        .from("merchant_upgrade_requests")
+        .select("clerk_user_id, status")
+        .eq("id", requestId)
+        .single();
+
+      if (fetchErr || !request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      if (request.status !== "pending") {
+        return res.status(400).json({ error: `Request already ${request.status}` });
+      }
+
+      // Approve the request
+      const { error: updateErr } = await supabaseAdmin
+        .from("merchant_upgrade_requests")
+        .update({
+          status: "approved",
+          reviewed_by: req.clerkUserId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+
+      if (updateErr) {
+        return res.status(500).json({ error: updateErr.message });
+      }
+
+      // Upgrade user role to merchant
+      const { error: roleErr } = await supabaseAdmin
+        .from("app_users")
+        .update({ role: "merchant" })
+        .eq("clerk_user_id", request.clerk_user_id);
+
+      if (roleErr) {
+        logger.error({ err: roleErr }, "Failed to update user role after merchant approval");
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "approve_merchant", "merchant_request", requestId, {
+        target_user: request.clerk_user_id,
+      });
+
+      return res.json({ message: "Merchant request approved" });
+    } catch (err) {
+      logger.error({ err }, "POST /merchant-requests/:id/approve unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/merchant-requests/:id/reject
+ * Rejects a merchant upgrade request with an optional reason.
+ * Body: { reason?: string }
+ */
+router.post(
+  "/merchant-requests/:id/reject",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const requestId = req.params.id;
+    const reason = typeof req.body?.reason === "string" ? req.body.reason.slice(0, 500) : "";
+
+    try {
+      const { data: request, error: fetchErr } = await supabaseAdmin
+        .from("merchant_upgrade_requests")
+        .select("clerk_user_id, status")
+        .eq("id", requestId)
+        .single();
+
+      if (fetchErr || !request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      if (request.status !== "pending") {
+        return res.status(400).json({ error: `Request already ${request.status}` });
+      }
+
+      const { error: updateErr } = await supabaseAdmin
+        .from("merchant_upgrade_requests")
+        .update({
+          status: "rejected",
+          reviewed_by: req.clerkUserId,
+          review_note: reason,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+
+      if (updateErr) {
+        return res.status(500).json({ error: updateErr.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "reject_merchant", "merchant_request", requestId, {
+        target_user: request.clerk_user_id,
+        reason,
+      });
+
+      return res.json({ message: "Merchant request rejected" });
+    } catch (err) {
+      logger.error({ err }, "POST /merchant-requests/:id/reject unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // NOTIFICATION HOOK: call after merchant submits ad (optional integration)
 // ═══════════════════════════════════════════════════════════════════════════════
 
