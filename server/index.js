@@ -32,6 +32,9 @@ import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import adminRoutes from "./adminRoutes.js";
 import merchantRoutes from "./merchantRoutes.js";
 import placesRoutes from "./placesRoutes.js";
+import reviewRoutes from "./reviewRoutes.js";
+import reactionRoutes from "./reactionRoutes.js";
+import sentimentRoutes from "./sentimentRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -132,6 +135,15 @@ app.use("/api/admin", adminRoutes);
 
 // ── Merchant routes (/api/merchant/*) ───────────────────────────────────────
 app.use("/api/merchant", merchantRoutes);
+
+// ── Review routes (/api/reviews/*) ──────────────────────────────────────────
+app.use("/api", reviewRoutes);
+
+// ── Reaction routes (/api/reactions/*) ──────────────────────────────────────
+app.use("/api", reactionRoutes);
+
+// ── Sentiment routes (/api/sentiment/*) ─────────────────────────────────────
+app.use("/api", sentimentRoutes);
 
 // ── Sentry error handler (must be after routes, before custom error handler) ─
 if (process.env.SENTRY_DSN) {

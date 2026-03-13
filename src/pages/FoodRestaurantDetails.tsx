@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ReviewSection from "@/components/ReviewSection";
+import SentimentPoll from "@/components/SentimentPoll";
+import ReactionBar from "@/components/ReactionBar";
 import { useFoodItems } from "@/hooks/useFoodItems";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -262,6 +265,7 @@ const FoodRestaurantDetails = () => {
                 Student favorite for quick and reliable meals near campus.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-white/90">
+                <ReactionBar placeId={item.id} />
                 <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                   <span className="text-sm font-medium">{item.rating}</span>
@@ -397,6 +401,10 @@ const FoodRestaurantDetails = () => {
                 )}
               </div>
             </div>
+
+            {/* Reviews & Sentiment */}
+            {item.id && <ReviewSection placeId={item.id} />}
+            {item.id && <SentimentPoll placeId={item.id} />}
           </div>
 
           <div className="space-y-6">

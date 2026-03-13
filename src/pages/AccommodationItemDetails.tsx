@@ -19,6 +19,9 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ReviewSection from "@/components/ReviewSection";
+import SentimentPoll from "@/components/SentimentPoll";
+import ReactionBar from "@/components/ReactionBar";
 import { useAccommodations } from "@/hooks/useAccommodations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -147,6 +150,7 @@ const AccommodationItemDetails = () => {
                 Detailed accommodation insights to help you choose confidently.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-white/90">
+                <ReactionBar placeId={item.id} />
                 <Badge className="bg-primary text-primary-foreground">{item.type}</Badge>
                 <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -210,6 +214,10 @@ const AccommodationItemDetails = () => {
                 })}
               </div>
             </div>
+
+            {/* Reviews & Sentiment */}
+            {item.id && <ReviewSection placeId={item.id} />}
+            {item.id && <SentimentPoll placeId={item.id} />}
           </div>
 
           <div className="space-y-6">
