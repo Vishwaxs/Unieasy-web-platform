@@ -32,6 +32,7 @@ import OnCampusDetails from "./pages/OnCampusDetails";
 import PlaceItemDetails from "./pages/PlaceItemDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import CommunityChat from "./pages/CommunityChat";
 import NotFound from "./pages/NotFound";
 
 // ── Item 14: TanStack Query global defaults ─────────────────────────────────
@@ -89,6 +90,14 @@ const App = () => {
               <Route path="/campus" element={<ErrorBoundary><OnCampusDetails /></ErrorBoundary>} />
               <Route path="/campus/:id" element={<ErrorBoundary><PlaceItemDetails /></ErrorBoundary>} />
               <Route path="/search" element={<ErrorBoundary><SearchResults /></ErrorBoundary>} />
+              <Route
+                path="/community"
+                element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><CommunityChat /></ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/merchant" element={<ErrorBoundary><MerchantAuth /></ErrorBoundary>} />
               <Route
                 path="/merchant/dashboard"

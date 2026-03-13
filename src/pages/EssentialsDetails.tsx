@@ -1,33 +1,43 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  Star,
-  MapPin,
-  Shield,
-  Tag,
-  Calendar,
-  Briefcase,
-  Users,
-  ShoppingBag,
-  SlidersHorizontal,
-  X,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Star, MapPin, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
-import { computeCombinedReviewStats } from "@/lib/reviewStats";
-import { formatCompactCount } from "@/lib/reviewStats";
+import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
+import SponsoredCard from "@/components/SponsoredCard";
 import { useEssentials, type EssentialItem } from "@/hooks/useEssentials";
+import { useActiveAds } from "@/hooks/useActiveAds";
 
-const ESSENTIAL_USE_TYPE_OPTIONS = [
-  { value: "daily-use", label: "Daily use" },
-  { value: "urgent-help", label: "Urgent help" },
-  { value: "student-discount", label: "Student discount" },
-  { value: "career-support", label: "Career support" },
+const ESSENTIALS_FILTER_GROUPS = [
+  {
+    key: "category",
+    label: "Category",
+    options: [
+      { value: "all", label: "All" },
+      { value: "health", label: "Health" },
+      { value: "services", label: "Services" },
+      { value: "fitness", label: "Fitness" },
+      { value: "essentials", label: "Essentials" },
+      { value: "safety", label: "Safety" },
+    ],
+  },
+  {
+    key: "rating",
+    label: "Rating",
+    options: [
+      { value: "all", label: "Any" },
+      { value: "4.5", label: "4.5+" },
+      { value: "4.0", label: "4.0+" },
+      { value: "3.5", label: "3.5+" },
+    ],
+  },
+];
+
+const ESSENTIALS_SORT_OPTIONS = [
+  { value: "default", label: "Default" },
+  { value: "rating", label: "Rating" },
+  { value: "name", label: "Name A–Z" },
 ];
 
 const categories = [
@@ -82,103 +92,82 @@ const ItemCard = ({
       ([entry]) => {
         if (entry.isIntersecting) setIsVisible(true);
       },
-      { threshold: 0.1 },
+      { threshold: 0.1 }
     );
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
   }, []);
 
-  const category = categories.find((c) => c.id === item.category);
-  const stats = computeCombinedReviewStats(item.rating, item.reviews, userReviews);
-
   return (
-    <div
-      ref={cardRef}
-      className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      }`}
-      style={{ transitionDelay: `${index * 50}ms` }}
-    >
-      <div className="relative h-40 overflow-hidden">
-        <img
-          src={item.image}
-          alt={item.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          referrerPolicy="no-referrer-when-downgrade"
-          loading="lazy"
-        />
-        <div
-          className={`absolute inset-0 bg-gradient-to-t ${category?.color} opacity-20`}
-        />
-        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
-          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-sm">
-            {stats.emoji ? `${stats.emoji} ` : ""}
-            {stats.averageRating > 0
-              ? stats.averageRating.toFixed(1)
-              : item.rating.toFixed(1)}
-          </span>
-        </div>
-      </div>
-
-      <div className="p-4 flex flex-1 flex-col">
-        <div className="flex items-center gap-2 mb-2">
-          {category && <category.icon className="w-4 h-4 text-primary" />}
-          <span className="text-xs text-muted-foreground">
-            {category?.name}
-          </span>
-        </div>
-        <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
-          {item.name}
-        </h3>
-        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-          <MapPin className="w-4 h-4 shrink-0" />
-          <span>{item.distance}</span>
-        </div>
-        {item.comment && (
-          <p className="text-muted-foreground text-xs italic">
-            "{item.comment}"
-          </p>
-        )}
-
-        <div className="mt-auto pt-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              Google • {formatCompactCount(stats.totalReviews)} ratings
-            </span>
+    <Link to={`/essentials/${item.id}`} className="block">
+      <div
+        ref={cardRef}
+        className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
+        style={{ transitionDelay: `${index * 50}ms` }}
+      >
+        <div className="relative h-40 overflow-hidden">
+          <img
+            src={item.image}
+            alt={item.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            referrerPolicy="no-referrer-when-downgrade"
+            loading="lazy"
+          />
+          <div className="absolute top-3 left-3">
+            <Badge className="bg-primary text-xs capitalize">{item.category}</Badge>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-3 w-full"
-            onClick={() => onReview(item)}
-          >
-            Review
-          </Button>
+          {item.rating > 0 && (
+            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              <span className="text-white text-sm">{item.rating}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4">
+          <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
+            {item.name}
+          </h3>
+          <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+            <MapPin className="w-3 h-3" />
+            <span>{item.distance}</span>
+          </div>
+          {item.comment && (
+            <p className="text-muted-foreground text-xs line-clamp-2">{item.comment}</p>
+          )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
 const EssentialsDetails = () => {
   const { items: essentialItems, loading } = useEssentials();
-  const [filter, setFilter] = useState<string>("all");
-  const [showFilters, setShowFilters] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<EssentialItem | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<
-    Record<string, ReviewEntry[]>
-  >({});
+  const { data: activeAds } = useActiveAds();
+  const [filters, setFilters] = useState<FilterState>({ category: "all", rating: "all" });
+  const [sort, setSort] = useState("default");
 
-  const openReviewDialog = (item: EssentialItem) => {
-    setActiveItem(item);
-    setReviewOpen(true);
-  };
+  const filteredItems = useMemo(() => {
+    let result = essentialItems.filter((item) => {
+      const catVal = filters.category as string;
+      if (catVal !== "all" && item.category !== catVal) return false;
 
-  const filteredItems = essentialItems.filter(
-    (item) => filter === "all" || item.category === filter,
-  );
+      const ratingVal = filters.rating as string;
+      if (ratingVal !== "all" && item.rating < parseFloat(ratingVal)) return false;
+
+      return true;
+    });
+
+    result = [...result].sort((a, b) => {
+      if (sort === "rating") return b.rating - a.rating;
+      if (sort === "name") return a.name.localeCompare(b.name);
+      return 0;
+    });
+
+    return result;
+  }, [essentialItems, filters, sort]);
 
   if (loading) {
     return (
@@ -212,61 +201,40 @@ const EssentialsDetails = () => {
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
                 Essentials & More
               </h1>
-              <p className="text-white/90 mt-2">
-                Everything you need as a student
-              </p>
+              <p className="text-white/90 mt-2">Everything you need as a student</p>
             </div>
           </div>
         </div>
 
         <div className="container mx-auto px-4 py-6">
-          {/* Category Pills */}
-          <div className="flex flex-wrap gap-3 mb-8">
-            <Button
-              variant={filter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilter("all")}
-              className="rounded-full"
-            >
-              All
-            </Button>
-            {categories.map((cat) => (
-              <Button
-                key={cat.id}
-                variant={filter === cat.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilter(cat.id)}
-                className="rounded-full gap-2"
-              >
-                <cat.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{cat.name}</span>
-                <span className="sm:hidden">{cat.name.split(" ")[0]}</span>
-              </Button>
-            ))}
+          <div className="mb-6">
+            <FilterSortBar
+              filterGroups={ESSENTIALS_FILTER_GROUPS}
+              sortOptions={ESSENTIALS_SORT_OPTIONS}
+              filters={filters}
+              sort={sort}
+              onFilterChange={setFilters}
+              onSortChange={setSort}
+              resultCount={filteredItems.length}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredItems.map((item, index) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                index={index}
-                onReview={openReviewDialog}
-                userReviews={reviewsByItem[item.id]}
-              />
+              <React.Fragment key={item.id}>
+                <ItemCard item={item} index={index} />
+                {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
+                  <SponsoredCard ad={activeAds[Math.floor(index / 5) % activeAds.length]} />
+                )}
+              </React.Fragment>
             ))}
           </div>
 
-          <ReviewDialog
-            open={reviewOpen}
-            onOpenChange={setReviewOpen}
-            activeItem={activeItem}
-            reviewsByItem={reviewsByItem}
-            setReviewsByItem={setReviewsByItem}
-            contextLabel="Use type"
-            contextPlaceholder="Select use type"
-            contextOptions={ESSENTIAL_USE_TYPE_OPTIONS}
-          />
+          {!loading && filteredItems.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              No essentials found matching your filters.
+            </div>
+          )}
         </div>
       </main>
 
