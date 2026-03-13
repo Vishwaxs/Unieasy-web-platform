@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Upload, Image, Eye, CheckCircle, Clock, X, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Upload, Image, Eye, CheckCircle, Clock, X, LogOut, Loader2, BarChart3, Megaphone, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser, useClerk, useAuth } from "@clerk/clerk-react";
-import { uploadAdImage, createAd, fetchMyAds } from "@/lib/adminApi";
-import Header from "@/components/Header";
+import { uploadAdImage, createAd, fetchMyAds, apiFetch } from "@/lib/adminApi";
+import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
 
@@ -20,6 +22,10 @@ interface Ad {
   created_at: string;
 }
 
+interface MerchantAnalytics {
+  ads: { total: number; active: number; impressions: number };
+}
+
 const MerchantDashboard = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -31,6 +37,7 @@ const MerchantDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [myAds, setMyAds] = useState<Ad[]>([]);
   const [loadingAds, setLoadingAds] = useState(true);
+  const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
   const navigate = useNavigate();
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -52,6 +59,20 @@ const MerchantDashboard = () => {
     };
     loadAds();
   }, [user, submitted, getToken]);
+
+  // Fetch analytics
+  useEffect(() => {
+    if (!user) return;
+    const loadAnalytics = async () => {
+      try {
+        const data = await apiFetch(getToken, "/merchant/analytics");
+        setAnalytics(data);
+      } catch {
+        // Non-critical
+      }
+    };
+    loadAnalytics();
+  }, [user, getToken]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -334,6 +355,56 @@ const MerchantDashboard = () => {
               </div>
             </div>
           )}
+          {/* Analytics Section */}
+          {analytics && (
+            <div className="mt-8 md:mt-12 animate-fade-up stagger-2">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                Performance Analytics
+              </h3>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Ads</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <Megaphone className="w-5 h-5 text-primary" />
+                      <span className="text-2xl font-bold text-foreground">{analytics.ads.total}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{analytics.ads.active} active</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Ad Impressions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-5 h-5 text-primary" />
+                      <span className="text-2xl font-bold text-foreground">{analytics.ads.impressions.toLocaleString()}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Total views across all ads</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Impressions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                      <span className="text-2xl font-bold text-foreground">
+                        {analytics.ads.total > 0 ? Math.round(analytics.ads.impressions / analytics.ads.total).toLocaleString() : 0}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Per advertisement</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
           {/* My Ads Section */}
           <div className="mt-8 md:mt-12 animate-fade-up stagger-2">
             <h3 className="text-lg font-semibold text-foreground mb-4">My Advertisements</h3>

@@ -35,6 +35,7 @@ import placesRoutes from "./placesRoutes.js";
 import reviewRoutes from "./reviewRoutes.js";
 import reactionRoutes from "./reactionRoutes.js";
 import sentimentRoutes from "./sentimentRoutes.js";
+import adsPublicRoutes from "./adsPublicRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -129,6 +130,9 @@ app.get("/readyz", async (_req, res) => {
 
 // ── Places routes (/api/places/*) — public, no auth required ────────────────
 app.use("/api", placesRoutes);
+
+// ── Ads public routes (/api/ads/*) — public, no auth required ───────────────
+app.use("/api", adsPublicRoutes);
 
 // ── Admin routes (/api/admin/*) ─────────────────────────────────────────────
 app.use("/api/admin", adminRoutes);

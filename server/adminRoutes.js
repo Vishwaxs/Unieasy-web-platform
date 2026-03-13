@@ -406,6 +406,247 @@ router.post(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// REVIEW MODERATION (admin + superadmin)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/admin/reviews
+ * List all reviews (paginated). Query params: ?page=1&limit=20&status=active
+ */
+router.get(
+  "/reviews",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const status = req.query.status || null;
+    const offset = (page - 1) * limit;
+
+    try {
+      let query = supabaseAdmin
+        .from("reviews")
+        .select("*, places!reviews_place_id_fkey(name, category)", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (status) {
+        query = query.eq("status", status);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        logger.error({ err: error }, "GET /reviews");
+        return res.status(500).json({ error: error.message });
+      }
+      return res.json({ data, total: count, page, limit });
+    } catch (err) {
+      logger.error({ err }, "GET /reviews unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * DELETE /api/admin/reviews/:id
+ * Soft-delete a review (sets status to 'deleted_by_admin').
+ */
+router.delete(
+  "/reviews/:id",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const reviewId = req.params.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("reviews")
+        .update({
+          status: "deleted_by_admin",
+          deleted_at: new Date().toISOString(),
+          deleted_by: req.clerkUserId,
+        })
+        .eq("id", reviewId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error, reviewId }, "DELETE /reviews/:id");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "delete_review", "review", reviewId, {
+        new_status: "deleted_by_admin",
+      });
+
+      return res.json({ message: "Review deleted", review: data });
+    } catch (err) {
+      logger.error({ err }, "DELETE /reviews/:id unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * PATCH /api/admin/reviews/:id/flag
+ * Flag a review for moderation.
+ */
+router.patch(
+  "/reviews/:id/flag",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const reviewId = req.params.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("reviews")
+        .update({ status: "flagged" })
+        .eq("id", reviewId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error, reviewId }, "PATCH /reviews/:id/flag");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "flag_review", "review", reviewId, {
+        new_status: "flagged",
+      });
+
+      return res.json({ message: "Review flagged", review: data });
+    } catch (err) {
+      logger.error({ err }, "PATCH /reviews/:id/flag unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTENT MANAGEMENT — PLACES CRUD (admin + superadmin)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/admin/places
+ * List all places (paginated, searchable).
+ * Query params: ?page=1&limit=20&search=pizza&category=food
+ */
+router.get(
+  "/places",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const search = req.query.search || null;
+    const category = req.query.category || null;
+    const offset = (page - 1) * limit;
+
+    try {
+      let query = supabaseAdmin
+        .from("places")
+        .select("id, name, category, sub_type, rating, rating_count, verified, data_source, created_at, updated_at", { count: "exact" })
+        .order("updated_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (search) {
+        query = query.ilike("name", `%${search}%`);
+      }
+      if (category) {
+        query = query.eq("category", category);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        logger.error({ err: error }, "GET /places");
+        return res.status(500).json({ error: error.message });
+      }
+      return res.json({ data, total: count, page, limit });
+    } catch (err) {
+      logger.error({ err }, "GET /places unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * PATCH /api/admin/places/:id
+ * Edit place fields (name, category, sub_type, phone, timing, amenities, verified, etc.).
+ */
+router.patch(
+  "/places/:id",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const placeId = req.params.id;
+    const allowedFields = [
+      "name", "category", "sub_type", "phone", "website", "timing",
+      "amenities", "cuisine_tags", "verified", "address",
+      "display_price_label", "price_inr", "noise_level", "crowd_level",
+    ];
+    const updates = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" });
+    }
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("places")
+        .update(updates)
+        .eq("id", placeId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error, placeId }, "PATCH /places/:id");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "edit_place", "place", placeId, {
+        updated_fields: Object.keys(updates),
+      });
+
+      return res.json({ message: "Place updated", place: data });
+    } catch (err) {
+      logger.error({ err }, "PATCH /places/:id unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * DELETE /api/admin/places/:id
+ * Delete a place record.
+ */
+router.delete(
+  "/places/:id",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const placeId = req.params.id;
+    try {
+      const { error } = await supabaseAdmin
+        .from("places")
+        .delete()
+        .eq("id", placeId);
+
+      if (error) {
+        logger.error({ err: error, placeId }, "DELETE /places/:id");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "delete_place", "place", placeId, {});
+
+      return res.json({ message: "Place deleted" });
+    } catch (err) {
+      logger.error({ err }, "DELETE /places/:id unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // NOTIFICATION HOOK: call after merchant submits ad (optional integration)
 // ═══════════════════════════════════════════════════════════════════════════════
 

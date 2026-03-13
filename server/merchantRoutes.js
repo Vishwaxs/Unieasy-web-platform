@@ -298,4 +298,42 @@ router.get(
   }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MERCHANT ANALYTICS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/merchant/analytics
+ * Returns aggregated analytics for the merchant's associated places and ads.
+ */
+router.get(
+  "/analytics",
+  verifyClerkToken(["merchant"]),
+  async (req, res) => {
+    try {
+      // Get ads stats
+      const { data: ads, error: adsErr } = await supabaseAdmin
+        .from("ads")
+        .select("id, status, impression_count")
+        .eq("clerk_user_id", req.clerkUserId);
+
+      if (adsErr) {
+        logger.error({ err: adsErr }, "GET /merchant/analytics ads");
+        return res.status(500).json({ error: adsErr.message });
+      }
+
+      const totalAds = ads?.length || 0;
+      const activeAds = ads?.filter(a => a.status === "active").length || 0;
+      const totalImpressions = ads?.reduce((sum, a) => sum + (a.impression_count || 0), 0) || 0;
+
+      return res.json({
+        ads: { total: totalAds, active: activeAds, impressions: totalImpressions },
+      });
+    } catch (err) {
+      logger.error({ err }, "GET /merchant/analytics unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 export default router;

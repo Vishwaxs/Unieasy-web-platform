@@ -4,6 +4,7 @@ import HeroSection from "@/components/HeroSection";
 import CategoryCards from "@/components/CategoryCards";
 import WhyUsSection from "@/components/WhyUsSection";
 import HighlightSection from "@/components/HighlightSection";
+import AdsCarousel from "@/components/AdsCarousel";
 import Footer from "@/components/Footer";
 
 const Home = () => {
@@ -67,6 +68,7 @@ const Home = () => {
       <Header />
       <main className="relative z-10 pt-16 md:pt-20">
         <HeroSection />
+        <AdsCarousel />
         <CategoryCards />
         <HighlightSection />
         <WhyUsSection />

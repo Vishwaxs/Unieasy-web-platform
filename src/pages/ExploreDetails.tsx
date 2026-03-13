@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Clock, Users, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
+import SponsoredCard from "@/components/SponsoredCard";
 import { useExplorePlaces, type ExplorePlace } from "@/hooks/useExplorePlaces";
+import { useActiveAds } from "@/hooks/useActiveAds";
 
 const EXPLORE_FILTER_GROUPS = [
   {
@@ -160,6 +162,7 @@ const PlaceCard = ({
 
 const ExploreDetails = () => {
   const { items: places, loading } = useExplorePlaces();
+  const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
   const [sort, setSort] = useState("default");
 
@@ -236,13 +239,12 @@ const ExploreDetails = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
-              <PlaceCard
-                key={item.id}
-                item={item}
-                index={index}
-                onReview={openReviewDialog}
-                userReviews={reviewsByItem[item.id]}
-              />
+              <React.Fragment key={item.id}>
+                <PlaceCard item={item} index={index} />
+                {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
+                  <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
+                )}
+              </React.Fragment>
             ))}
           </div>
 
