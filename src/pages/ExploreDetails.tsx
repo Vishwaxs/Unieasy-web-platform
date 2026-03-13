@@ -87,6 +87,7 @@ const PlaceCard = ({
   };
 
   return (
+    <Link to={`/explore/${item.id}`} className="block">
     <div
       ref={cardRef}
       className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
@@ -157,6 +158,7 @@ const PlaceCard = ({
         </div>
       </div>
     </div>
+    </Link>
   );
 };
 

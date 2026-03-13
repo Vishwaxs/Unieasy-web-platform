@@ -84,6 +84,7 @@ const FoodCard = ({
   const stats = computeCombinedReviewStats(item.rating, item.reviews, userReviews);
 
   return (
+    <Link to={`/food/${item.id}`} className="block">
     <div
       ref={cardRef}
       className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
@@ -153,6 +154,7 @@ const FoodCard = ({
         </div>
       </div>
     </div>
+    </Link>
   );
 };
 

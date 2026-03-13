@@ -10,16 +10,8 @@ import {
   fetchAndUpdatePlaceDetails,
 } from "./lib/placesService.js";
 import logger from "./lib/logger.js";
-import {
-  listLimiter,
-  detailLimiter,
-  photoLimiter,
-} from "./middleware/rateLimiter.js";
-import {
-  listQuerySchema,
-  idParamSchema,
-  photoParamSchema,
-} from "./lib/validation.js";
+import { listLimiter, detailLimiter, photoLimiter } from "./middleware/rateLimiter.js";
+import { listQuerySchema, idParamSchema, photoParamSchema, searchQuerySchema } from "./lib/validation.js";
 
 const router = Router();
 
@@ -256,6 +248,51 @@ router.get("/places", listLimiter, async (req, res) => {
     logger.error({ err, latency_ms: latency }, "GET /places unexpected error");
     return res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GET /api/places/search — Full-text search across name, address, sub_type
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get("/places/search", listLimiter, async (req, res) => {
+    const start = Date.now();
+
+    try {
+        const parsed = searchQuerySchema.safeParse(req.query);
+        if (!parsed.success) {
+            return res.status(400).json({
+                error: "Invalid search parameters",
+                details: parsed.error.flatten(),
+            });
+        }
+
+        const { q, limit } = parsed.data;
+        const pattern = `%${q}%`;
+
+        const { data, error } = await supabaseAdmin
+            .from("places")
+            .select("id, name, category, sub_type, type, address, rating, image_url, photo_refs, is_on_campus")
+            .or(`name.ilike.${pattern},address.ilike.${pattern},sub_type.ilike.${pattern}`)
+            .order("rating", { ascending: false, nullsFirst: false })
+            .limit(limit);
+
+        if (error) {
+            logger.error({ err: error }, "GET /places/search query error");
+            return res.status(500).json({ error: error.message });
+        }
+
+        const latency = Date.now() - start;
+        logger.info(
+            { method: "GET", path: "/places/search", q, results: data?.length ?? 0, latency_ms: latency },
+            "places search"
+        );
+
+        return res.json({ data: data || [] });
+    } catch (err) {
+        const latency = Date.now() - start;
+        logger.error({ err, latency_ms: latency }, "GET /places/search unexpected error");
+        return res.status(500).json({ error: "Internal server error" });
+    }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

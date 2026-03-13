@@ -90,6 +90,7 @@ const AccommodationCard = ({
   };
 
   return (
+    <Link to={`/accommodation/${item.id}`} className="block">
     <div
       ref={cardRef}
       className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
@@ -172,6 +173,7 @@ const AccommodationCard = ({
         </div>
       </div>
     </div>
+    </Link>
   );
 };
 

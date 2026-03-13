@@ -26,3 +26,8 @@ export const photoParamSchema = z.object({
     id: z.string().uuid("Invalid place ID format"),
     index: z.coerce.number().int().min(0).max(9),
 });
+
+export const searchQuerySchema = z.object({
+    q: z.string().min(1).max(100),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+});

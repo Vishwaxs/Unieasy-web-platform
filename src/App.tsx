@@ -29,6 +29,7 @@ import StudyDetails from "./pages/StudyDetails";
 import EssentialsDetails from "./pages/EssentialsDetails";
 import SearchResults from "./pages/SearchResults";
 import OnCampusDetails from "./pages/OnCampusDetails";
+import PlaceItemDetails from "./pages/PlaceItemDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -80,9 +81,13 @@ const App = () => {
               <Route path="/accommodation" element={<ErrorBoundary><AccommodationDetails /></ErrorBoundary>} />
               <Route path="/accommodation/:id" element={<ErrorBoundary><AccommodationItemDetails /></ErrorBoundary>} />
               <Route path="/explore" element={<ErrorBoundary><ExploreDetails /></ErrorBoundary>} />
+              <Route path="/explore/:id" element={<ErrorBoundary><PlaceItemDetails /></ErrorBoundary>} />
               <Route path="/study" element={<ErrorBoundary><StudyDetails /></ErrorBoundary>} />
+              <Route path="/study/:id" element={<ErrorBoundary><PlaceItemDetails /></ErrorBoundary>} />
               <Route path="/essentials" element={<ErrorBoundary><EssentialsDetails /></ErrorBoundary>} />
+              <Route path="/essentials/:id" element={<ErrorBoundary><PlaceItemDetails /></ErrorBoundary>} />
               <Route path="/campus" element={<ErrorBoundary><OnCampusDetails /></ErrorBoundary>} />
+              <Route path="/campus/:id" element={<ErrorBoundary><PlaceItemDetails /></ErrorBoundary>} />
               <Route path="/search" element={<ErrorBoundary><SearchResults /></ErrorBoundary>} />
               <Route path="/merchant" element={<ErrorBoundary><MerchantAuth /></ErrorBoundary>} />
               <Route
