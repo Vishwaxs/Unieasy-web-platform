@@ -20,6 +20,7 @@ export function useSyncUser(): void {
             clerk_user_id: user.id,
             email: user.primaryEmailAddress?.emailAddress ?? "",
             full_name: user.fullName ?? "",
+            last_active_at: new Date().toISOString(),
           },
           { onConflict: "clerk_user_id" }
         );

@@ -647,6 +647,277 @@ router.delete(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SUPERADMIN: ANALYTICS ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/admin/analytics/overview
+ * Returns aggregate counters for the superadmin overview tab.
+ */
+router.get(
+  "/analytics/overview",
+  verifyClerkToken(["superadmin"]),
+  async (req, res) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
+
+      const [usersRes, placesRes, reviewsRes, adsRes, signupsRes, reviewsTodayRes] =
+        await Promise.all([
+          supabaseAdmin.from("app_users").select("role", { count: "exact", head: false }),
+          supabaseAdmin.from("places").select("id", { count: "exact", head: true }),
+          supabaseAdmin.from("reviews").select("id", { count: "exact", head: true }),
+          supabaseAdmin.from("ads").select("status", { count: "exact", head: false }),
+          supabaseAdmin.from("app_users").select("id", { count: "exact", head: true }).gte("created_at", todayISO),
+          supabaseAdmin.from("reviews").select("id", { count: "exact", head: true }).gte("created_at", todayISO),
+        ]);
+
+      const users = usersRes.data || [];
+      const ads = adsRes.data || [];
+
+      return res.json({
+        totalUsers: usersRes.count || 0,
+        students: users.filter((u) => u.role === "student").length,
+        merchants: users.filter((u) => u.role === "merchant").length,
+        admins: users.filter((u) => u.role === "admin" || u.role === "superadmin").length,
+        totalPlaces: placesRes.count || 0,
+        totalReviews: reviewsRes.count || 0,
+        activeAds: ads.filter((a) => a.status === "active").length,
+        signupsToday: signupsRes.count || 0,
+        reviewsToday: reviewsTodayRes.count || 0,
+      });
+    } catch (err) {
+      logger.error({ err }, "GET /analytics/overview");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/analytics/user-growth
+ * Returns new signups per day for the last 30 days.
+ */
+router.get(
+  "/analytics/user-growth",
+  verifyClerkToken(["superadmin"]),
+  async (req, res) => {
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data, error } = await supabaseAdmin
+        .from("app_users")
+        .select("created_at")
+        .gte("created_at", thirtyDaysAgo.toISOString())
+        .order("created_at", { ascending: true });
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      const grouped = {};
+      (data || []).forEach((u) => {
+        const day = u.created_at.slice(0, 10);
+        grouped[day] = (grouped[day] || 0) + 1;
+      });
+
+      const result = Object.entries(grouped).map(([date, count]) => ({ date, count }));
+      return res.json({ data: result });
+    } catch (err) {
+      logger.error({ err }, "GET /analytics/user-growth");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/analytics/reviews-by-module
+ * Returns count of reviews grouped by place category.
+ */
+router.get(
+  "/analytics/reviews-by-module",
+  verifyClerkToken(["superadmin"]),
+  async (req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("reviews")
+        .select("place_id, places!reviews_place_id_fkey(category)")
+        .eq("status", "active");
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      const grouped = {};
+      (data || []).forEach((r) => {
+        const cat = r.places?.category || "unknown";
+        grouped[cat] = (grouped[cat] || 0) + 1;
+      });
+
+      const result = Object.entries(grouped).map(([category, count]) => ({ category, count }));
+      return res.json({ data: result });
+    } catch (err) {
+      logger.error({ err }, "GET /analytics/reviews-by-module");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/analytics/sentiment
+ * Returns overall sentiment distribution.
+ */
+router.get(
+  "/analytics/sentiment",
+  verifyClerkToken(["superadmin"]),
+  async (req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("sentiment_polls")
+        .select("sentiment");
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      const grouped = {};
+      (data || []).forEach((s) => {
+        grouped[s.sentiment] = (grouped[s.sentiment] || 0) + 1;
+      });
+
+      const result = Object.entries(grouped).map(([sentiment, count]) => ({ sentiment, count }));
+      return res.json({ data: result });
+    } catch (err) {
+      logger.error({ err }, "GET /analytics/sentiment");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/analytics/top-liked
+ * Returns the top 10 most liked places.
+ */
+router.get(
+  "/analytics/top-liked",
+  verifyClerkToken(["superadmin"]),
+  async (req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("places")
+        .select("name, like_count")
+        .order("like_count", { ascending: false })
+        .limit(10);
+
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json({ data: data || [] });
+    } catch (err) {
+      logger.error({ err }, "GET /analytics/top-liked");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/analytics/ads-status
+ * Returns ad count grouped by status.
+ */
+router.get(
+  "/analytics/ads-status",
+  verifyClerkToken(["superadmin"]),
+  async (req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("ads")
+        .select("status");
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      const grouped = {};
+      (data || []).forEach((a) => {
+        grouped[a.status] = (grouped[a.status] || 0) + 1;
+      });
+
+      const result = Object.entries(grouped).map(([status, count]) => ({ status, count }));
+      return res.json({ data: result });
+    } catch (err) {
+      logger.error({ err }, "GET /analytics/ads-status");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUPERADMIN: AUDIT LOG
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/admin/audit-logs
+ * Returns paginated audit log entries.
+ * Query params: ?page=1&limit=20&action=approve_ad
+ */
+router.get(
+  "/audit-logs",
+  verifyClerkToken(["superadmin"]),
+  async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const action = req.query.action || null;
+    const offset = (page - 1) * limit;
+
+    try {
+      let query = supabaseAdmin
+        .from("audit_logs")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (action) {
+        query = query.eq("action", action);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json({ data: data || [], total: count || 0, page, limit });
+    } catch (err) {
+      logger.error({ err }, "GET /audit-logs");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUPERADMIN: USER SUSPENSION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * PATCH /api/admin/users/:clerkUserId/suspend
+ * Toggles is_suspended for a user.
+ */
+router.patch(
+  "/users/:clerkUserId/suspend",
+  verifyClerkToken(["superadmin"]),
+  async (req, res) => {
+    const targetUserId = req.params.clerkUserId;
+    const { suspend } = req.body || {};
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("app_users")
+        .update({ is_suspended: !!suspend })
+        .eq("clerk_user_id", targetUserId)
+        .select("clerk_user_id, is_suspended")
+        .single();
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      await auditLog(req.clerkUserId, req.userRole, suspend ? "suspend_user" : "unsuspend_user", "user", targetUserId, {});
+
+      return res.json({ message: suspend ? "User suspended" : "User unsuspended", user: data });
+    } catch (err) {
+      logger.error({ err }, "PATCH /users/:clerkUserId/suspend");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // NOTIFICATION HOOK: call after merchant submits ad (optional integration)
 // ═══════════════════════════════════════════════════════════════════════════════
 
