@@ -5,6 +5,15 @@ seed_offcampus.py — Production-ready seeding script for UniEasy places table.
 Fetches places from Google Places API (Nearby Search) and upserts them into
 the Supabase `places` table. Designed to be idempotent and safe to re-run.
 
+Phase 8 enhancements:
+  - Realistic price_inr with random variation per place
+  - is_veg detection from API fields and name keywords
+  - cuisine_tags mapped from Google place types
+  - amenities built from API boolean fields
+  - distance_from_campus via haversine calculation
+  - timing extracted from opening hours
+  - Expanded Google type map (hangout, essentials categories)
+
 Usage:
     python scripts/seed_offcampus.py --dry-run --verbose
     python scripts/seed_offcampus.py --categories restaurant,cafe,gym --radius 2500
@@ -14,6 +23,7 @@ Usage:
 import argparse
 import json
 import logging
+import math
 import os
 import random
 import sys
@@ -28,8 +38,8 @@ from supabase import create_client, Client  # pyre-ignore[21]
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
-DEFAULT_LAT = 12.9345
-DEFAULT_LNG = 77.6069
+CAMPUS_LAT = 12.9345
+CAMPUS_LNG = 77.6069
 DEFAULT_RADIUS = 2500
 MAX_RADIUS = 5000
 DEFAULT_CITY = "Bangalore"
@@ -53,18 +63,94 @@ FIELD_MASK = ",".join([
     "places.currentOpeningHours",
     "places.photos",
     "places.types",
+    "places.dineIn",
+    "places.takeout",
+    "places.delivery",
+    "places.servesBreakfast",
+    "places.servesLunch",
+    "places.servesDinner",
+    "places.servesVegetarianFood",
+    "places.servesBeer",
+    "places.servesWine",
+    "places.wheelchairAccessibleEntrance",
 ])
 
 # Google place type → (category, sub-type) mapping
 GOOGLE_TYPE_MAP = {
+    # Food
     "restaurant": ("food", "restaurant"),
     "cafe": ("food", "cafe"),
-    "gym": ("fitness", "gym"),
+    "bakery": ("food", "bakery"),
+    # Accommodation
     "lodging": ("accommodation", "hostel"),
+    # Study
     "library": ("study", "library"),
+    # Fitness
+    "gym": ("fitness", "gym"),
+    # Hangout / Explore
+    "park": ("hangout", "park"),
+    "movie_theater": ("hangout", "cinema"),
+    "shopping_mall": ("hangout", "mall"),
+    "tourist_attraction": ("hangout", "attraction"),
+    # Services / Essentials
     "laundry": ("services", "laundry"),
     "pharmacy": ("health", "pharmacy"),
     "store": ("services", "store"),
+    "bank": ("essentials", "bank"),
+    "atm": ("essentials", "atm"),
+    "hospital": ("health", "hospital"),
+    "grocery_or_supermarket": ("essentials", "grocery"),
+}
+
+# ── Cuisine tag mapping from Google types ────────────────────────────────────
+CUISINE_MAP = {
+    "indian_restaurant": "Indian",
+    "chinese_restaurant": "Chinese",
+    "pizza_restaurant": "Pizza",
+    "fast_food_restaurant": "Fast Food",
+    "cafe": "Cafe",
+    "bakery": "Bakery",
+    "south_indian_restaurant": "South Indian",
+    "north_indian_restaurant": "North Indian",
+    "japanese_restaurant": "Japanese",
+    "italian_restaurant": "Italian",
+    "mexican_restaurant": "Mexican",
+    "thai_restaurant": "Thai",
+    "korean_restaurant": "Korean",
+    "seafood_restaurant": "Seafood",
+    "vegetarian_restaurant": "Vegetarian",
+    "vegan_restaurant": "Vegan",
+    "ice_cream_shop": "Desserts",
+    "meal_delivery": "Delivery",
+    "meal_takeaway": "Takeaway",
+    "brunch_restaurant": "Brunch",
+    "steak_house": "Steakhouse",
+    "hamburger_restaurant": "Burgers",
+    "sandwich_shop": "Sandwiches",
+}
+
+# ── Price mapping: price_level → INR range ───────────────────────────────────
+PRICE_RANGES = {
+    0: (40, 80),       # Free / very cheap
+    1: (80, 200),      # Inexpensive
+    2: (200, 500),     # Moderate
+    3: (500, 1500),    # Expensive
+    4: (1500, 5000),   # Very expensive
+}
+
+PRICE_LABELS = {
+    0: "Under ₹80",
+    1: "₹80–₹200",
+    2: "₹200–₹500",
+    3: "₹500–₹1500",
+    4: "₹1500+",
+}
+
+# ── Non-veg detection keywords ───────────────────────────────────────────────
+NONVEG_KEYWORDS = {
+    "chicken", "mutton", "fish", "egg", "non-veg", "nonveg", "meat",
+    "beef", "pork", "lamb", "prawn", "shrimp", "crab", "kebab", "biryani",
+    "tandoori chicken", "butter chicken", "grilled",
 }
 
 # Keywords for filtering "store" type to relevant sub-types only
@@ -102,7 +188,6 @@ def setup_logging(verbose: bool) -> None:
 
 def load_env() -> tuple[str, str, str]:
     """Load required env vars from .env.local. Returns (api_key, sb_url, sb_key)."""
-    # Look for .env.local in project root and server/ directory
     project_root = Path(__file__).resolve().parent.parent
     env_paths = [
         project_root / "server" / ".env.local",
@@ -136,11 +221,124 @@ def load_env() -> tuple[str, str, str]:
         )
         sys.exit(1)
 
-    # After the missing check + sys.exit, these are guaranteed non-None
     assert api_key is not None
     assert sb_url is not None
     assert sb_key is not None
     return api_key, sb_url, sb_key
+
+
+# ─── Utility helpers ─────────────────────────────────────────────────────────
+
+def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """Calculate distance in km between two lat/lng points using Haversine formula."""
+    R = 6371  # Earth radius in km
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlng / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return round(R * c, 1)
+
+
+def price_from_level(level: int | None) -> int | None:
+    """Generate a realistic INR price from a Google price_level with random variation."""
+    if level is None:
+        return None
+    lo, hi = PRICE_RANGES.get(level, (100, 300))
+    return random.randint(lo, hi)
+
+
+def make_price_label(level: int | None) -> str | None:
+    """Return a human-readable price label from price_level."""
+    if level is None:
+        return None
+    return PRICE_LABELS.get(level, "₹200–₹500")
+
+
+def detect_is_veg(place: dict, name: str) -> bool | None:
+    """
+    Infer is_veg from API fields and name keywords.
+    Returns True (veg), False (non-veg), or None (unknown).
+    """
+    serves_veg = place.get("servesVegetarianFood")
+    serves_beer = place.get("servesBeer")
+    serves_wine = place.get("servesWine")
+
+    name_lower = name.lower()
+
+    # Check name for non-veg keywords
+    has_nonveg_keyword = any(kw in name_lower for kw in NONVEG_KEYWORDS)
+
+    if has_nonveg_keyword:
+        return False
+
+    # If serves beer/wine, likely non-veg
+    if serves_beer or serves_wine:
+        return False
+
+    # If explicitly serves vegetarian food and no non-veg signals
+    if serves_veg is True:
+        return True
+
+    # Unknown
+    return None
+
+
+def extract_cuisine_tags(place: dict) -> list[str]:
+    """Extract cuisine tags from Google place types."""
+    google_types = place.get("types", [])
+    tags: list[str] = []
+    seen: set[str] = set()
+    for gtype in google_types:
+        cuisine = CUISINE_MAP.get(gtype)
+        if cuisine and cuisine not in seen:
+            tags.append(cuisine)
+            seen.add(cuisine)
+    return tags
+
+
+def build_amenities(place: dict) -> list[str]:
+    """Build amenities list from Google API boolean fields."""
+    amenities: list[str] = []
+    if place.get("dineIn"):
+        amenities.append("Dine-in")
+    if place.get("takeout"):
+        amenities.append("Takeaway")
+    if place.get("delivery"):
+        amenities.append("Delivery")
+    if place.get("servesBreakfast"):
+        amenities.append("Breakfast")
+    if place.get("servesLunch"):
+        amenities.append("Lunch")
+    if place.get("servesDinner"):
+        amenities.append("Dinner")
+    if place.get("wheelchairAccessibleEntrance"):
+        amenities.append("Wheelchair Accessible")
+    if place.get("servesVegetarianFood"):
+        amenities.append("Vegetarian Options")
+    return amenities
+
+
+def get_timing_summary(opening_hours: dict | None) -> str | None:
+    """Extract a representative timing string from opening hours."""
+    if not opening_hours or not isinstance(opening_hours, dict):
+        return None
+    descriptions = opening_hours.get("weekdayDescriptions", [])
+    if not descriptions:
+        return None
+    # Return Monday's hours as the representative timing
+    monday = next(
+        (d for d in descriptions if d.lower().startswith("monday")),
+        None,
+    )
+    if monday:
+        return monday.replace("Monday: ", "").replace("Monday:", "").strip()
+    # Fallback to first entry
+    return descriptions[0] if descriptions else None
 
 
 # ─── Google Places API (New) ─────────────────────────────────────────────────
@@ -166,7 +364,6 @@ def fetch_with_backoff(api_key: str, body: dict) -> dict | None:
                 timeout=30,
             )
 
-            # HTTP-level errors
             if resp.status_code == 429:
                 logger.warning(
                     f"Rate limited (429) (attempt {attempt}/{MAX_RETRIES}). "
@@ -188,19 +385,15 @@ def fetch_with_backoff(api_key: str, body: dict) -> dict | None:
                 error_msg = data.get("error", {}).get("message", resp.text[:200])
                 logger.warning(f"HTTP {resp.status_code}: {error_msg} (attempt {attempt})")
                 if resp.status_code >= 500:
-                    # Server error — retry
-                    pass
+                    pass  # Server error — retry
                 else:
-                    # Client error — don't retry
-                    return None
+                    return None  # Client error — don't retry
             else:
-                # Success
                 return resp.json()
 
         except requests.exceptions.RequestException as e:
             logger.warning(f"Request error (attempt {attempt}): {e}")
 
-        # Exponential backoff with jitter
         jitter = random.uniform(0, wait * 0.5)
         sleep_time = min(wait + jitter, MAX_WAIT)
         logger.debug(f"Backing off {sleep_time:.1f}s before retry...")
@@ -216,7 +409,7 @@ def fetch_nearby_places(
 ) -> list[dict]:
     """
     Fetch nearby places using Google Places API (New) — searchNearby.
-    The new API uses POST with JSON body. Max 20 results per call (no pagination token).
+    Max 20 results per call (no pagination token).
     """
     body = {
         "includedTypes": [place_type],
@@ -270,19 +463,6 @@ def map_place_to_record(place: dict, google_type: str) -> dict | None:
     """
     Map a Google Places API (New) result to a places table record.
     Returns None if the place should be skipped.
-
-    New API field names:
-      displayName.text  → name
-      id                → google_place_id (resource name, e.g. "places/ChIJ...")
-      formattedAddress  → address
-      location          → {latitude, longitude}
-      rating            → rating
-      userRatingCount   → rating_count
-      priceLevel        → price_level (enum string → int)
-      businessStatus    → business_status
-      currentOpeningHours → opening_hours
-      photos[].name     → photo resource name
-      types             → google types
     """
     category, sub_type = GOOGLE_TYPE_MAP[google_type]
 
@@ -299,11 +479,11 @@ def map_place_to_record(place: dict, google_type: str) -> dict | None:
     if google_type == "lodging":
         sub_type = infer_lodging_subtype(name)
 
-    # Extract google_place_id — new API returns "places/ChIJ..." format
+    # Extract google_place_id
     raw_id = place.get("id", "")
-    google_place_id = raw_id  # Already in the right format for the new API
+    google_place_id = raw_id
 
-    # Extract photo refs as objects: { ref, width, height, html_attributions }
+    # Extract photo refs
     photos = place.get("photos", [])
     photo_refs = [
         {
@@ -319,7 +499,7 @@ def map_place_to_record(place: dict, google_type: str) -> dict | None:
         if p.get("name")
     ]
 
-    # Extract location (new API uses location.latitude / location.longitude)
+    # Extract location
     location = place.get("location", {})
     lat = location.get("latitude")
     lng = location.get("longitude")
@@ -339,12 +519,40 @@ def map_place_to_record(place: dict, google_type: str) -> dict | None:
     raw_price = place.get("priceLevel")
     price_level = price_level_map.get(raw_price) if isinstance(raw_price, str) else raw_price
 
-    # Build extra JSONB with fields not mapped to named columns
+    # ── Phase 8: Rich field extraction ────────────────────────────────────────
+
+    # Price in INR with random variation
+    price_inr = price_from_level(price_level)
+    display_price_label = make_price_label(price_level)
+
+    # Veg/non-veg detection
+    is_veg = detect_is_veg(place, name) if category == "food" else None
+
+    # Cuisine tags (food category only)
+    cuisine_tags = extract_cuisine_tags(place) if category == "food" else []
+
+    # Amenities from API boolean fields
+    amenities = build_amenities(place)
+
+    # Distance from campus via haversine
+    dist_km = haversine_km(CAMPUS_LAT, CAMPUS_LNG, lat, lng)
+    distance_from_campus = f"{dist_km} km"
+
+    # Timing from opening hours
     opening_hours = place.get("currentOpeningHours", {})
+    timing = get_timing_summary(opening_hours)
+
+    # Build extra JSONB
     extra = {
         "business_status": place.get("businessStatus"),
         "open_now": opening_hours.get("openNow") if isinstance(opening_hours, dict) else None,
         "google_types": place.get("types", []),
+        "opening_hours": {
+            "weekdayDescriptions": (
+                opening_hours.get("weekdayDescriptions", [])
+                if isinstance(opening_hours, dict) else []
+            ),
+        },
     }
 
     now_utc = datetime.now(timezone.utc).isoformat()
@@ -354,12 +562,13 @@ def map_place_to_record(place: dict, google_type: str) -> dict | None:
         "google_place_id": google_place_id,
         "category": category,
         "type": sub_type,
+        "sub_type": sub_type,
         "address": place.get("formattedAddress"),
         "city": DEFAULT_CITY,
         "lat": lat,
         "lng": lng,
-        "phone": None,  # Not available from searchNearby
-        "website": None,  # Not available from searchNearby
+        "phone": None,
+        "website": None,
         "is_on_campus": False,
         "is_static": True,
         "is_manual_override": False,
@@ -368,6 +577,13 @@ def map_place_to_record(place: dict, google_type: str) -> dict | None:
         "rating": place.get("rating"),
         "rating_count": place.get("userRatingCount"),
         "price_level": price_level,
+        "price_inr": price_inr,
+        "display_price_label": display_price_label,
+        "is_veg": is_veg,
+        "cuisine_tags": cuisine_tags,
+        "amenities": amenities,
+        "distance_from_campus": distance_from_campus,
+        "timing": timing,
         "photo_refs": photo_refs,
         "extra": extra,
         "updated_at": now_utc,
@@ -399,7 +615,6 @@ def upsert_place(supabase: Client, record: dict, dry_run: bool) -> str:
     """
     google_place_id: str = str(record.get("google_place_id", ""))
 
-    # Check for manual override protection
     if check_manual_override(supabase, google_place_id):
         logger.warning(
             f"SKIP (manual_override): '{record['name']}' ({google_place_id}) — "
@@ -408,7 +623,6 @@ def upsert_place(supabase: Client, record: dict, dry_run: bool) -> str:
         return "skipped"
 
     if dry_run:
-        # Check if record already exists to determine action
         try:
             existing = (
                 supabase.table("places")
@@ -427,6 +641,12 @@ def upsert_place(supabase: Client, record: dict, dry_run: bool) -> str:
                     "name": record["name"],
                     "category": record["category"],
                     "type": record["type"],
+                    "price_inr": record.get("price_inr"),
+                    "is_veg": record.get("is_veg"),
+                    "cuisine_tags": record.get("cuisine_tags"),
+                    "amenities": record.get("amenities"),
+                    "distance_from_campus": record.get("distance_from_campus"),
+                    "timing": record.get("timing"),
                     "lat": record["lat"],
                     "lng": record["lng"],
                     "action": action,
@@ -434,26 +654,26 @@ def upsert_place(supabase: Client, record: dict, dry_run: bool) -> str:
                 ensure_ascii=False,
             )
         )
-        return action + "d"  # 'inserted' or 'updated' for counting
+        return action + "d"
 
     try:
-        # Upsert with conflict on google_place_id
-        # On conflict, update only the allowed fields
         result = (
             supabase.table("places")
             .upsert(
                 record,
                 on_conflict="google_place_id",
-                # These columns are updated on conflict:
-                # name, address, lat, lng, rating, rating_count, price_level,
-                # photo_refs, extra, last_fetched_at, updated_at
-                # id, is_on_campus (if manual_override), is_static, created_at are NOT updated
             )
             .execute()
         )
 
         if result.data:
-            logger.info(f"UPSERT: '{record['name']}' ({google_place_id}) → {record['category']}/{record['type']}")
+            logger.info(
+                f"UPSERT: '{record['name']}' ({google_place_id}) → "
+                f"{record['category']}/{record['type']} "
+                f"₹{record.get('price_inr', '?')} "
+                f"veg={record.get('is_veg')} "
+                f"dist={record.get('distance_from_campus')}"
+            )
             return "upserted"
         else:
             logger.warning(f"Upsert returned no data for '{record['name']}'")
@@ -469,10 +689,9 @@ def upsert_place(supabase: Client, record: dict, dry_run: bool) -> str:
 def run(args: argparse.Namespace) -> None:
     setup_logging(args.verbose)
     logger.info("=" * 60)
-    logger.info("UniEasy Off-Campus Seeder")
+    logger.info("UniEasy Off-Campus Seeder (Phase 8)")
     logger.info("=" * 60)
 
-    # Load environment
     api_key, sb_url, sb_key = load_env()
 
     # Parse location
@@ -484,7 +703,6 @@ def run(args: argparse.Namespace) -> None:
         logger.error(f"Invalid --location format: '{args.location}'. Use 'lat,lng'.")
         sys.exit(1)
 
-    # Validate radius
     radius = min(args.radius, MAX_RADIUS)
     if args.radius > MAX_RADIUS:
         logger.warning(f"Radius clamped to maximum: {MAX_RADIUS}m (requested: {args.radius}m)")
@@ -509,7 +727,6 @@ def run(args: argparse.Namespace) -> None:
     # Initialize Supabase client
     try:
         supabase: Client = create_client(sb_url, sb_key)
-        # Test connection
         if not args.dry_run:
             supabase.table("places").select("id").limit(1).execute()
             logger.info("Supabase connection verified.")
@@ -524,7 +741,6 @@ def run(args: argparse.Namespace) -> None:
     total_skipped: int = 0
     total_errors: int = 0
 
-    # Iterate over each Google place type
     for google_type in categories:
         logger.info(f"\n--- Fetching type: {google_type} ---")
         places = fetch_nearby_places(api_key, google_type, lat, lng, radius)
@@ -544,7 +760,6 @@ def run(args: argparse.Namespace) -> None:
             elif result == "updated":
                 total_updated += 1
             elif result == "upserted":
-                # We can't distinguish insert vs update from Supabase upsert response
                 total_inserted += 1
             elif result == "skipped":
                 total_skipped += 1
@@ -555,11 +770,11 @@ def run(args: argparse.Namespace) -> None:
     logger.info("\n" + "=" * 60)
     logger.info("SEED SUMMARY")
     logger.info("=" * 60)
-    logger.info(f"  Total places fetched:  {total_fetched}")
-    logger.info(f"  Total inserted:        {total_inserted}")
-    logger.info(f"  Total updated:         {total_updated}")
+    logger.info(f"  Total places fetched:     {total_fetched}")
+    logger.info(f"  Total inserted/upserted:  {total_inserted}")
+    logger.info(f"  Total updated:            {total_updated}")
     logger.info(f"  Total skipped (override): {total_skipped}")
-    logger.info(f"  Total errors:          {total_errors}")
+    logger.info(f"  Total errors:             {total_errors}")
     logger.info("=" * 60)
 
     if args.dry_run:
@@ -582,6 +797,9 @@ Examples:
 
   # Seed with custom center point and radius
   python scripts/seed_offcampus.py --location "12.9345,77.6069" --radius 2000 --categories restaurant,cafe
+
+  # Seed all categories including hangout/essentials
+  python scripts/seed_offcampus.py --radius 3000
         """,
     )
 
@@ -594,8 +812,8 @@ Examples:
     parser.add_argument(
         "--location",
         type=str,
-        default=f"{DEFAULT_LAT},{DEFAULT_LNG}",
-        help=f'Center point as "lat,lng". Default: "{DEFAULT_LAT},{DEFAULT_LNG}".',
+        default=f"{CAMPUS_LAT},{CAMPUS_LNG}",
+        help=f'Center point as "lat,lng". Default: "{CAMPUS_LAT},{CAMPUS_LNG}".',
     )
     parser.add_argument(
         "--categories",
