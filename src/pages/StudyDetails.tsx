@@ -1,32 +1,47 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  Star,
-  MapPin,
-  Clock,
-  Wifi,
-  Volume2,
-  VolumeX,
-  SlidersHorizontal,
-  X,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Star, MapPin, Clock, Wifi, Volume2, VolumeX, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
-import { computeCombinedReviewStats } from "@/lib/reviewStats";
-import { formatCompactCount } from "@/lib/reviewStats";
+import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import { useStudySpots, type StudySpot } from "@/hooks/useStudySpots";
 
-type TypeFilter = "all" | "Library" | "Cafe" | "Coworking" | "Outdoor" | "Lab";
-const STUDY_SESSION_TYPE_OPTIONS = [
-  { value: "solo", label: "Solo" },
-  { value: "group", label: "Group" },
-  { value: "exam-prep", label: "Exam prep" },
-  { value: "quick-revision", label: "Quick revision" },
+const STUDY_FILTER_GROUPS = [
+  {
+    key: "type",
+    label: "Type",
+    options: [
+      { value: "all", label: "All" },
+      { value: "Library", label: "Library" },
+      { value: "Cafe", label: "Cafe" },
+      { value: "Coworking", label: "Coworking" },
+      { value: "Outdoor", label: "Outdoor" },
+      { value: "Lab", label: "Lab" },
+    ],
+  },
+  {
+    key: "noise",
+    label: "Noise Level",
+    options: [
+      { value: "all", label: "Any" },
+      { value: "Silent", label: "Quiet" },
+      { value: "Moderate", label: "Moderate" },
+    ],
+  },
+  {
+    key: "wifi",
+    label: "WiFi",
+    options: [
+      { value: "all", label: "Any" },
+      { value: "yes", label: "WiFi Available" },
+    ],
+  },
+];
+
+const STUDY_SORT_OPTIONS = [
+  { value: "default", label: "Relevance" },
+  { value: "rating", label: "Rating" },
 ];
 
 const StudyCard = ({
@@ -148,22 +163,30 @@ const StudyCard = ({
 
 const StudyDetails = () => {
   const { items: studySpots, loading } = useStudySpots();
-  const [filter, setFilter] = useState<TypeFilter>("all");
-  const [showFilters, setShowFilters] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<StudySpot | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<
-    Record<string, ReviewEntry[]>
-  >({});
+  const [filters, setFilters] = useState<FilterState>({ type: "all", noise: "all", wifi: "all" });
+  const [sort, setSort] = useState("default");
 
-  const openReviewDialog = (item: StudySpot) => {
-    setActiveItem(item);
-    setReviewOpen(true);
-  };
+  const filteredItems = useMemo(() => {
+    let result = studySpots.filter((item) => {
+      const typeVal = filters.type as string;
+      if (typeVal !== "all" && item.type !== typeVal) return false;
 
-  const filteredItems = studySpots.filter(
-    (item) => filter === "all" || item.type === filter,
-  );
+      const noiseVal = filters.noise as string;
+      if (noiseVal !== "all" && item.noise !== noiseVal) return false;
+
+      const wifiVal = filters.wifi as string;
+      if (wifiVal === "yes" && !item.has_wifi) return false;
+
+      return true;
+    });
+
+    result = [...result].sort((a, b) => {
+      if (sort === "rating") return b.rating - a.rating;
+      return 0;
+    });
+
+    return result;
+  }, [studySpots, filters, sort]);
 
   if (loading) {
     return (
@@ -205,79 +228,17 @@ const StudyDetails = () => {
         </div>
 
         <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <span className="text-muted-foreground text-sm">
-              {filteredItems.length} spots found
-            </span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden"
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-
-            <div className="hidden md:flex flex-wrap gap-2">
-              {(
-                [
-                  "all",
-                  "Library",
-                  "Cafe",
-                  "Coworking",
-                  "Outdoor",
-                  "Lab",
-                ] as TypeFilter[]
-              ).map((f) => (
-                <Button
-                  key={f}
-                  variant={filter === f ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilter(f)}
-                >
-                  {f === "all" ? "All" : f}
-                </Button>
-              ))}
-            </div>
+          <div className="mb-6">
+            <FilterSortBar
+              filterGroups={STUDY_FILTER_GROUPS}
+              sortOptions={STUDY_SORT_OPTIONS}
+              filters={filters}
+              sort={sort}
+              onFilterChange={setFilters}
+              onSortChange={setSort}
+              resultCount={filteredItems.length}
+            />
           </div>
-
-          {showFilters && (
-            <div className="md:hidden bg-card rounded-xl p-4 mb-6 border border-border animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Filters</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowFilters(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    "all",
-                    "Library",
-                    "Cafe",
-                    "Coworking",
-                    "Outdoor",
-                    "Lab",
-                  ] as TypeFilter[]
-                ).map((f) => (
-                  <Button
-                    key={f}
-                    variant={filter === f ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilter(f)}
-                  >
-                    {f === "all" ? "All" : f}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (

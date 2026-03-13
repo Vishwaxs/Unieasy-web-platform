@@ -1,31 +1,51 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  Star,
-  MapPin,
-  MessageSquare,
-  Leaf,
-  Drumstick,
-  SlidersHorizontal,
-  X,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
-import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStats";
+import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import { useFoodItems, type FoodItem } from "@/hooks/useFoodItems";
 
-type FilterType = "all" | "veg" | "nonveg";
-type SortType = "default" | "price-low" | "price-high" | "rating";
-const VISIT_TYPE_OPTIONS = [
-  { value: "dine-in", label: "Dine-in" },
-  { value: "takeaway", label: "Takeaway" },
-  { value: "delivery", label: "Delivery" },
-  { value: "quick-bite", label: "Quick bite" },
+const FOOD_FILTER_GROUPS = [
+  {
+    key: "diet",
+    label: "Veg / Non-Veg",
+    options: [
+      { value: "all", label: "All" },
+      { value: "veg", label: "Veg Only" },
+      { value: "nonveg", label: "Non-Veg Only" },
+    ],
+  },
+  {
+    key: "rating",
+    label: "Rating",
+    options: [
+      { value: "all", label: "Any" },
+      { value: "4.5", label: "4.5+" },
+      { value: "4.0", label: "4.0+" },
+      { value: "3.5", label: "3.5+" },
+    ],
+  },
+  {
+    key: "price",
+    label: "Price Range",
+    options: [
+      { value: "all", label: "Any" },
+      { value: "0-100", label: "Under \u20B9100" },
+      { value: "100-300", label: "\u20B9100\u2013\u20B9300" },
+      { value: "300-600", label: "\u20B9300\u2013\u20B9600" },
+      { value: "600+", label: "\u20B9600+" },
+    ],
+  },
+];
+
+const FOOD_SORT_OPTIONS = [
+  { value: "default", label: "Relevance" },
+  { value: "rating", label: "Rating" },
+  { value: "price-low", label: "Price: Low to High" },
+  { value: "price-high", label: "Price: High to Low" },
+  { value: "reviews", label: "Most Reviewed" },
 ];
 
 const FoodCard = ({
@@ -136,32 +156,44 @@ const FoodCard = ({
 
 const FoodDetails = () => {
   const { items: foodItems, loading } = useFoodItems();
-  const [filter, setFilter] = useState<FilterType>("all");
-  const [sort, setSort] = useState<SortType>("default");
-  const [showFilters, setShowFilters] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<FoodItem | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<
-    Record<string, ReviewEntry[]>
-  >({});
+  const [filters, setFilters] = useState<FilterState>({ diet: "all", rating: "all", price: "all" });
+  const [sort, setSort] = useState("default");
 
-  const openReviewDialog = (item: FoodItem) => {
-    setActiveItem(item);
-    setReviewOpen(true);
-  };
+  const filteredItems = useMemo(() => {
+    let result = foodItems.filter((item) => {
+      // Diet filter
+      const diet = filters.diet as string;
+      if (diet === "veg" && item.is_veg !== true && item.is_veg !== null) return false;
+      if (diet === "nonveg" && item.is_veg !== false && item.is_veg !== null) return false;
 
-  const filteredItems = foodItems
-    .filter((item) => {
-      if (filter === "veg") return item.is_veg === true || item.is_veg === null;
-      if (filter === "nonveg") return item.is_veg === false || item.is_veg === null;
+      // Rating filter
+      const rating = filters.rating as string;
+      if (rating !== "all") {
+        const min = parseFloat(rating);
+        if (item.rating < min) return false;
+      }
+
+      // Price filter
+      const price = filters.price as string;
+      if (price === "0-100" && item.price > 100) return false;
+      if (price === "100-300" && (item.price < 100 || item.price > 300)) return false;
+      if (price === "300-600" && (item.price < 300 || item.price > 600)) return false;
+      if (price === "600+" && item.price < 600) return false;
+
       return true;
-    })
-    .sort((a, b) => {
+    });
+
+    // Sort
+    result = [...result].sort((a, b) => {
       if (sort === "price-low") return a.price - b.price;
       if (sort === "price-high") return b.price - a.price;
       if (sort === "rating") return b.rating - a.rating;
+      if (sort === "reviews") return b.reviews - a.reviews;
       return 0;
     });
+
+    return result;
+  }, [foodItems, filters, sort]);
 
   if (loading) {
     return (
@@ -205,140 +237,17 @@ const FoodDetails = () => {
 
         {/* Filters */}
         <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">
-                {filteredItems.length} items found
-              </span>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden"
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-
-            {/* Desktop Filters */}
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Type:</span>
-                <div className="flex gap-1">
-                  {(["all", "veg", "nonveg"] as FilterType[]).map((f) => (
-                    <Button
-                      key={f}
-                      variant={filter === f ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilter(f)}
-                      className="capitalize"
-                    >
-                      {f === "nonveg" ? "Non-Veg" : f === "all" ? "All" : "Veg"}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sort:</span>
-                <div className="flex gap-1">
-                  <Button
-                    variant={sort === "price-low" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSort("price-low")}
-                  >
-                    Price: Low to High
-                  </Button>
-                  <Button
-                    variant={sort === "price-high" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSort("price-high")}
-                  >
-                    Price: High to Low
-                  </Button>
-                  <Button
-                    variant={sort === "rating" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSort("rating")}
-                  >
-                    Top Rated
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <div className="mb-6">
+            <FilterSortBar
+              filterGroups={FOOD_FILTER_GROUPS}
+              sortOptions={FOOD_SORT_OPTIONS}
+              filters={filters}
+              sort={sort}
+              onFilterChange={setFilters}
+              onSortChange={setSort}
+              resultCount={filteredItems.length}
+            />
           </div>
-
-          {/* Mobile Filters Panel */}
-          {showFilters && (
-            <div className="md:hidden bg-card rounded-xl p-4 mb-6 border border-border animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-foreground">Filters</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowFilters(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <span className="text-sm text-muted-foreground mb-2 block">
-                    Type
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {(["all", "veg", "nonveg"] as FilterType[]).map((f) => (
-                      <Button
-                        key={f}
-                        variant={filter === f ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setFilter(f)}
-                        className="capitalize"
-                      >
-                        {f === "nonveg"
-                          ? "Non-Veg"
-                          : f === "all"
-                            ? "All"
-                            : "Veg"}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-sm text-muted-foreground mb-2 block">
-                    Sort by
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant={sort === "price-low" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("price-low")}
-                    >
-                      Price ↑
-                    </Button>
-                    <Button
-                      variant={sort === "price-high" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("price-high")}
-                    >
-                      Price ↓
-                    </Button>
-                    <Button
-                      variant={sort === "rating" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("rating")}
-                    >
-                      Rating
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Food Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

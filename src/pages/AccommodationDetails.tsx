@@ -1,35 +1,43 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  Star,
-  MapPin,
-  Wifi,
-  Car,
-  Shield,
-  SlidersHorizontal,
-  X,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
-import { computeCombinedReviewStats } from "@/lib/reviewStats";
-import { formatCompactCount } from "@/lib/reviewStats";
-import {
-  useAccommodations,
-  type Accommodation,
-} from "@/hooks/useAccommodations";
+import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
+import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations";
 
-type TypeFilter = "all" | "Hostel" | "PG" | "Co-living";
-type SortType = "default" | "price-low" | "price-high" | "rating" | "distance";
-const STAY_TYPE_OPTIONS = [
-  { value: "short-stay", label: "Short stay" },
-  { value: "long-term", label: "Long term" },
-  { value: "shared", label: "Shared" },
-  { value: "private", label: "Private" },
+const ACCOMMODATION_FILTER_GROUPS = [
+  {
+    key: "type",
+    label: "Type",
+    options: [
+      { value: "all", label: "All" },
+      { value: "Hostel", label: "Hostel" },
+      { value: "PG", label: "PG" },
+      { value: "Apartment", label: "Apartment" },
+      { value: "Co-living", label: "Co-living" },
+    ],
+  },
+  {
+    key: "price",
+    label: "Price Range",
+    options: [
+      { value: "all", label: "Any" },
+      { value: "0-5000", label: "Under \u20B95K/mo" },
+      { value: "5000-10000", label: "\u20B95K\u2013\u20B910K" },
+      { value: "10000-20000", label: "\u20B910K\u2013\u20B920K" },
+      { value: "20000+", label: "\u20B920K+" },
+    ],
+  },
+];
+
+const ACCOMMODATION_SORT_OPTIONS = [
+  { value: "default", label: "Relevance" },
+  { value: "price-low", label: "Price: Low to High" },
+  { value: "price-high", label: "Price: High to Low" },
+  { value: "rating", label: "Rating" },
+  { value: "distance", label: "Nearest" },
 ];
 
 const AccommodationCard = ({
@@ -167,23 +175,24 @@ const AccommodationCard = ({
 
 const AccommodationDetails = () => {
   const { items: accommodations, loading } = useAccommodations();
-  const [filter, setFilter] = useState<TypeFilter>("all");
-  const [sort, setSort] = useState<SortType>("default");
-  const [showFilters, setShowFilters] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<Accommodation | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<
-    Record<string, ReviewEntry[]>
-  >({});
+  const [filters, setFilters] = useState<FilterState>({ type: "all", price: "all" });
+  const [sort, setSort] = useState("default");
 
-  const openReviewDialog = (item: Accommodation) => {
-    setActiveItem(item);
-    setReviewOpen(true);
-  };
+  const filteredItems = useMemo(() => {
+    let result = accommodations.filter((item) => {
+      const typeVal = filters.type as string;
+      if (typeVal !== "all" && item.type !== typeVal) return false;
 
-  const filteredItems = accommodations
-    .filter((item) => filter === "all" || item.type === filter)
-    .sort((a, b) => {
+      const priceVal = filters.price as string;
+      if (priceVal === "0-5000" && item.price > 5000) return false;
+      if (priceVal === "5000-10000" && (item.price < 5000 || item.price > 10000)) return false;
+      if (priceVal === "10000-20000" && (item.price < 10000 || item.price > 20000)) return false;
+      if (priceVal === "20000+" && item.price < 20000) return false;
+
+      return true;
+    });
+
+    result = [...result].sort((a, b) => {
       if (sort === "price-low") return a.price - b.price;
       if (sort === "price-high") return b.price - a.price;
       if (sort === "rating") return b.rating - a.rating;
@@ -191,6 +200,9 @@ const AccommodationDetails = () => {
         return parseFloat(a.distance) - parseFloat(b.distance);
       return 0;
     });
+
+    return result;
+  }, [accommodations, filters, sort]);
 
   if (loading) {
     return (
@@ -232,128 +244,17 @@ const AccommodationDetails = () => {
         </div>
 
         <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <span className="text-muted-foreground text-sm">
-              {filteredItems.length} options found
-            </span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden"
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Type:</span>
-                {(["all", "Hostel", "PG", "Co-living"] as TypeFilter[]).map(
-                  (f) => (
-                    <Button
-                      key={f}
-                      variant={filter === f ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilter(f)}
-                    >
-                      {f === "all" ? "All" : f}
-                    </Button>
-                  ),
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sort:</span>
-                <Button
-                  variant={sort === "price-low" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSort("price-low")}
-                >
-                  Price ↑
-                </Button>
-                <Button
-                  variant={sort === "rating" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSort("rating")}
-                >
-                  Rating
-                </Button>
-                <Button
-                  variant={sort === "distance" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSort("distance")}
-                >
-                  Nearest
-                </Button>
-              </div>
-            </div>
+          <div className="mb-6">
+            <FilterSortBar
+              filterGroups={ACCOMMODATION_FILTER_GROUPS}
+              sortOptions={ACCOMMODATION_SORT_OPTIONS}
+              filters={filters}
+              sort={sort}
+              onFilterChange={setFilters}
+              onSortChange={setSort}
+              resultCount={filteredItems.length}
+            />
           </div>
-
-          {showFilters && (
-            <div className="md:hidden bg-card rounded-xl p-4 mb-6 border border-border animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Filters</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowFilters(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <span className="text-sm text-muted-foreground mb-2 block">
-                    Type
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {(["all", "Hostel", "PG", "Co-living"] as TypeFilter[]).map(
-                      (f) => (
-                        <Button
-                          key={f}
-                          variant={filter === f ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setFilter(f)}
-                        >
-                          {f === "all" ? "All" : f}
-                        </Button>
-                      ),
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground mb-2 block">
-                    Sort
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant={sort === "price-low" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("price-low")}
-                    >
-                      Price ↑
-                    </Button>
-                    <Button
-                      variant={sort === "rating" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("rating")}
-                    >
-                      Rating
-                    </Button>
-                    <Button
-                      variant={sort === "distance" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSort("distance")}
-                    >
-                      Nearest
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (

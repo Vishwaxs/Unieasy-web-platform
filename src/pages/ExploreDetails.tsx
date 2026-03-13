@@ -1,37 +1,41 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  Star,
-  MapPin,
-  Clock,
-  Users,
-  SlidersHorizontal,
-  X,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Star, MapPin, Clock, Users, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
-import { computeCombinedReviewStats } from "@/lib/reviewStats";
-import { formatCompactCount } from "@/lib/reviewStats";
+import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import { useExplorePlaces, type ExplorePlace } from "@/hooks/useExplorePlaces";
 
-type TypeFilter =
-  | "all"
-  | "Park"
-  | "Cafe"
-  | "Mall"
-  | "Scenic"
-  | "Sports"
-  | "Culture";
-const HANGOUT_TYPE_OPTIONS = [
-  { value: "chill", label: "Chill" },
-  { value: "adventure", label: "Adventure" },
-  { value: "family", label: "Family" },
-  { value: "couple", label: "Couple" },
+const EXPLORE_FILTER_GROUPS = [
+  {
+    key: "type",
+    label: "Type",
+    options: [
+      { value: "all", label: "All" },
+      { value: "Park", label: "Park" },
+      { value: "Cafe", label: "Cafe" },
+      { value: "Mall", label: "Mall" },
+      { value: "Scenic", label: "Scenic" },
+      { value: "Sports", label: "Sports" },
+      { value: "Culture", label: "Culture" },
+    ],
+  },
+  {
+    key: "crowd",
+    label: "Crowd Level",
+    options: [
+      { value: "all", label: "Any" },
+      { value: "Low", label: "Low" },
+      { value: "Medium", label: "Medium" },
+      { value: "High", label: "High" },
+    ],
+  },
+];
+
+const EXPLORE_SORT_OPTIONS = [
+  { value: "default", label: "Relevance" },
+  { value: "rating", label: "Rating" },
 ];
 
 const PlaceCard = ({
@@ -156,22 +160,27 @@ const PlaceCard = ({
 
 const ExploreDetails = () => {
   const { items: places, loading } = useExplorePlaces();
-  const [filter, setFilter] = useState<TypeFilter>("all");
-  const [showFilters, setShowFilters] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<ExplorePlace | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<
-    Record<string, ReviewEntry[]>
-  >({});
+  const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
+  const [sort, setSort] = useState("default");
 
-  const openReviewDialog = (item: ExplorePlace) => {
-    setActiveItem(item);
-    setReviewOpen(true);
-  };
+  const filteredItems = useMemo(() => {
+    let result = places.filter((item) => {
+      const typeVal = filters.type as string;
+      if (typeVal !== "all" && item.type !== typeVal) return false;
 
-  const filteredItems = places.filter(
-    (item) => filter === "all" || item.type === filter,
-  );
+      const crowdVal = filters.crowd as string;
+      if (crowdVal !== "all" && item.crowd !== crowdVal) return false;
+
+      return true;
+    });
+
+    result = [...result].sort((a, b) => {
+      if (sort === "rating") return b.rating - a.rating;
+      return 0;
+    });
+
+    return result;
+  }, [places, filters, sort]);
 
   if (loading) {
     return (
@@ -213,81 +222,17 @@ const ExploreDetails = () => {
         </div>
 
         <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <span className="text-muted-foreground text-sm">
-              {filteredItems.length} places found
-            </span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden"
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-
-            <div className="hidden md:flex flex-wrap gap-2">
-              {(
-                [
-                  "all",
-                  "Park",
-                  "Cafe",
-                  "Mall",
-                  "Scenic",
-                  "Sports",
-                  "Culture",
-                ] as TypeFilter[]
-              ).map((f) => (
-                <Button
-                  key={f}
-                  variant={filter === f ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilter(f)}
-                >
-                  {f === "all" ? "All" : f}
-                </Button>
-              ))}
-            </div>
+          <div className="mb-6">
+            <FilterSortBar
+              filterGroups={EXPLORE_FILTER_GROUPS}
+              sortOptions={EXPLORE_SORT_OPTIONS}
+              filters={filters}
+              sort={sort}
+              onFilterChange={setFilters}
+              onSortChange={setSort}
+              resultCount={filteredItems.length}
+            />
           </div>
-
-          {showFilters && (
-            <div className="md:hidden bg-card rounded-xl p-4 mb-6 border border-border animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Filters</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowFilters(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    "all",
-                    "Park",
-                    "Cafe",
-                    "Mall",
-                    "Scenic",
-                    "Sports",
-                    "Culture",
-                  ] as TypeFilter[]
-                ).map((f) => (
-                  <Button
-                    key={f}
-                    variant={filter === f ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilter(f)}
-                  >
-                    {f === "all" ? "All" : f}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
