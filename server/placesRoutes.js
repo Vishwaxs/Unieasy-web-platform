@@ -5,95 +5,183 @@
 
 import { Router } from "express";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
-import { isLiveDataStale, fetchAndUpdatePlaceDetails } from "./lib/placesService.js";
+import {
+  isLiveDataStale,
+  fetchAndUpdatePlaceDetails,
+} from "./lib/placesService.js";
 import logger from "./lib/logger.js";
-import { listLimiter, detailLimiter, photoLimiter } from "./middleware/rateLimiter.js";
-import { listQuerySchema, idParamSchema, photoParamSchema } from "./lib/validation.js";
+import {
+  listLimiter,
+  detailLimiter,
+  photoLimiter,
+} from "./middleware/rateLimiter.js";
+import {
+  listQuerySchema,
+  idParamSchema,
+  photoParamSchema,
+} from "./lib/validation.js";
 
 const router = Router();
+
+// Demo dataset for on-campus page, exposed via API for frontend fetching.
+const campusShops = [
+  {
+    id: "1",
+    name: "Mingos",
+    block: "Central Block",
+    floor: "Gourmet, Birdspark",
+    category: "Cafe",
+    image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400",
+    comment: "Located in Central Block near Gourmet and Birdspark.",
+  },
+  {
+    id: "2",
+    name: "Michael",
+    block: "Central Block",
+    floor: "Gourmet",
+    category: "Cafe",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400",
+    comment: "Located in Central Block at Gourmet.",
+  },
+  {
+    id: "3",
+    name: "Nandini",
+    block: "Opp. to Central Block",
+    floor: "Ground Level",
+    category: "Cafe",
+    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400",
+    comment: "Located opposite to Central Block",
+  },
+  {
+    id: "4",
+    name: "Fresteria",
+    block: "Opp. to Central Block",
+    floor: "Ground Level",
+    category: "Cafe",
+    image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
+    comment: "Located opposite to Central Block.",
+  },
+  {
+    id: "5",
+    name: "Kiosk",
+    block: "Near Block 2",
+    floor: "Ground Level",
+    category: "Cafe",
+    image: "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400",
+    comment: "Located near Block 2.",
+  },
+  {
+    id: "6",
+    name: "JustBake",
+    block: "Near Basketball",
+    floor: "Ground Level",
+    category: "Cake Shop",
+    image: "https://images.unsplash.com/photo-1559622214-f8a9850965bb?w=400",
+    comment: "Cake shop located near the basketball court.",
+  },
+  {
+    id: "7",
+    name: "Punjabi Bites",
+    block: "Central Block",
+    floor: "Ground Level",
+    category: "Food",
+    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400",
+    comment: "Punjabi food outlet in Central Block.",
+  },
+];
+
+router.get("/campus/shops", (_req, res) => {
+  res.json({
+    data: campusShops,
+    count: campusShops.length,
+  });
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET /api/places — List places with filters
 // ═══════════════════════════════════════════════════════════════════════════════
 
 router.get("/places", listLimiter, async (req, res) => {
-    const start = Date.now();
+  const start = Date.now();
 
-    try {
-        // ── Validate query params with Zod ──────────────────────────────────
-        const parsed = listQuerySchema.safeParse(req.query);
-        if (!parsed.success) {
-            return res.status(400).json({
-                error: "Invalid query parameters",
-                details: parsed.error.flatten(),
-            });
-        }
-
-        const { category, type, bbox, is_on_campus, limit, offset } = parsed.data;
-
-        // ── Build query ────────────────────────────────────────────────────────
-        let query = supabaseAdmin
-            .from("places")
-            .select("*", { count: "exact" });
-
-        if (category) {
-            query = query.eq("category", category);
-        }
-
-        if (type) {
-            query = query.eq("type", type);
-        }
-
-        if (is_on_campus !== undefined) {
-            query = query.eq("is_on_campus", is_on_campus === "true");
-        }
-
-        // Bounding box filter: "lat1,lng1,lat2,lng2" (SW corner, NE corner)
-        if (bbox) {
-            const parts = bbox.split(",").map((s) => parseFloat(s.trim()));
-            const [lat1, lng1, lat2, lng2] = parts;
-            const minLat = Math.min(lat1, lat2);
-            const maxLat = Math.max(lat1, lat2);
-            const minLng = Math.min(lng1, lng2);
-            const maxLng = Math.max(lng1, lng2);
-
-            query = query
-                .gte("lat", minLat)
-                .lte("lat", maxLat)
-                .gte("lng", minLng)
-                .lte("lng", maxLng);
-        }
-
-        // Pagination
-        query = query
-            .order("rating", { ascending: false, nullsFirst: false })
-            .range(offset, offset + limit - 1);
-
-        const { data, error, count } = await query;
-
-        if (error) {
-            logger.error({ err: error }, "GET /places query error");
-            return res.status(500).json({ error: error.message });
-        }
-
-        const latency = Date.now() - start;
-        logger.info(
-            { method: "GET", path: "/places", params: req.query, status: 200, latency_ms: latency },
-            "places list"
-        );
-
-        return res.json({
-            data: data || [],
-            count: count || 0,
-            offset,
-            limit,
-        });
-
-    } catch (err) {
-        const latency = Date.now() - start;
-        logger.error({ err, latency_ms: latency }, "GET /places unexpected error");
-        return res.status(500).json({ error: "Internal server error" });
+  try {
+    // ── Validate query params with Zod ──────────────────────────────────
+    const parsed = listQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid query parameters",
+        details: parsed.error.flatten(),
+      });
     }
+
+    const { category, type, bbox, is_on_campus, limit, offset } = parsed.data;
+
+    // ── Build query ────────────────────────────────────────────────────────
+    let query = supabaseAdmin.from("places").select("*", { count: "exact" });
+
+    if (category) {
+      query = query.eq("category", category);
+    }
+
+    if (type) {
+      query = query.eq("type", type);
+    }
+
+    if (is_on_campus !== undefined) {
+      query = query.eq("is_on_campus", is_on_campus === "true");
+    }
+
+    // Bounding box filter: "lat1,lng1,lat2,lng2" (SW corner, NE corner)
+    if (bbox) {
+      const parts = bbox.split(",").map((s) => parseFloat(s.trim()));
+      const [lat1, lng1, lat2, lng2] = parts;
+      const minLat = Math.min(lat1, lat2);
+      const maxLat = Math.max(lat1, lat2);
+      const minLng = Math.min(lng1, lng2);
+      const maxLng = Math.max(lng1, lng2);
+
+      query = query
+        .gte("lat", minLat)
+        .lte("lat", maxLat)
+        .gte("lng", minLng)
+        .lte("lng", maxLng);
+    }
+
+    // Pagination
+    query = query
+      .order("rating", { ascending: false, nullsFirst: false })
+      .range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      logger.error({ err: error }, "GET /places query error");
+      return res.status(500).json({ error: error.message });
+    }
+
+    const latency = Date.now() - start;
+    logger.info(
+      {
+        method: "GET",
+        path: "/places",
+        params: req.query,
+        status: 200,
+        latency_ms: latency,
+      },
+      "places list",
+    );
+
+    return res.json({
+      data: data || [],
+      count: count || 0,
+      offset,
+      limit,
+    });
+  } catch (err) {
+    const latency = Date.now() - start;
+    logger.error({ err, latency_ms: latency }, "GET /places unexpected error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -101,104 +189,124 @@ router.get("/places", listLimiter, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 router.get("/places/:id", detailLimiter, async (req, res) => {
-    const start = Date.now();
+  const start = Date.now();
 
-    // ── Validate params with Zod ────────────────────────────────────────────
-    const parsed = idParamSchema.safeParse(req.params);
-    if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid place ID format" });
+  // ── Validate params with Zod ────────────────────────────────────────────
+  const parsed = idParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid place ID format" });
+  }
+  const { id } = parsed.data;
+
+  try {
+    // 1. Fetch the row from Supabase
+    const { data: place, error } = await supabaseAdmin
+      .from("places")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error || !place) {
+      return res.status(404).json({ error: "Not found" });
     }
-    const { id } = parsed.data;
 
-    try {
-        // 1. Fetch the row from Supabase
-        const { data: place, error } = await supabaseAdmin
-            .from("places")
-            .select("*")
-            .eq("id", id)
-            .single();
-
-        if (error || !place) {
-            return res.status(404).json({ error: "Not found" });
-        }
-
-        // 2. If no google_place_id or manual skeleton → return as-is
-        if (!place.google_place_id || place.data_source === "manual_skeleton") {
-            const latency = Date.now() - start;
-            logger.info(
-                { method: "GET", path: `/places/${id}`, status: 200, live_fetch: false, latency_ms: latency },
-                "place detail (static)"
-            );
-            return res.json({
-                ...place,
-                live_fetch: false,
-                last_fetched_at: place.last_fetched_at,
-            });
-        }
-
-        // 3. If on-campus + manual override → return as-is
-        if (place.is_on_campus && place.is_manual_override) {
-            const latency = Date.now() - start;
-            logger.info(
-                { method: "GET", path: `/places/${id}`, status: 200, live_fetch: false, latency_ms: latency },
-                "place detail (manual override)"
-            );
-            return res.json({
-                ...place,
-                live_fetch: false,
-                last_fetched_at: place.last_fetched_at,
-            });
-        }
-
-        // 4. Check TTL — if stale, do live fetch
-        if (isLiveDataStale(place.last_fetched_at)) {
-            const { updatedPlace, liveFetch, liveFetchError } =
-                await fetchAndUpdatePlaceDetails(supabaseAdmin, place);
-
-            const latency = Date.now() - start;
-            logger.info(
-                {
-                    method: "GET",
-                    path: `/places/${id}`,
-                    status: 200,
-                    live_fetch: liveFetch,
-                    live_fetch_error: liveFetchError,
-                    latency_ms: latency,
-                },
-                "place detail (live fetch attempted)"
-            );
-
-            const response = {
-                ...updatedPlace,
-                live_fetch: liveFetch,
-                last_fetched_at: updatedPlace.last_fetched_at,
-            };
-
-            if (liveFetchError) {
-                response.live_fetch_error = true;
-            }
-
-            return res.json(response);
-        }
-
-        // 5. Data is within TTL — return cached
-        const latency = Date.now() - start;
-        logger.info(
-            { method: "GET", path: `/places/${id}`, status: 200, live_fetch: false, latency_ms: latency },
-            "place detail (cached)"
-        );
-
-        return res.json({
-            ...place,
-            live_fetch: false,
-            last_fetched_at: place.last_fetched_at,
-        });
-
-    } catch (err) {
-        const latency = Date.now() - start;
-        logger.error({ err, latency_ms: latency }, `GET /places/${id} unexpected error`);
-        return res.status(500).json({ error: "Internal server error" });
+    // 2. If no google_place_id or manual skeleton → return as-is
+    if (!place.google_place_id || place.data_source === "manual_skeleton") {
+      const latency = Date.now() - start;
+      logger.info(
+        {
+          method: "GET",
+          path: `/places/${id}`,
+          status: 200,
+          live_fetch: false,
+          latency_ms: latency,
+        },
+        "place detail (static)",
+      );
+      return res.json({
+        ...place,
+        live_fetch: false,
+        last_fetched_at: place.last_fetched_at,
+      });
     }
+
+    // 3. If on-campus + manual override → return as-is
+    if (place.is_on_campus && place.is_manual_override) {
+      const latency = Date.now() - start;
+      logger.info(
+        {
+          method: "GET",
+          path: `/places/${id}`,
+          status: 200,
+          live_fetch: false,
+          latency_ms: latency,
+        },
+        "place detail (manual override)",
+      );
+      return res.json({
+        ...place,
+        live_fetch: false,
+        last_fetched_at: place.last_fetched_at,
+      });
+    }
+
+    // 4. Check TTL — if stale, do live fetch
+    if (isLiveDataStale(place.last_fetched_at)) {
+      const { updatedPlace, liveFetch, liveFetchError } =
+        await fetchAndUpdatePlaceDetails(supabaseAdmin, place);
+
+      const latency = Date.now() - start;
+      logger.info(
+        {
+          method: "GET",
+          path: `/places/${id}`,
+          status: 200,
+          live_fetch: liveFetch,
+          live_fetch_error: liveFetchError,
+          latency_ms: latency,
+        },
+        "place detail (live fetch attempted)",
+      );
+
+      const response = {
+        ...updatedPlace,
+        live_fetch: liveFetch,
+        last_fetched_at: updatedPlace.last_fetched_at,
+      };
+
+      if (liveFetchError) {
+        response.live_fetch_error = true;
+      }
+
+      return res.json(response);
+    }
+
+    // 5. Data is within TTL — return cached
+    const latency = Date.now() - start;
+    logger.info(
+      {
+        method: "GET",
+        path: `/places/${id}`,
+        status: 200,
+        live_fetch: false,
+        latency_ms: latency,
+      },
+      "place detail (cached)",
+    );
+
+    return res.json({
+      ...place,
+      live_fetch: false,
+      last_fetched_at: place.last_fetched_at,
+    });
+  } catch (err) {
+    const latency = Date.now() - start;
+    logger.error(
+      { err, latency_ms: latency },
+      `GET /places/${id} unexpected error`,
+    );
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -210,98 +318,112 @@ const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 const PHOTO_CACHE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
 router.get("/places/:id/photo/:index", photoLimiter, async (req, res) => {
-    const start = Date.now();
+  const start = Date.now();
 
-    // ── Validate params with Zod ────────────────────────────────────────────
-    const parsed = photoParamSchema.safeParse(req.params);
-    if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid parameters" });
+  // ── Validate params with Zod ────────────────────────────────────────────
+  const parsed = photoParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid parameters" });
+  }
+  const { id, index } = parsed.data;
+
+  if (!GOOGLE_API_KEY) {
+    return res.status(503).json({ error: "Photo proxy not configured." });
+  }
+
+  try {
+    // 1. Fetch place row to get photo_refs
+    const { data: place, error } = await supabaseAdmin
+      .from("places")
+      .select("id, photo_refs")
+      .eq("id", id)
+      .single();
+
+    if (error || !place) {
+      return res.status(404).json({ error: "Place not found." });
     }
-    const { id, index } = parsed.data;
 
-    if (!GOOGLE_API_KEY) {
-        return res.status(503).json({ error: "Photo proxy not configured." });
+    const photoRefs = place.photo_refs || [];
+    if (index >= photoRefs.length) {
+      return res.status(404).json({
+        error: `No photo at index ${index}. Available: ${photoRefs.length}`,
+      });
     }
 
-    try {
-        // 1. Fetch place row to get photo_refs
-        const { data: place, error } = await supabaseAdmin
-            .from("places")
-            .select("id, photo_refs")
-            .eq("id", id)
-            .single();
+    const photoEntry = photoRefs[index];
 
-        if (error || !place) {
-            return res.status(404).json({ error: "Place not found." });
-        }
+    // Support both old format (string) and new format (object with ref)
+    const photoName =
+      typeof photoEntry === "string" ? photoEntry : photoEntry?.ref;
+    const attributions =
+      typeof photoEntry === "object" ? photoEntry?.html_attributions || [] : [];
 
-        const photoRefs = place.photo_refs || [];
-        if (index >= photoRefs.length) {
-            return res.status(404).json({ error: `No photo at index ${index}. Available: ${photoRefs.length}` });
-        }
-
-        const photoEntry = photoRefs[index];
-
-        // Support both old format (string) and new format (object with ref)
-        const photoName = typeof photoEntry === "string" ? photoEntry : photoEntry?.ref;
-        const attributions = typeof photoEntry === "object" ? (photoEntry?.html_attributions || []) : [];
-
-        if (!photoName) {
-            return res.status(404).json({ error: "Photo reference is empty." });
-        }
-
-        // 2. Build Google Places Photo Media URL (New API)
-        const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true&key=${GOOGLE_API_KEY}`;
-
-        const googleRes = await fetch(photoUrl);
-
-        if (!googleRes.ok) {
-            logger.warn(
-                { placeId: id, index, status: googleRes.status },
-                "Google Photo Media API error"
-            );
-            return res.status(502).json({ error: "Failed to fetch photo from Google." });
-        }
-
-        const photoData = await googleRes.json();
-        const imageUrl = photoData.photoUri;
-
-        if (!imageUrl) {
-            return res.status(502).json({ error: "No photo URI in Google response." });
-        }
-
-        // 3. Fetch the actual image
-        const imageRes = await fetch(imageUrl);
-
-        if (!imageRes.ok) {
-            return res.status(502).json({ error: "Failed to stream photo." });
-        }
-
-        // 4. Set headers and stream
-        const contentType = imageRes.headers.get("content-type") || "image/jpeg";
-        res.set("Content-Type", contentType);
-        res.set("Cache-Control", `public, max-age=${PHOTO_CACHE_MAX_AGE}`);
-        res.set("X-Photo-Attribution", JSON.stringify(attributions));
-        // Allow cross-origin loading (frontend on :5173, backend on :8080)
-        res.set("Cross-Origin-Resource-Policy", "cross-origin");
-
-        // Stream the image bytes to client
-        const arrayBuffer = await imageRes.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        const latency = Date.now() - start;
-        logger.info(
-            { method: "GET", path: `/places/${id}/photo/${index}`, latency_ms: latency },
-            "photo proxy served"
-        );
-
-        return res.send(buffer);
-
-    } catch (err) {
-        const latency = Date.now() - start;
-        logger.error({ err, latency_ms: latency }, `GET /places/${id}/photo/${index} error`);
-        return res.status(500).json({ error: "Internal server error" });
+    if (!photoName) {
+      return res.status(404).json({ error: "Photo reference is empty." });
     }
+
+    // 2. Build Google Places Photo Media URL (New API)
+    const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true&key=${GOOGLE_API_KEY}`;
+
+    const googleRes = await fetch(photoUrl);
+
+    if (!googleRes.ok) {
+      logger.warn(
+        { placeId: id, index, status: googleRes.status },
+        "Google Photo Media API error",
+      );
+      return res
+        .status(502)
+        .json({ error: "Failed to fetch photo from Google." });
+    }
+
+    const photoData = await googleRes.json();
+    const imageUrl = photoData.photoUri;
+
+    if (!imageUrl) {
+      return res
+        .status(502)
+        .json({ error: "No photo URI in Google response." });
+    }
+
+    // 3. Fetch the actual image
+    const imageRes = await fetch(imageUrl);
+
+    if (!imageRes.ok) {
+      return res.status(502).json({ error: "Failed to stream photo." });
+    }
+
+    // 4. Set headers and stream
+    const contentType = imageRes.headers.get("content-type") || "image/jpeg";
+    res.set("Content-Type", contentType);
+    res.set("Cache-Control", `public, max-age=${PHOTO_CACHE_MAX_AGE}`);
+    res.set("X-Photo-Attribution", JSON.stringify(attributions));
+    // Allow cross-origin loading (frontend on :5173, backend on :8080)
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
+
+    // Stream the image bytes to client
+    const arrayBuffer = await imageRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const latency = Date.now() - start;
+    logger.info(
+      {
+        method: "GET",
+        path: `/places/${id}/photo/${index}`,
+        latency_ms: latency,
+      },
+      "photo proxy served",
+    );
+
+    return res.send(buffer);
+  } catch (err) {
+    const latency = Date.now() - start;
+    logger.error(
+      { err, latency_ms: latency },
+      `GET /places/${id}/photo/${index} error`,
+    );
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

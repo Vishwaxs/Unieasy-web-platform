@@ -22,7 +22,8 @@ const Footer = () => {
               <Logo />
             </div>
             <p className="text-[hsl(var(--footer-muted))] mb-6 text-sm md:text-base">
-              A student-focused companion for discovering food, stays, study zones and places around Christ University – Central Campus.
+              A student-focused companion for discovering food, stays, study
+              zones and places around Christ University – Central Campus.
             </p>
 
             <div className="flex items-center gap-3 rounded-xl border border-[hsl(var(--footer-border))] bg-[hsl(var(--footer-bg))] px-4 py-3 mb-6">
@@ -34,19 +35,33 @@ const Footer = () => {
                 decoding="async"
               />
               <div className="text-xs leading-snug">
-                <div className="text-[hsl(var(--footer-text))] font-medium"> For Christ University</div>
-                <div className="text-[hsl(var(--footer-muted))] opacity-90">Central Campus </div>
+                <div className="text-[hsl(var(--footer-text))] font-medium">
+                  {" "}
+                  For Christ University
+                </div>
+                <div className="text-[hsl(var(--footer-muted))] opacity-90">
+                  Central Campus{" "}
+                </div>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => toast.info("Twitter coming soon!")} className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]">
+              <button
+                onClick={() => toast.info("Twitter coming soon!")}
+                className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]"
+              >
                 <Twitter className="w-5 h-5" />
               </button>
-              <button onClick={() => toast.info("LinkedIn coming soon!")} className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]">
+              <button
+                onClick={() => toast.info("LinkedIn coming soon!")}
+                className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]"
+              >
                 <Linkedin className="w-5 h-5" />
               </button>
-              <button onClick={() => toast.info("GitHub coming soon!")} className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]">
+              <button
+                onClick={() => toast.info("GitHub coming soon!")}
+                className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]"
+              >
                 <Github className="w-5 h-5" />
               </button>
             </div>
@@ -54,25 +69,39 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold text-[hsl(var(--footer-text))] mb-4">Quick Links</h3>
+            <h3 className="text-lg font-semibold text-[hsl(var(--footer-text))] mb-4">
+              Quick Links
+            </h3>
             <ul className="space-y-3">
               <li>
-                <Link to="/home" className="text-[hsl(var(--footer-muted))] hover:text-primary transition-colors text-sm md:text-base">
+                <Link
+                  to="/home"
+                  className="text-[hsl(var(--footer-muted))] hover:text-primary transition-colors text-sm md:text-base"
+                >
                   Home
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-[hsl(var(--footer-muted))] hover:text-primary transition-colors text-sm md:text-base">
+                <Link
+                  to="/contact"
+                  className="text-[hsl(var(--footer-muted))] hover:text-primary transition-colors text-sm md:text-base"
+                >
                   Contact Us
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="text-[hsl(var(--footer-muted))] hover:text-primary transition-colors text-sm md:text-base">
+                <Link
+                  to="/terms"
+                  className="text-[hsl(var(--footer-muted))] hover:text-primary transition-colors text-sm md:text-base"
+                >
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-[hsl(var(--footer-muted))] hover:text-primary transition-colors text-sm md:text-base">
+                <Link
+                  to="/privacy"
+                  className="text-[hsl(var(--footer-muted))] hover:text-primary transition-colors text-sm md:text-base"
+                >
                   Privacy Policy
                 </Link>
               </li>
@@ -81,11 +110,13 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold text-[hsl(var(--footer-text))] mb-4">Contact Us</h3>
+            <h3 className="text-lg font-semibold text-[hsl(var(--footer-text))] mb-4">
+              Contact Us
+            </h3>
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                <span className="truncate">vishwas.vashishta@mca.christuniversity.in</span>
+                <span className="truncate">hello@unieasy.com</span>
               </li>
               <li className="flex items-center gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <Phone className="w-5 h-5 text-primary flex-shrink-0" />
@@ -93,20 +124,29 @@ const Footer = () => {
               </li>
               <li className="flex items-start gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span>Christ University – Central Campus, Hosur Road, Bengaluru, Karnataka</span>
+                <span>
+                  Christ University – Central Campus, Hosur Road, Bengaluru,
+                  Karnataka
+                </span>
               </li>
             </ul>
           </div>
 
           {/* Development Team */}
           <div>
-            <h3 className="text-lg font-semibold text-[hsl(var(--footer-text))] mb-4">Development Team</h3>
+            <h3 className="text-lg font-semibold text-[hsl(var(--footer-text))] mb-4">
+              Development Team
+            </h3>
             <ul className="space-y-3">
               {developers.map((dev, index) => (
                 <li key={index} className="text-[hsl(var(--footer-muted))]">
-                  <span className="font-medium text-[hsl(var(--footer-text))] text-sm md:text-base">{dev.name}</span>
+                  <span className="font-medium text-[hsl(var(--footer-text))] text-sm md:text-base">
+                    {dev.name}
+                  </span>
                   <br />
-                  <span className="text-xs md:text-sm opacity-80">{dev.role}</span>
+                  <span className="text-xs md:text-sm opacity-80">
+                    {dev.role}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -118,7 +158,10 @@ const Footer = () => {
             © {new Date().getFullYear()} UniEasy. All rights reserved.
           </p>
           <div className="flex gap-4 md:gap-6 text-xs md:text-sm text-[hsl(var(--footer-muted))]">
-            <Link to="/privacy" className="hover:text-primary transition-colors">
+            <Link
+              to="/privacy"
+              className="hover:text-primary transition-colors"
+            >
               Privacy Policy
             </Link>
             <Link to="/terms" className="hover:text-primary transition-colors">

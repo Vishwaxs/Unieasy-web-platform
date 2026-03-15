@@ -4,7 +4,12 @@ import Logo from "@/components/Logo";
 import Footer from "@/components/Footer";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Megaphone, User, ChevronDown, LogIn } from "lucide-react";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+} from "@clerk/clerk-react";
 import { useTheme } from "@/hooks/useTheme";
 
 import lightLogoHref from "@/assets/light.png";
@@ -21,7 +26,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
       {/* Hero Section - Full Screen */}
-      <div className="relative min-h-screen">
+      <div className="relative min-h-screen landing-hero">
         {/* Background Image */}
         <div className="absolute inset-0">
           <img
@@ -33,16 +38,16 @@ const Index = () => {
         </div>
 
         {/* Fixed Glassmorphism Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/50 shadow-sm">
-          <div className="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/50 shadow-sm landing-header">
+          <div className="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between landing-header-inner">
             <Logo />
             <div className="flex items-center gap-2 md:gap-3">
               <ThemeToggle />
               <SignedIn>
                 <Link to="/profile">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
+                  <Button
+                    variant="outline"
+                    size="icon"
                     className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary w-10 h-10 transition-all duration-300"
                   >
                     <User className="w-5 h-5 text-foreground" />
@@ -52,9 +57,9 @@ const Index = () => {
               </SignedIn>
               <SignedOut>
                 <SignInButton mode="modal">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2 transition-all duration-300"
                   >
                     <LogIn className="w-4 h-4" />
@@ -67,26 +72,27 @@ const Index = () => {
         </header>
 
         {/* Main Content */}
-        <main className="relative z-10 min-h-screen flex items-center justify-center px-4 md:px-6 pt-20">
-          <div className="text-center max-w-2xl mx-auto rounded-3xl dark:bg-background/35 backdrop-blur-xl border border-white/40 dark:border-border/80 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-lg px-6 py-10 md:px-10 md:py-12">
-            <div className="flex justify-center mb-6 animate-fade-up">
+        <main className="relative z-10 min-h-screen flex items-center justify-center px-4 md:px-6 pt-20 landing-main">
+          <div className="text-center max-w-2xl mx-auto rounded-3xl dark:bg-background/35 backdrop-blur-xl border border-white/40 dark:border-border/80 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-lg px-6 py-10 md:px-10 md:py-12 landing-hero-panel">
+            <div className="flex justify-center mb-2 animate-fade-up">
               <img
                 src={theme === "dark" ? darkLogoHref : lightLogoHref}
                 alt="UniEasy"
-                className="h-24 md:h-32 w-auto"
+                className="h-24 md:h-32 w-auto landing-hero-logo"
                 loading="eager"
                 decoding="async"
               />
             </div>
 
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 animate-fade-up">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 animate-fade-up landing-hero-title">
               Discover Christ University – Central Campus
             </h1>
-            <p className="text-base md:text-lg text-foreground/80 dark:text-foreground/85 mb-10 animate-fade-up stagger-1 leading-relaxed">
-              Food spots, accommodation, study zones, and places nearby – curated for students.
+            <p className="text-base md:text-lg text-foreground/80 dark:text-foreground/85 mb-10 animate-fade-up stagger-1 leading-relaxed landing-hero-subtitle">
+              Food spots, accommodation, study zones, and places nearby –
+              curated for students.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up stagger-2">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up stagger-2 landing-hero-actions">
               <Link to="/signup">
                 <Button variant="hero" size="xl">
                   Get Started
@@ -103,27 +109,32 @@ const Index = () => {
               </Link>
             </div>
 
-            <p className="mt-8 text-sm text-muted-foreground animate-fade-up stagger-3">
+            <p className="mt-8 text-sm text-muted-foreground animate-fade-up stagger-3 landing-hero-footnote">
               Already have an account?{" "}
-              <Link to="/signin" className="text-primary font-medium hover:underline">
+              <Link
+                to="/signin"
+                className="text-primary font-medium hover:underline"
+              >
                 Sign in
               </Link>
             </p>
+
+            {/* Scroll indicator – inside blurred panel */}
+            <div className="mt-5 flex justify-center animate-fade-up stagger-4">
+              <button
+                onClick={scrollToContent}
+                className="flex flex-col items-center gap-2 cursor-pointer group transition-all duration-300 hover:translate-y-1"
+              >
+                <span className="text-muted-foreground text-sm font-medium group-hover:text-foreground transition-colors">
+                  Scroll down
+                </span>
+                <div className="w-10 h-14 rounded-full border-2 border-border/60 flex items-center justify-center group-hover:border-border transition-colors">
+                  <ChevronDown className="w-6 h-6 text-muted-foreground animate-bounce group-hover:text-foreground" />
+                </div>
+              </button>
+            </div>
           </div>
         </main>
-
-        {/* Scroll indicator */}
-        <button 
-          onClick={scrollToContent}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer group transition-all duration-300 hover:translate-y-1 z-20"
-        >
-          <span className="text-muted-foreground text-sm font-medium group-hover:text-foreground transition-colors">
-            Scroll down
-          </span>
-          <div className="w-10 h-14 rounded-full border-2 border-border/60 flex items-center justify-center group-hover:border-border transition-colors">
-            <ChevronDown className="w-6 h-6 text-muted-foreground animate-bounce group-hover:text-foreground" />
-          </div>
-        </button>
       </div>
 
       {/* Institutional affiliation (Christ University – Central Campus) */}
@@ -144,7 +155,9 @@ const Index = () => {
                 For Christ University – Central Campus
               </h2>
               <p className="mt-2 text-sm md:text-base text-muted-foreground">
-                UniEasy is an independent student-focused platform. The Christ University logo is used here only to indicate campus affiliation.
+                UniEasy is an independent student-focused platform. The Christ
+                University logo is used here only to indicate campus
+                affiliation.
               </p>
             </div>
           </div>
@@ -154,7 +167,11 @@ const Index = () => {
       {/* Run Your Advertisement - Bottom Right above Footer */}
       <div className="relative z-10 flex justify-end px-4 md:px-6 py-8 bg-background">
         <Link to="/merchant">
-          <Button variant="default" size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-shadow">
+          <Button
+            variant="default"
+            size="lg"
+            className="gap-2 shadow-lg hover:shadow-xl transition-shadow"
+          >
             <Megaphone className="w-5 h-5" />
             Run Your Advertisement
           </Button>

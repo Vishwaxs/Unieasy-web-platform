@@ -1,4 +1,12 @@
-import { Utensils, Home, MapPin, MoreHorizontal, BookOpen, ArrowRight, Store } from "lucide-react";
+import {
+  Utensils,
+  Home,
+  MapPin,
+  MoreHorizontal,
+  BookOpen,
+  ArrowRight,
+  Store,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { modulesEnabled, modulesDisabledHint } from "@/lib/featureFlags";
@@ -17,7 +25,7 @@ const categories = [
     name: "On Campus",
     description: "Campus essentials right here",
     icon: Store,
-    video: "/on-campus-portrait-8s.mp4",
+    video: "/campus.mp4",
     playbackRate: 1.1,
     count: "Shops",
     link: "/campus",
@@ -69,7 +77,13 @@ const categories = [
   },
 ];
 
-const CategoryCard = ({ category, index }: { category: typeof categories[0]; index: number }) => {
+const CategoryCard = ({
+  category,
+  index,
+}: {
+  category: (typeof categories)[0];
+  index: number;
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -84,7 +98,7 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
           setIsVisible(true);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
 
     if (cardRef.current) {
@@ -123,69 +137,93 @@ const CategoryCard = ({ category, index }: { category: typeof categories[0]; ind
       >
         {/* Card with video background */}
         <div className="relative h-80 sm:h-96 rounded-3xl overflow-hidden transition-all duration-500 group-hover:scale-[1.02] group-hover:shadow-2xl">
-        {/* Video Background */}
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${
-            isHovered ? "scale-110" : "scale-100"
-          }`}
-        >
-          <source src={videoSrc} type="video/mp4" />
-        </video>
-        
-        {/* Gradient overlay */}
-        <div className={`absolute inset-0 bg-gradient-to-t ${category} opacity-60 mix-blend-multiply transition-opacity duration-500`} />
-        <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-all duration-300 ${isHovered ? "from-black/90 via-black/50" : ""}`} />
-        
-        {/* Subtle darkening overlay on hover */}
-        <div className={`absolute inset-0 bg-black/0 transition-all duration-300 ${isHovered ? "bg-black/20" : ""}`} />
-        
-        {/* Animated border glow */}
-        <div className={`absolute inset-0 rounded-3xl border-2 transition-all duration-500 ${isHovered ? "border-white/40 shadow-[inset_0_0_30px_rgba(255,255,255,0.1)]" : "border-white/0"}`} />
-        
-        {/* Floating particles animation */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className={`absolute w-2 h-2 bg-white/30 rounded-full top-1/4 left-1/4 transition-all duration-1000 ${isHovered ? "animate-float-slow" : ""}`} />
-          <div className={`absolute w-3 h-3 bg-white/20 rounded-full top-1/2 right-1/4 transition-all duration-1000 ${isHovered ? "animate-float-medium" : ""}`} />
-          <div className={`absolute w-1.5 h-1.5 bg-white/40 rounded-full bottom-1/3 left-1/3 transition-all duration-1000 ${isHovered ? "animate-float-fast" : ""}`} />
-        </div>
+          {/* Video Background */}
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${
+              isHovered ? "scale-110" : "scale-100"
+            }`}
+          >
+            <source src={videoSrc} type="video/mp4" />
+          </video>
 
-        {/* Shimmer effect on load */}
-        {!isVisible && (
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
-        )}
+          {/* Gradient overlay */}
+          <div
+            className={`absolute inset-0 bg-gradient-to-t ${category} opacity-60 mix-blend-multiply transition-opacity duration-500`}
+          />
+          <div
+            className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-all duration-300 ${isHovered ? "from-black/90 via-black/50" : ""}`}
+          />
 
-        {/* Content */}
-        <div className="relative z-10 h-full flex flex-col justify-between p-5 sm:p-6">
-          {/* Icon with animation */}
-          <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg transition-all duration-500 ${isHovered ? "scale-110 rotate-3 bg-white/30" : ""}`}>
-            <category.icon className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
+          {/* Subtle darkening overlay on hover */}
+          <div
+            className={`absolute inset-0 bg-black/0 transition-all duration-300 ${isHovered ? "bg-black/20" : ""}`}
+          />
+
+          {/* Animated border glow */}
+          <div
+            className={`absolute inset-0 rounded-3xl border-2 transition-all duration-500 ${isHovered ? "border-white/40 shadow-[inset_0_0_30px_rgba(255,255,255,0.1)]" : "border-white/0"}`}
+          />
+
+          {/* Floating particles animation */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div
+              className={`absolute w-2 h-2 bg-white/30 rounded-full top-1/4 left-1/4 transition-all duration-1000 ${isHovered ? "animate-float-slow" : ""}`}
+            />
+            <div
+              className={`absolute w-3 h-3 bg-white/20 rounded-full top-1/2 right-1/4 transition-all duration-1000 ${isHovered ? "animate-float-medium" : ""}`}
+            />
+            <div
+              className={`absolute w-1.5 h-1.5 bg-white/40 rounded-full bottom-1/3 left-1/3 transition-all duration-1000 ${isHovered ? "animate-float-fast" : ""}`}
+            />
           </div>
 
-          {/* Text with slide up animation */}
-          <div className={`transform transition-all duration-500 ${isHovered ? "-translate-y-2" : ""}`}>
-            <span className={`inline-block px-3 sm:px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold mb-3 shadow-lg transition-all duration-300 ${isHovered ? "bg-white/30" : ""}`}>
-              {category.count} Places
-            </span>
-            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 drop-shadow-lg">
-              {category.name}
-            </h3>
-            <p className="text-white/90 text-sm drop-shadow-md">
-              {category.description}
-            </p>
-            
-            {/* Explore button that appears on hover */}
-            <div className={`mt-4 flex items-center gap-2 text-white font-medium transition-all duration-500 ${isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-              <span>Explore</span>
-              <ArrowRight className={`w-4 h-4 transition-transform duration-300 ${isHovered ? "translate-x-1" : ""}`} />
+          {/* Shimmer effect on load */}
+          {!isVisible && (
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+          )}
+
+          {/* Content */}
+          <div className="relative z-10 h-full flex flex-col justify-between p-5 sm:p-6">
+            {/* Icon with animation */}
+            <div
+              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg transition-all duration-500 ${isHovered ? "scale-110 rotate-3 bg-white/30" : ""}`}
+            >
+              <category.icon className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
+            </div>
+
+            {/* Text with slide up animation */}
+            <div
+              className={`transform transition-all duration-500 ${isHovered ? "-translate-y-2" : ""}`}
+            >
+              <span
+                className={`inline-block px-3 sm:px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold mb-3 shadow-lg transition-all duration-300 ${isHovered ? "bg-white/30" : ""}`}
+              >
+                {category.count} Places
+              </span>
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 drop-shadow-lg">
+                {category.name}
+              </h3>
+              <p className="text-white/90 text-sm drop-shadow-md">
+                {category.description}
+              </p>
+
+              {/* Explore button that appears on hover */}
+              <div
+                className={`mt-4 flex items-center gap-2 text-white font-medium transition-all duration-500 ${isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+              >
+                <span>Explore</span>
+                <ArrowRight
+                  className={`w-4 h-4 transition-transform duration-300 ${isHovered ? "translate-x-1" : ""}`}
+                />
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
     </Link>
@@ -212,7 +250,10 @@ const CategoryCards = () => {
   };
 
   return (
-    <section id="category-cards" className="py-12 md:py-16 px-4 md:px-6 overflow-hidden">
+    <section
+      id="category-cards"
+      className="py-12 md:py-16 px-4 md:px-6 overflow-hidden"
+    >
       <div className="container mx-auto">
         <div className="flex items-center justify-between mb-6 md:mb-8">
           <div>
