@@ -5,11 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
 import { useStudySpots, type StudySpot } from "@/hooks/useStudySpots";
 
 type TypeFilter = "all" | "Library" | "Cafe" | "Coworking" | "Outdoor" | "Lab";
+const STUDY_SESSION_TYPE_OPTIONS = [
+  { value: "solo", label: "Solo" },
+  { value: "group", label: "Group" },
+  { value: "exam-prep", label: "Exam prep" },
+  { value: "quick-revision", label: "Quick revision" },
+];
 
-const StudyCard = ({ item, index }: { item: StudySpot; index: number }) => {
+const StudyCard = ({
+  item,
+  index,
+  onReview,
+}: {
+  item: StudySpot;
+  index: number;
+  onReview: (item: StudySpot) => void;
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -26,7 +41,7 @@ const StudyCard = ({ item, index }: { item: StudySpot; index: number }) => {
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
@@ -39,12 +54,12 @@ const StudyCard = ({ item, index }: { item: StudySpot; index: number }) => {
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="p-4 flex flex-1 flex-col">
         <h3 className="font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">{item.name}</h3>
 
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <MapPin className="w-3 h-3" /><span>{item.distance}</span>
+            <MapPin className="w-4 h-4 shrink-0" /><span>{item.distance}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Clock className="w-3 h-3" /><span>{item.timing}</span>
@@ -62,7 +77,23 @@ const StudyCard = ({ item, index }: { item: StudySpot; index: number }) => {
           </div>
         </div>
 
-        <p className="text-muted-foreground text-xs italic">"{item.comment}"</p>
+          {item.comment && (
+            <p className="text-muted-foreground text-xs italic">"{item.comment}"</p>
+          )}
+
+        <div className="mt-auto pt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full"
+            onClick={() => onReview(item)}
+          >
+            Review
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -72,6 +103,14 @@ const StudyDetails = () => {
   const { items: studySpots, loading } = useStudySpots();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState<StudySpot | null>(null);
+  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
+
+  const openReviewDialog = (item: StudySpot) => {
+    setActiveItem(item);
+    setReviewOpen(true);
+  };
 
   const filteredItems = studySpots.filter((item) => filter === "all" || item.type === filter);
 
@@ -137,9 +176,20 @@ const StudyDetails = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
-              <StudyCard key={item.id} item={item} index={index} />
+              <StudyCard key={item.id} item={item} index={index} onReview={openReviewDialog} />
             ))}
           </div>
+
+          <ReviewDialog
+            open={reviewOpen}
+            onOpenChange={setReviewOpen}
+            activeItem={activeItem}
+            reviewsByItem={reviewsByItem}
+            setReviewsByItem={setReviewsByItem}
+            contextLabel="Session type"
+            contextPlaceholder="Select session type"
+            contextOptions={STUDY_SESSION_TYPE_OPTIONS}
+          />
         </div>
       </main>
 

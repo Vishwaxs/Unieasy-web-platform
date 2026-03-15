@@ -11,17 +11,11 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { SignedIn, SignedOut, useClerk, useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
 import {
   useAccommodations,
   type Accommodation,
@@ -29,26 +23,11 @@ import {
 
 type TypeFilter = "all" | "Hostel" | "PG" | "Apartment";
 type SortType = "default" | "price-low" | "price-high" | "rating" | "distance";
-type StayType = "short-stay" | "long-term" | "shared" | "private";
-type UserReview = {
-  id: string;
-  text: string;
-  createdAt: string;
-  author: string;
-  rating: 1 | 2 | 3 | 4 | 5;
-  stayType: StayType;
-};
-
-const ratingOptions: Array<{
-  value: 1 | 2 | 3 | 4 | 5;
-  emoji: string;
-  label: string;
-}> = [
-  { value: 1, emoji: "😞", label: "Poor" },
-  { value: 2, emoji: "😕", label: "Okay" },
-  { value: 3, emoji: "🙂", label: "Good" },
-  { value: 4, emoji: "😋", label: "Great" },
-  { value: 5, emoji: "🤩", label: "Amazing" },
+const STAY_TYPE_OPTIONS = [
+  { value: "short-stay", label: "Short stay" },
+  { value: "long-term", label: "Long term" },
+  { value: "shared", label: "Shared" },
+  { value: "private", label: "Private" },
 ];
 
 const AccommodationCard = ({
@@ -176,56 +155,17 @@ const AccommodationCard = ({
 };
 
 const AccommodationDetails = () => {
-  const { openSignIn } = useClerk();
-  const { isSignedIn, user } = useUser();
   const { items: accommodations, loading } = useAccommodations();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [sort, setSort] = useState<SortType>("default");
   const [showFilters, setShowFilters] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<Accommodation | null>(null);
-  const [reviewText, setReviewText] = useState("");
-  const [reviewRating, setReviewRating] = useState<1 | 2 | 3 | 4 | 5 | null>(
-    null,
-  );
-  const [stayType, setStayType] = useState<StayType | "">("");
-  const [reviewsByItem, setReviewsByItem] = useState<
-    Record<string, UserReview[]>
-  >({});
+  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
 
   const openReviewDialog = (item: Accommodation) => {
     setActiveItem(item);
-    setReviewText("");
-    setReviewRating(null);
-    setStayType("");
     setReviewOpen(true);
-  };
-
-  const submitReview = () => {
-    if (!activeItem || !isSignedIn) return;
-    const text = reviewText.trim();
-    if (!text || !reviewRating || !stayType) return;
-
-    const newReview: UserReview = {
-      id: `${activeItem.id}-${Date.now()}`,
-      text,
-      createdAt: new Date().toLocaleString(),
-      author:
-        user?.firstName ||
-        user?.username ||
-        user?.primaryEmailAddress?.emailAddress ||
-        "User",
-      rating: reviewRating,
-      stayType,
-    };
-
-    setReviewsByItem((prev) => ({
-      ...prev,
-      [activeItem.id]: [newReview, ...(prev[activeItem.id] || [])],
-    }));
-    setReviewText("");
-    setReviewRating(null);
-    setStayType("");
   };
 
   const filteredItems = accommodations
@@ -413,160 +353,16 @@ const AccommodationDetails = () => {
             ))}
           </div>
 
-          <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
-            <DialogContent className="sm:max-w-lg [&>button]:hidden">
-              <DialogHeader>
-                <DialogTitle>
-                  Reviews{activeItem ? ` - ${activeItem.name}` : ""}
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                {activeItem && (
-                  <div className="rounded-lg border border-border bg-muted/40 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-foreground font-medium">
-                        Listing review stats
-                      </p>
-                      <Badge variant="secondary">
-                        {activeItem.reviews} reviews
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Showing current listing count; user-posted reviews appear
-                      below.
-                    </p>
-                  </div>
-                )}
-
-                <div className="max-h-56 overflow-y-auto space-y-3 pr-1">
-                  {activeItem &&
-                  (reviewsByItem[activeItem.id] || []).length > 0 ? (
-                    (reviewsByItem[activeItem.id] || []).map((review) => (
-                      <div
-                        key={review.id}
-                        className="rounded-lg border border-border p-3"
-                      >
-                        <div className="mb-1 flex items-center justify-between gap-3">
-                          <span className="text-sm">
-                            {
-                              ratingOptions.find(
-                                (r) => r.value === review.rating,
-                              )?.emoji
-                            }{" "}
-                            {
-                              ratingOptions.find(
-                                (r) => r.value === review.rating,
-                              )?.label
-                            }
-                          </span>
-                          <span className="text-xs text-muted-foreground capitalize">
-                            {review.stayType.replace("-", " ")}
-                          </span>
-                        </div>
-                        <p className="text-sm text-foreground">{review.text}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {review.author} · {review.createdAt}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No user-posted reviews yet.
-                    </p>
-                  )}
-                </div>
-
-                <SignedIn>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="mb-2 text-sm font-medium text-foreground">
-                        Your rating (required)
-                      </p>
-                      <div className="grid grid-cols-5 gap-2">
-                        {ratingOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setReviewRating(option.value)}
-                            className={`rounded-md border px-2 py-2 text-center transition-colors ${
-                              reviewRating === option.value
-                                ? "border-primary bg-primary/10"
-                                : "border-border bg-background hover:border-primary/40"
-                            }`}
-                          >
-                            <div className="text-lg leading-none">
-                              {option.emoji}
-                            </div>
-                            <div className="mt-1 text-[11px] text-muted-foreground">
-                              {option.label}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="stayType"
-                        className="mb-2 block text-sm font-medium text-foreground"
-                      >
-                        Stay type (required)
-                      </label>
-                      <select
-                        id="stayType"
-                        value={stayType}
-                        onChange={(e) =>
-                          setStayType(e.target.value as StayType | "")
-                        }
-                        className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
-                      >
-                        <option value="">Select stay type</option>
-                        <option value="short-stay">Short stay</option>
-                        <option value="long-term">Long term</option>
-                        <option value="shared">Shared</option>
-                        <option value="private">Private</option>
-                      </select>
-                    </div>
-
-                    <textarea
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                      placeholder="Write your review..."
-                      className="w-full min-h-24 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={submitReview}
-                        disabled={
-                          !reviewText.trim() || !reviewRating || !stayType
-                        }
-                      >
-                        Post Review
-                      </Button>
-                    </div>
-                  </div>
-                </SignedIn>
-
-                <SignedOut>
-                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                    You need to sign in to post a review.
-                    <div className="mt-3">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setReviewOpen(false);
-                          window.setTimeout(() => openSignIn(), 0);
-                        }}
-                      >
-                        Sign in to Post Review
-                      </Button>
-                    </div>
-                  </div>
-                </SignedOut>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <ReviewDialog
+            open={reviewOpen}
+            onOpenChange={setReviewOpen}
+            activeItem={activeItem}
+            reviewsByItem={reviewsByItem}
+            setReviewsByItem={setReviewsByItem}
+            contextLabel="Stay type"
+            contextPlaceholder="Select stay type"
+            contextOptions={STAY_TYPE_OPTIONS}
+          />
         </div>
       </main>
 

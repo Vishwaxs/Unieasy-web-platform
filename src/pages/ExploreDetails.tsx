@@ -5,11 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
 import { useExplorePlaces, type ExplorePlace } from "@/hooks/useExplorePlaces";
 
 type TypeFilter = "all" | "Park" | "Cafe" | "Mall" | "Scenic" | "Sports" | "Culture";
+const HANGOUT_TYPE_OPTIONS = [
+  { value: "chill", label: "Chill" },
+  { value: "adventure", label: "Adventure" },
+  { value: "family", label: "Family" },
+  { value: "couple", label: "Couple" },
+];
 
-const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
+const PlaceCard = ({
+  item,
+  index,
+  onReview,
+}: {
+  item: ExplorePlace;
+  index: number;
+  onReview: (item: ExplorePlace) => void;
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +70,7 @@ const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="p-4 flex flex-1 flex-col">
         <h3 className="font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">{item.name}</h3>
 
         <div className="space-y-2 mb-3">
@@ -74,6 +89,20 @@ const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
         </div>
 
         <p className="text-muted-foreground text-xs italic">"{item.comment}"</p>
+
+        <div className="mt-auto pt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full"
+            onClick={() => onReview(item)}
+          >
+            Review
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -83,6 +112,14 @@ const ExploreDetails = () => {
   const { items: places, loading } = useExplorePlaces();
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState<ExplorePlace | null>(null);
+  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
+
+  const openReviewDialog = (item: ExplorePlace) => {
+    setActiveItem(item);
+    setReviewOpen(true);
+  };
 
   const filteredItems = places.filter((item) => filter === "all" || item.type === filter);
 
@@ -148,9 +185,20 @@ const ExploreDetails = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
-              <PlaceCard key={item.id} item={item} index={index} />
+              <PlaceCard key={item.id} item={item} index={index} onReview={openReviewDialog} />
             ))}
           </div>
+
+          <ReviewDialog
+            open={reviewOpen}
+            onOpenChange={setReviewOpen}
+            activeItem={activeItem}
+            reviewsByItem={reviewsByItem}
+            setReviewsByItem={setReviewsByItem}
+            contextLabel="Hangout type"
+            contextPlaceholder="Select hangout type"
+            contextOptions={HANGOUT_TYPE_OPTIONS}
+          />
         </div>
       </main>
 

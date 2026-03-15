@@ -40,6 +40,23 @@ const ESSENTIALS_CATEGORIES = ["services", "health", "fitness", "safety", "essen
 function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
   const hasPhoto = photoRefs.length > 0;
+  const extra =
+    typeof place.extra === "object" && place.extra !== null
+      ? (place.extra as Record<string, unknown>)
+      : null;
+  const reviews =
+    extra && Array.isArray(extra.reviews)
+      ? (extra.reviews as Array<Record<string, unknown>>)
+      : [];
+  const firstReview = reviews.length > 0 ? reviews[0] : null;
+  const reviewSnippet =
+    firstReview && typeof firstReview.text === "string"
+      ? firstReview.text.trim()
+      : "";
+  const address =
+    typeof place.address === "string" && place.address.trim().length > 0
+      ? place.address
+      : "Nearby";
 
   return {
     id: place.id as string,
@@ -47,11 +64,11 @@ function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
     category: (place.category as string) || "essentials",
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: (place.address as string) || "Nearby",
+    distance: address,
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
       : "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
-    comment: (place.address as string) || "",
+    comment: reviewSnippet,
   };
 }
 

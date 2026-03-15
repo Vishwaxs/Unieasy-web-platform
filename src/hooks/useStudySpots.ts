@@ -38,6 +38,18 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
 
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
   const hasPhoto = photoRefs.length > 0;
+  const address =
+    typeof place.address === "string" && place.address.trim().length > 0
+      ? place.address
+      : "Nearby";
+  const reviews = Array.isArray(extra.reviews)
+    ? (extra.reviews as Array<Record<string, unknown>>)
+    : [];
+  const firstReview = reviews.length > 0 ? reviews[0] : null;
+  const reviewSnippet =
+    firstReview && typeof firstReview.text === "string"
+      ? firstReview.text.trim()
+      : "";
 
   return {
     id: place.id as string,
@@ -45,14 +57,14 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
     type: ((place.type as string) || "library").charAt(0).toUpperCase() + ((place.type as string) || "library").slice(1),
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: (place.address as string) || "Nearby",
+    distance: address,
     timing,
     noise: "Varies",
     has_wifi: true,
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
       : "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400",
-    comment: (place.address as string) || "",
+    comment: reviewSnippet,
   };
 }
 

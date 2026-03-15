@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
 import { useEssentials, type EssentialItem } from "@/hooks/useEssentials";
+
+const ESSENTIAL_USE_TYPE_OPTIONS = [
+  { value: "daily-use", label: "Daily use" },
+  { value: "urgent-help", label: "Urgent help" },
+  { value: "student-discount", label: "Student discount" },
+  { value: "career-support", label: "Career support" },
+];
 
 const categories = [
   { id: "essentials", name: "Student Essentials", icon: ShoppingBag, color: "from-pink-500 to-rose-500" },
@@ -15,7 +23,15 @@ const categories = [
   { id: "career", name: "Career & Skill Support", icon: Briefcase, color: "from-blue-500 to-cyan-500" },
 ];
 
-const ItemCard = ({ item, index }: { item: EssentialItem; index: number }) => {
+const ItemCard = ({
+  item,
+  index,
+  onReview,
+}: {
+  item: EssentialItem;
+  index: number;
+  onReview: (item: EssentialItem) => void;
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -30,7 +46,7 @@ const ItemCard = ({ item, index }: { item: EssentialItem; index: number }) => {
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
@@ -43,16 +59,32 @@ const ItemCard = ({ item, index }: { item: EssentialItem; index: number }) => {
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="p-4 flex flex-1 flex-col">
         <div className="flex items-center gap-2 mb-2">
           {category && <category.icon className="w-4 h-4 text-primary" />}
           <span className="text-xs text-muted-foreground">{category?.name}</span>
         </div>
         <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">{item.name}</h3>
         <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-          <MapPin className="w-3 h-3" /><span>{item.distance}</span>
+          <MapPin className="w-4 h-4 shrink-0" /><span>{item.distance}</span>
         </div>
-        <p className="text-muted-foreground text-xs italic">"{item.comment}"</p>
+        {item.comment && (
+          <p className="text-muted-foreground text-xs italic">"{item.comment}"</p>
+        )}
+
+        <div className="mt-auto pt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full"
+            onClick={() => onReview(item)}
+          >
+            Review
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -62,6 +94,14 @@ const EssentialsDetails = () => {
   const { items: essentialItems, loading } = useEssentials();
   const [filter, setFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState<EssentialItem | null>(null);
+  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
+
+  const openReviewDialog = (item: EssentialItem) => {
+    setActiveItem(item);
+    setReviewOpen(true);
+  };
 
   const filteredItems = essentialItems.filter((item) => filter === "all" || item.category === filter);
 
@@ -120,9 +160,20 @@ const EssentialsDetails = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredItems.map((item, index) => (
-              <ItemCard key={item.id} item={item} index={index} />
+              <ItemCard key={item.id} item={item} index={index} onReview={openReviewDialog} />
             ))}
           </div>
+
+          <ReviewDialog
+            open={reviewOpen}
+            onOpenChange={setReviewOpen}
+            activeItem={activeItem}
+            reviewsByItem={reviewsByItem}
+            setReviewsByItem={setReviewsByItem}
+            contextLabel="Use type"
+            contextPlaceholder="Select use type"
+            contextOptions={ESSENTIAL_USE_TYPE_OPTIONS}
+          />
         </div>
       </main>
 
