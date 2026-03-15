@@ -1,10 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Star,
+  MapPin,
+  MessageSquare,
+  Leaf,
+  Drumstick,
+  SlidersHorizontal,
+  X,
+  Loader2,
+} from "lucide-react";
 import { SignedIn, SignedOut, useClerk, useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useFoodItems, type FoodItem } from "@/hooks/useFoodItems";
@@ -21,7 +36,11 @@ type UserReview = {
   visitType: VisitType;
 };
 
-const ratingOptions: Array<{ value: 1 | 2 | 3 | 4 | 5; emoji: string; label: string }> = [
+const ratingOptions: Array<{
+  value: 1 | 2 | 3 | 4 | 5;
+  emoji: string;
+  label: string;
+}> = [
   { value: 1, emoji: "😞", label: "Poor" },
   { value: 2, emoji: "😕", label: "Okay" },
   { value: 3, emoji: "🙂", label: "Good" },
@@ -29,7 +48,15 @@ const ratingOptions: Array<{ value: 1 | 2 | 3 | 4 | 5; emoji: string; label: str
   { value: 5, emoji: "🤩", label: "Amazing" },
 ];
 
-const FoodCard = ({ item, index, onReview }: { item: FoodItem; index: number; onReview: (item: FoodItem) => void }) => {
+const FoodCard = ({
+  item,
+  index,
+  onReview,
+}: {
+  item: FoodItem;
+  index: number;
+  onReview: (item: FoodItem) => void;
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +67,7 @@ const FoodCard = ({ item, index, onReview }: { item: FoodItem; index: number; on
           setIsVisible(true);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     if (cardRef.current) {
@@ -53,8 +80,9 @@ const FoodCard = ({ item, index, onReview }: { item: FoodItem; index: number; on
   return (
     <div
       ref={cardRef}
-      className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-        }`}
+      className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div className="relative h-48 overflow-hidden">
@@ -69,7 +97,11 @@ const FoodCard = ({ item, index, onReview }: { item: FoodItem; index: number; on
         <Badge
           className={`absolute top-3 left-3 ${item.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
         >
-          {item.is_veg ? <Leaf className="w-3 h-3 mr-1" /> : <Drumstick className="w-3 h-3 mr-1" />}
+          {item.is_veg ? (
+            <Leaf className="w-3 h-3 mr-1" />
+          ) : (
+            <Drumstick className="w-3 h-3 mr-1" />
+          )}
           {item.is_veg ? "Veg" : "Non-Veg"}
         </Badge>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
@@ -82,7 +114,10 @@ const FoodCard = ({ item, index, onReview }: { item: FoodItem; index: number; on
         <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
           {item.name}
         </h3>
-        <p className="text-muted-foreground text-sm mb-3">{item.restaurant}</p>
+        <div className="flex items-start gap-2 text-muted-foreground text-sm mb-3">
+          <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+          <p>{item.restaurant}</p>
+        </div>
 
         {item.comment && (
           <div className="flex items-center gap-2 text-muted-foreground text-xs mb-3">
@@ -93,10 +128,19 @@ const FoodCard = ({ item, index, onReview }: { item: FoodItem; index: number; on
 
         <div className="mt-auto">
           <div className="flex items-center justify-between">
-            <span className="text-xl font-bold text-primary">₹{item.price}</span>
-            <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
+            <span className="text-xl font-bold text-primary">
+              ₹{item.price}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {item.reviews} reviews
+            </span>
           </div>
-          <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => onReview(item)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full"
+            onClick={() => onReview(item)}
+          >
             Review
           </Button>
         </div>
@@ -115,9 +159,13 @@ const FoodDetails = () => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<FoodItem | null>(null);
   const [reviewText, setReviewText] = useState("");
-  const [reviewRating, setReviewRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+  const [reviewRating, setReviewRating] = useState<1 | 2 | 3 | 4 | 5 | null>(
+    null,
+  );
   const [visitType, setVisitType] = useState<VisitType | "">("");
-  const [reviewsByItem, setReviewsByItem] = useState<Record<string, UserReview[]>>({});
+  const [reviewsByItem, setReviewsByItem] = useState<
+    Record<string, UserReview[]>
+  >({});
 
   const openReviewDialog = (item: FoodItem) => {
     setActiveItem(item);
@@ -136,7 +184,11 @@ const FoodDetails = () => {
       id: `${activeItem.id}-${Date.now()}`,
       text,
       createdAt: new Date().toLocaleString(),
-      author: user?.firstName || user?.username || user?.primaryEmailAddress?.emailAddress || "User",
+      author:
+        user?.firstName ||
+        user?.username ||
+        user?.primaryEmailAddress?.emailAddress ||
+        "User",
       rating: reviewRating,
       visitType,
     };
@@ -186,12 +238,19 @@ const FoodDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-red-600/80 dark:from-orange-700/70 dark:to-red-800/70" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link to="/home" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors">
+              <Link
+                to="/home"
+                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+              >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
               </Link>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">Food & Eating</h1>
-              <p className="text-white/90 mt-2">Discover the best food spots around campus</p>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                Food & Eating
+              </h1>
+              <p className="text-white/90 mt-2">
+                Discover the best food spots around campus
+              </p>
             </div>
           </div>
         </div>
@@ -200,7 +259,9 @@ const FoodDetails = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">{filteredItems.length} items found</span>
+              <span className="text-muted-foreground text-sm">
+                {filteredItems.length} items found
+              </span>
             </div>
 
             <Button
@@ -266,14 +327,20 @@ const FoodDetails = () => {
             <div className="md:hidden bg-card rounded-xl p-4 mb-6 border border-border animate-fade-in">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-foreground">Filters</h3>
-                <Button variant="ghost" size="icon" onClick={() => setShowFilters(false)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowFilters(false)}
+                >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <span className="text-sm text-muted-foreground mb-2 block">Type</span>
+                  <span className="text-sm text-muted-foreground mb-2 block">
+                    Type
+                  </span>
                   <div className="flex flex-wrap gap-2">
                     {(["all", "veg", "nonveg"] as FilterType[]).map((f) => (
                       <Button
@@ -283,14 +350,20 @@ const FoodDetails = () => {
                         onClick={() => setFilter(f)}
                         className="capitalize"
                       >
-                        {f === "nonveg" ? "Non-Veg" : f === "all" ? "All" : "Veg"}
+                        {f === "nonveg"
+                          ? "Non-Veg"
+                          : f === "all"
+                            ? "All"
+                            : "Veg"}
                       </Button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <span className="text-sm text-muted-foreground mb-2 block">Sort by</span>
+                  <span className="text-sm text-muted-foreground mb-2 block">
+                    Sort by
+                  </span>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant={sort === "price-low" ? "default" : "outline"}
@@ -322,38 +395,65 @@ const FoodDetails = () => {
           {/* Food Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredItems.map((item, index) => (
-              <FoodCard key={item.id} item={item} index={index} onReview={openReviewDialog} />
+              <FoodCard
+                key={item.id}
+                item={item}
+                index={index}
+                onReview={openReviewDialog}
+              />
             ))}
           </div>
 
           <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
             <DialogContent className="sm:max-w-lg [&>button]:hidden">
               <DialogHeader>
-                <DialogTitle>Reviews{activeItem ? ` - ${activeItem.name}` : ""}</DialogTitle>
+                <DialogTitle>
+                  Reviews{activeItem ? ` - ${activeItem.name}` : ""}
+                </DialogTitle>
               </DialogHeader>
 
               <div className="space-y-4">
                 {activeItem && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-foreground font-medium">Listing review stats</p>
-                      <Badge variant="secondary">{activeItem.reviews} reviews</Badge>
+                      <p className="text-sm text-foreground font-medium">
+                        Listing review stats
+                      </p>
+                      <Badge variant="secondary">
+                        {activeItem.reviews} reviews
+                      </Badge>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Showing current listing count; user-posted reviews appear below.
+                      Showing current listing count; user-posted reviews appear
+                      below.
                     </p>
                   </div>
                 )}
 
                 <div className="max-h-56 overflow-y-auto space-y-3 pr-1">
-                  {activeItem && (reviewsByItem[activeItem.id] || []).length > 0 ? (
+                  {activeItem &&
+                  (reviewsByItem[activeItem.id] || []).length > 0 ? (
                     (reviewsByItem[activeItem.id] || []).map((review) => (
-                      <div key={review.id} className="rounded-lg border border-border p-3">
+                      <div
+                        key={review.id}
+                        className="rounded-lg border border-border p-3"
+                      >
                         <div className="mb-1 flex items-center justify-between gap-3">
                           <span className="text-sm">
-                            {ratingOptions.find((r) => r.value === review.rating)?.emoji} {ratingOptions.find((r) => r.value === review.rating)?.label}
+                            {
+                              ratingOptions.find(
+                                (r) => r.value === review.rating,
+                              )?.emoji
+                            }{" "}
+                            {
+                              ratingOptions.find(
+                                (r) => r.value === review.rating,
+                              )?.label
+                            }
                           </span>
-                          <span className="text-xs text-muted-foreground capitalize">{review.visitType.replace("-", " ")}</span>
+                          <span className="text-xs text-muted-foreground capitalize">
+                            {review.visitType.replace("-", " ")}
+                          </span>
                         </div>
                         <p className="text-sm text-foreground">{review.text}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -362,14 +462,18 @@ const FoodDetails = () => {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">No user-posted reviews yet.</p>
+                    <p className="text-sm text-muted-foreground">
+                      No user-posted reviews yet.
+                    </p>
                   )}
                 </div>
 
                 <SignedIn>
                   <div className="space-y-3">
                     <div>
-                      <p className="mb-2 text-sm font-medium text-foreground">Your rating (required)</p>
+                      <p className="mb-2 text-sm font-medium text-foreground">
+                        Your rating (required)
+                      </p>
                       <div className="grid grid-cols-5 gap-2">
                         {ratingOptions.map((option) => (
                           <button
@@ -382,21 +486,30 @@ const FoodDetails = () => {
                                 : "border-border bg-background hover:border-primary/40"
                             }`}
                           >
-                            <div className="text-lg leading-none">{option.emoji}</div>
-                            <div className="mt-1 text-[11px] text-muted-foreground">{option.label}</div>
+                            <div className="text-lg leading-none">
+                              {option.emoji}
+                            </div>
+                            <div className="mt-1 text-[11px] text-muted-foreground">
+                              {option.label}
+                            </div>
                           </button>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <label htmlFor="visitType" className="mb-2 block text-sm font-medium text-foreground">
+                      <label
+                        htmlFor="visitType"
+                        className="mb-2 block text-sm font-medium text-foreground"
+                      >
                         Visit type (required)
                       </label>
                       <select
                         id="visitType"
                         value={visitType}
-                        onChange={(e) => setVisitType(e.target.value as VisitType | "")}
+                        onChange={(e) =>
+                          setVisitType(e.target.value as VisitType | "")
+                        }
                         className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
                       >
                         <option value="">Select visit type</option>
@@ -414,7 +527,12 @@ const FoodDetails = () => {
                       className="w-full min-h-24 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50"
                     />
                     <div className="flex justify-end">
-                      <Button onClick={submitReview} disabled={!reviewText.trim() || !reviewRating || !visitType}>
+                      <Button
+                        onClick={submitReview}
+                        disabled={
+                          !reviewText.trim() || !reviewRating || !visitType
+                        }
+                      >
                         Post Review
                       </Button>
                     </div>
