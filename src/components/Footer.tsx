@@ -116,7 +116,12 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                <span className="truncate">unieasy.app@gmail.com</span>
+                <a
+                  href="mailto:unieasy.app@gmail.com"
+                  className="break-all hover:text-primary transition-colors"
+                >
+                  unieasy.app@gmail.com
+                </a>
               </li>
               <li className="flex items-center gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <Phone className="w-5 h-5 text-primary flex-shrink-0" />

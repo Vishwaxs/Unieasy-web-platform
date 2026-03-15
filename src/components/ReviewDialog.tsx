@@ -140,11 +140,20 @@ export default function ReviewDialog({
           <div className="max-h-56 overflow-y-auto space-y-3 pr-1">
             {activeItem && (reviewsByItem[activeItem.id] || []).length > 0 ? (
               (reviewsByItem[activeItem.id] || []).map((review) => (
-                <div key={review.id} className="rounded-lg border border-border p-3">
+                <div
+                  key={review.id}
+                  className="rounded-lg border border-border p-3"
+                >
                   <div className="mb-1 flex items-center justify-between gap-3">
                     <span className="text-sm">
-                      {ratingOptions.find((r) => r.value === review.rating)?.emoji}{" "}
-                      {ratingOptions.find((r) => r.value === review.rating)?.label}
+                      {
+                        ratingOptions.find((r) => r.value === review.rating)
+                          ?.emoji
+                      }{" "}
+                      {
+                        ratingOptions.find((r) => r.value === review.rating)
+                          ?.label
+                      }
                     </span>
                     <span className="text-xs text-muted-foreground capitalize">
                       {optionLabelByValue.get(review.contextValue) ||
@@ -205,7 +214,8 @@ export default function ReviewDialog({
                   className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/50"
                 >
                   <option value="">
-                    {contextPlaceholder || `Select ${contextLabel.toLowerCase()}`}
+                    {contextPlaceholder ||
+                      `Select ${contextLabel.toLowerCase()}`}
                   </option>
                   {contextOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -224,7 +234,9 @@ export default function ReviewDialog({
               <div className="flex justify-end">
                 <Button
                   onClick={submitReview}
-                  disabled={!reviewText.trim() || !reviewRating || !contextValue}
+                  disabled={
+                    !reviewText.trim() || !reviewRating || !contextValue
+                  }
                 >
                   Post Review
                 </Button>

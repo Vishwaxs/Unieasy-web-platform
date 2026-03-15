@@ -135,7 +135,9 @@ const FoodDetails = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<FoodItem | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
+  const [reviewsByItem, setReviewsByItem] = useState<
+    Record<string, ReviewEntry[]>
+  >({});
 
   const openReviewDialog = (item: FoodItem) => {
     setActiveItem(item);
