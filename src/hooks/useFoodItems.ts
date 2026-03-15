@@ -41,11 +41,16 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
 
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
   const hasPhoto = photoRefs.length > 0;
+  const address = (place.address as string) || "";
+  const extra = typeof place.extra === "object" && place.extra !== null ? (place.extra as Record<string, unknown>) : null;
+  const reviews = extra && Array.isArray(extra.reviews) ? (extra.reviews as Array<Record<string, unknown>>) : [];
+  const firstReview = reviews.length > 0 ? reviews[0] : null;
+  const reviewSnippet = firstReview && typeof firstReview.text === "string" ? firstReview.text : "";
 
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
-    restaurant: (place.address as string) || "",
+    restaurant: address,
     price: priceLevelMap[priceLevel] ?? 200,
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
@@ -53,7 +58,7 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
       : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
-    comment: (place.address as string) || "",
+    comment: reviewSnippet,
   };
 }
 
