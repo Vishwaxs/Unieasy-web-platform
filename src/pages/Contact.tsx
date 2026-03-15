@@ -91,7 +91,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col overflow-y-auto overflow-x-hidden">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
@@ -143,7 +143,7 @@ const Contact = () => {
                 {contactInfo.map((item, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border hover:border-primary/30 transition-all duration-300 animate-fade-up group"
+                    className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border hover:border-primary/30 transition-all duration-300 animate-fade-up group overflow-hidden"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:scale-110 transition-all">
@@ -176,7 +176,7 @@ const Contact = () => {
 
             {/* Contact Form */}
             <div className="lg:col-span-3 animate-fade-up stagger-1">
-              <div className="bg-card rounded-2xl border border-border p-5 sm:p-6 md:p-8">
+              <div className="bg-card rounded-2xl border border-border p-5 sm:p-6 md:p-8 overflow-hidden">
                 <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-6">
                   Send us a Message
                 </h2>
