@@ -111,6 +111,7 @@ export default function ReviewDialog({
     setReviewText("");
     setReviewRating(null);
     setContextValue("");
+    onOpenChange(false);
   };
 
   return (
