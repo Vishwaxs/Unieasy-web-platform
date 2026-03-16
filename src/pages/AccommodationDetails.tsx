@@ -22,6 +22,7 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
   const [reaction, setReaction] = useState<"like" | "dislike" | null>(null);
   const [reactionLoading, setReactionLoading] = useState(false);
 
+  // Read the saved bookmark state for this user from Supabase.
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -46,6 +47,7 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
     window.open(url, "_blank");
   };
 
+  // Read the saved like or dislike reaction for this user from Supabase.
   useEffect(() => {
     const checkBookmark = async () => {
       if (!userId) return;
@@ -84,6 +86,7 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
     checkReaction();
   }, [userId, item.id]);
 
+  // Write bookmark add or remove changes to Supabase.
   const toggleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -121,6 +124,7 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
     setLoading(false);
   };
 
+  // Write like or dislike changes to Supabase using one row per user and item.
   const handleReaction = async (e: React.MouseEvent<HTMLButtonElement>, nextReaction: "like" | "dislike") => {
     e.preventDefault();
     e.stopPropagation();
