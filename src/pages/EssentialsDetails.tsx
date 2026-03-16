@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
+import { computeCombinedReviewStats } from "@/lib/reviewStats";
+import { formatCompactCount } from "@/lib/reviewStats";
 import { useEssentials, type EssentialItem } from "@/hooks/useEssentials";
 
 const ESSENTIAL_USE_TYPE_OPTIONS = [
@@ -65,10 +67,12 @@ const ItemCard = ({
   item,
   index,
   onReview,
+  userReviews,
 }: {
   item: EssentialItem;
   index: number;
   onReview: (item: EssentialItem) => void;
+  userReviews?: ReviewEntry[];
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -85,6 +89,7 @@ const ItemCard = ({
   }, []);
 
   const category = categories.find((c) => c.id === item.category);
+  const stats = computeCombinedReviewStats(item.rating, item.reviews, userReviews);
 
   return (
     <div
@@ -107,7 +112,12 @@ const ItemCard = ({
         />
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-sm">{item.rating}</span>
+          <span className="text-white text-sm">
+            {stats.emoji ? `${stats.emoji} ` : ""}
+            {stats.averageRating > 0
+              ? stats.averageRating.toFixed(1)
+              : item.rating.toFixed(1)}
+          </span>
         </div>
       </div>
 
@@ -134,7 +144,7 @@ const ItemCard = ({
         <div className="mt-auto pt-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              {item.reviews} reviews
+              Google • {formatCompactCount(stats.totalReviews)} ratings
             </span>
           </div>
           <Button
@@ -242,6 +252,7 @@ const EssentialsDetails = () => {
                 item={item}
                 index={index}
                 onReview={openReviewDialog}
+                userReviews={reviewsByItem[item.id]}
               />
             ))}
           </div>

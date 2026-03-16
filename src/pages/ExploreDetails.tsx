@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
+import { computeCombinedReviewStats } from "@/lib/reviewStats";
+import { formatCompactCount } from "@/lib/reviewStats";
 import { useExplorePlaces, type ExplorePlace } from "@/hooks/useExplorePlaces";
 
 type TypeFilter =
@@ -36,10 +38,12 @@ const PlaceCard = ({
   item,
   index,
   onReview,
+  userReviews,
 }: {
   item: ExplorePlace;
   index: number;
   onReview: (item: ExplorePlace) => void;
+  userReviews?: ReviewEntry[];
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -60,6 +64,8 @@ const PlaceCard = ({
 
     return () => observer.disconnect();
   }, []);
+
+  const stats = computeCombinedReviewStats(item.rating, item.reviews, userReviews);
 
   const getCrowdColor = (crowd: string) => {
     switch (crowd) {
@@ -93,7 +99,12 @@ const PlaceCard = ({
         <Badge className="absolute top-3 left-3 bg-primary">{item.type}</Badge>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-sm">{item.rating}</span>
+          <span className="text-white text-sm">
+            {stats.emoji ? `${stats.emoji} ` : ""}
+            {stats.averageRating > 0
+              ? stats.averageRating.toFixed(1)
+              : item.rating.toFixed(1)}
+          </span>
         </div>
       </div>
 
@@ -126,7 +137,7 @@ const PlaceCard = ({
         <div className="mt-auto pt-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              {item.reviews} reviews
+              Google • {formatCompactCount(stats.totalReviews)} ratings
             </span>
           </div>
           <Button
@@ -285,6 +296,7 @@ const ExploreDetails = () => {
                 item={item}
                 index={index}
                 onReview={openReviewDialog}
+                userReviews={reviewsByItem[item.id]}
               />
             ))}
           </div>

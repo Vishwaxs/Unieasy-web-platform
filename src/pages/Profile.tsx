@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -20,11 +21,22 @@ import Footer from "@/components/Footer";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
+import { getUserReviewCount } from "@/lib/reviewStats";
 
 const Profile = () => {
   const { user } = useUser();
   const { signOut } = useClerk();
   const role = useUserRole();
+  const [reviewCount, setReviewCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setReviewCount(0);
+      return;
+    }
+
+    setReviewCount(getUserReviewCount(user.id));
+  }, [user?.id]);
 
   const menuItems = [
     {
@@ -110,7 +122,7 @@ const Profile = () => {
                   <div className="grid grid-cols-3 gap-3 sm:gap-4">
                     <div className="text-center p-3 sm:p-4 bg-muted/50 rounded-xl">
                       <p className="text-lg sm:text-xl font-bold text-primary">
-                        12
+                        {reviewCount}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Reviews

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ReviewDialog, { type ReviewEntry } from "@/components/ReviewDialog";
+import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStats";
 import { useFoodItems, type FoodItem } from "@/hooks/useFoodItems";
 
 type FilterType = "all" | "veg" | "nonveg";
@@ -31,10 +32,12 @@ const FoodCard = ({
   item,
   index,
   onReview,
+  userReviews,
 }: {
   item: FoodItem;
   index: number;
   onReview: (item: FoodItem) => void;
+  userReviews?: ReviewEntry[];
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -55,6 +58,8 @@ const FoodCard = ({
 
     return () => observer.disconnect();
   }, []);
+
+  const stats = computeCombinedReviewStats(item.rating, item.reviews, userReviews);
 
   return (
     <div
@@ -85,7 +90,12 @@ const FoodCard = ({
         </Badge>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-sm font-medium">{item.rating}</span>
+          <span className="text-white text-sm font-medium">
+            {stats.emoji ? `${stats.emoji} ` : ""}
+            {stats.averageRating > 0
+              ? stats.averageRating.toFixed(1)
+              : item.rating.toFixed(1)}
+          </span>
         </div>
       </div>
 
@@ -111,7 +121,7 @@ const FoodCard = ({
               ₹{item.price}
             </span>
             <span className="text-xs text-muted-foreground">
-              {item.reviews} reviews
+              Google • {formatCompactCount(stats.totalReviews)} ratings
             </span>
           </div>
           <Button
@@ -342,6 +352,7 @@ const FoodDetails = () => {
                 item={item}
                 index={index}
                 onReview={openReviewDialog}
+                userReviews={reviewsByItem[item.id]}
               />
             ))}
           </div>

@@ -8,6 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  computeCombinedReviewStats,
+  incrementUserReviewCount,
+  ratingOptions,
+} from "@/lib/reviewStats";
+import GoogleRatingBadge from "@/components/GoogleRatingBadge";
 
 export type ReviewRating = 1 | 2 | 3 | 4 | 5;
 
@@ -28,6 +34,7 @@ export type ReviewContextOption = {
 export type ReviewItemSummary = {
   id: string;
   name: string;
+  rating?: number;
   reviews: number;
 };
 
@@ -44,18 +51,6 @@ type ReviewDialogProps = {
   contextPlaceholder?: string;
 };
 
-const ratingOptions: Array<{
-  value: ReviewRating;
-  emoji: string;
-  label: string;
-}> = [
-  { value: 1, emoji: "😞", label: "Poor" },
-  { value: 2, emoji: "😕", label: "Okay" },
-  { value: 3, emoji: "🙂", label: "Good" },
-  { value: 4, emoji: "😋", label: "Great" },
-  { value: 5, emoji: "🤩", label: "Amazing" },
-];
-
 export default function ReviewDialog({
   open,
   onOpenChange,
@@ -71,6 +66,17 @@ export default function ReviewDialog({
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState<ReviewRating | null>(null);
   const [contextValue, setContextValue] = useState("");
+
+  const listingStats = useMemo(() => {
+    if (!activeItem) {
+      return { averageRating: 0, totalReviews: 0, emoji: "" };
+    }
+    return computeCombinedReviewStats(
+      typeof activeItem.rating === "number" ? activeItem.rating : 0,
+      activeItem.reviews,
+      reviewsByItem[activeItem.id],
+    );
+  }, [activeItem, reviewsByItem]);
 
   const optionLabelByValue = useMemo(
     () => new Map(contextOptions.map((option) => [option.value, option.label])),
@@ -108,6 +114,10 @@ export default function ReviewDialog({
       [activeItem.id]: [newReview, ...(prev[activeItem.id] || [])],
     }));
 
+    if (user?.id) {
+      incrementUserReviewCount(user.id, 1);
+    }
+
     setReviewText("");
     setReviewRating(null);
     setContextValue("");
@@ -130,10 +140,16 @@ export default function ReviewDialog({
                 <p className="text-sm text-foreground font-medium">
                   Listing review stats
                 </p>
-                <Badge variant="secondary">{activeItem.reviews} reviews</Badge>
+                <Badge variant="secondary">{listingStats.totalReviews} ratings</Badge>
+              </div>
+              <div className="mt-3">
+                <GoogleRatingBadge
+                  rating={listingStats.averageRating}
+                  ratingCount={listingStats.totalReviews}
+                />
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Showing current listing count; user-posted reviews appear below.
+                Includes listing stats + user-posted reviews.
               </p>
             </div>
           )}
