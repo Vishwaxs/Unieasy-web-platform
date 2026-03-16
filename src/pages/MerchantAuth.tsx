@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Store, LogOut, Loader2, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Store, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser, useClerk, useAuth, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { apiFetch } from "@/lib/adminApi";
-import Logo from "@/components/Logo";
-import ThemeToggle from "@/components/ThemeToggle";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
 
@@ -46,36 +45,10 @@ const MerchantAuth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="p-4 md:p-6 flex items-center justify-between">
-        <div className="flex items-center gap-3 md:gap-6">
-          <Logo />
-          <Link
-            to="/home"
-            className="hidden sm:inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-        </div>
-        <div className="flex items-center gap-2 md:gap-3">
-          <SignedIn>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => signOut({ redirectUrl: "/" })}
-              className="gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
-          </SignedIn>
-          <ThemeToggle />
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-4 md:px-6 py-8 md:py-12">
+      <main className="flex-1 flex items-center justify-center px-4 md:px-6 pt-16 md:pt-20 pb-8 md:pb-12">
         <div className="w-full max-w-md animate-fade-up">
           {/* Icon */}
           <div className="text-center mb-6 md:mb-8">

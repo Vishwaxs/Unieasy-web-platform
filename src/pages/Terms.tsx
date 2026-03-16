@@ -1,8 +1,6 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft, Shield, FileText, Users, AlertTriangle, Scale, Mail } from "lucide-react";
-import Logo from "@/components/Logo";
+import { Shield, FileText, Users, AlertTriangle, Scale, Mail } from "lucide-react";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ThemeToggle from "@/components/ThemeToggle";
 
 const sections = [
   {
@@ -47,24 +45,9 @@ const sections = [
 const Terms = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Logo />
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Link>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
+      <Header />
 
-      <main className="flex-1 py-16 px-6">
+      <main className="flex-1 pt-16 md:pt-20 pb-16 px-6">
         <div className="container max-w-4xl mx-auto">
           {/* Hero */}
           <div className="text-center mb-16">

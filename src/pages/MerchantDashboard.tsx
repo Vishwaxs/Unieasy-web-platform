@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, Image, Eye, CheckCircle, Clock, X, LogOut, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Upload, Image, Eye, CheckCircle, Clock, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUser, useClerk, useAuth } from "@clerk/clerk-react";
 import { uploadAdImage, createAd, fetchMyAds } from "@/lib/adminApi";
-import Logo from "@/components/Logo";
-import ThemeToggle from "@/components/ThemeToggle";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
 
@@ -108,41 +107,11 @@ const MerchantDashboard = () => {
     setSubmitted(false);
   };
 
-  const handleLogout = () => {
-    signOut({ redirectUrl: "/" });
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 md:gap-6">
-            <Logo />
-            <Link
-              to="/merchant"
-              className="hidden sm:inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Portal
-            </Link>
-          </div>
-          <div className="flex items-center gap-2 md:gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <Header />
 
-      <main className="flex-1 py-8 md:py-12 px-4 md:px-6">
+      <main className="flex-1 pt-16 md:pt-20 pb-8 md:pb-12 px-4 md:px-6">
         <div className="container max-w-4xl mx-auto">
           {/* Title */}
           <div className="text-center mb-8 md:mb-12 animate-fade-up">

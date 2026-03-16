@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import {
-  ArrowLeft,
   CheckCircle,
   XCircle,
   Loader2,
@@ -13,8 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Logo from "@/components/Logo";
-import ThemeToggle from "@/components/ThemeToggle";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { adminFetch } from "@/lib/adminApi";
 import { toast } from "sonner";
@@ -90,24 +87,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 md:gap-6">
-            <Logo />
-            <Link
-              to="/home"
-              className="hidden sm:inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Link>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
+      <Header />
 
-      <main className="flex-1 py-8 md:py-12 px-4 md:px-6">
+      <main className="flex-1 pt-16 md:pt-20 pb-8 md:pb-12 px-4 md:px-6">
         <div className="container max-w-5xl mx-auto">
           {/* Title */}
           <div className="flex items-center justify-between mb-8">
