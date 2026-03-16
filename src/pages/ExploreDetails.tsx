@@ -1,19 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Clock, Users, SlidersHorizontal, X, Loader2, Map as MapIcon, List, Heart } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, Users, SlidersHorizontal, X, Loader2, Map as MapIcon, List, Heart, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ExploreMap } from "@/components/ExploreMap";
 import { useExplorePlaces, type ExplorePlace } from "@/hooks/useExplorePlaces";
+import { useAuth } from "@clerk/clerk-react";
+import { supabase } from "@/lib/supabase";
 
 type TypeFilter = "all" | "Park" | "Cafe" | "Mall" | "Scenic" | "Sports" | "Culture";
 
 const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const [isSaved, setIsSaved] = useState(false);
+  const { userId } = useAuth();
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [reaction, setReaction] = useState<"like" | "dislike" | null>(null);
+  const [reactionLoading, setReactionLoading] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -33,25 +39,117 @@ const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
   }, []);
 
   useEffect(() => {
-    const savedPlaces = JSON.parse(localStorage.getItem("savedExplorePlaces") || "[]");
-    setIsSaved(savedPlaces.some((place: ExplorePlace) => place.id === item.id));
-  }, [item.id]);
+    const checkBookmark = async () => {
+      if (!userId) return;
 
-  const handleSave = (e: React.MouseEvent) => {
+      const { data } = await supabase
+        .from("bookmarks")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("item_id", String(item.id))
+        .eq("item_type", "explore")
+        .maybeSingle();
+
+      if (data) setIsBookmarked(true);
+    };
+
+    checkBookmark();
+  }, [userId, item.id]);
+
+  useEffect(() => {
+    const checkReaction = async () => {
+      if (!userId) return;
+
+      const { data } = await supabase
+        .from("item_reactions")
+        .select("reaction_type")
+        .eq("user_id", userId)
+        .eq("item_id", String(item.id))
+        .eq("item_type", "explore")
+        .maybeSingle();
+
+      if (data?.reaction_type === "like" || data?.reaction_type === "dislike") {
+        setReaction(data.reaction_type);
+      }
+    };
+
+    checkReaction();
+  }, [userId, item.id]);
+
+  const toggleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const savedPlaces = JSON.parse(localStorage.getItem("savedExplorePlaces") || "[]");
-    let updatedPlaces;
-
-    if (isSaved) {
-      updatedPlaces = savedPlaces.filter((place: ExplorePlace) => place.id !== item.id);
-    } else {
-      updatedPlaces = [...savedPlaces, item];
+    if (!userId) {
+      alert("Please sign in to bookmark items!");
+      return;
     }
 
-    localStorage.setItem("savedExplorePlaces", JSON.stringify(updatedPlaces));
-    setIsSaved(!isSaved);
+    setLoading(true);
+
+    if (isBookmarked) {
+      const { error } = await supabase
+        .from("bookmarks")
+        .delete()
+        .eq("user_id", userId)
+        .eq("item_id", String(item.id))
+        .eq("item_type", "explore");
+
+      if (!error) setIsBookmarked(false);
+    } else {
+      const { error } = await supabase
+        .from("bookmarks")
+        .insert([
+          {
+            user_id: userId,
+            item_id: String(item.id),
+            item_type: "explore"
+          }
+        ]);
+
+      if (!error) setIsBookmarked(true);
+    }
+
+    setLoading(false);
+  };
+
+  const handleReaction = async (e: React.MouseEvent<HTMLButtonElement>, nextReaction: "like" | "dislike") => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!userId) {
+      alert("Please sign in to react to items!");
+      return;
+    }
+
+    setReactionLoading(true);
+
+    if (reaction === nextReaction) {
+      const { error } = await supabase
+        .from("item_reactions")
+        .delete()
+        .eq("user_id", userId)
+        .eq("item_id", String(item.id))
+        .eq("item_type", "explore");
+
+      if (!error) setReaction(null);
+    } else {
+      const { error } = await supabase
+        .from("item_reactions")
+        .upsert(
+          {
+            user_id: userId,
+            item_id: String(item.id),
+            item_type: "explore",
+            reaction_type: nextReaction,
+          },
+          { onConflict: "user_id,item_id,item_type" }
+        );
+
+      if (!error) setReaction(nextReaction);
+    }
+
+    setReactionLoading(false);
   };
 
   const getCrowdColor = (crowd: string) => {
@@ -66,29 +164,31 @@ const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      className={`group h-full bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 flex flex-col ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div className="relative h-48 overflow-hidden">
         <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
         <Badge className="absolute top-3 left-3 bg-primary">{item.type}</Badge>
-        <div className="absolute top-3 right-3 flex items-center gap-2">
-          <button
-            onClick={handleSave}
-            className="p-1.5 bg-black/70 backdrop-blur-sm rounded-lg hover:bg-black/90 transition-colors"
-          >
-            <Heart className={`w-4 h-4 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-white"}`} />
-          </button>
-          <div className="bg-black/70 backdrop-blur-sm px-2 py-1 flex items-center gap-1 rounded-lg h-[28px]">
-            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span className="text-white text-sm">{item.rating}</span>
-          </div>
+        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 z-10">
+          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+          <span className="text-white text-sm">{item.rating}</span>
         </div>
       </div>
 
-      <div className="p-4">
-        <h3 className="font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">{item.name}</h3>
+      <div className="p-4 relative flex flex-1 flex-col">
+        <button
+          onClick={toggleBookmark}
+          disabled={loading}
+          className="absolute -top-5 right-4 p-2.5 bg-background shadow-md border border-border rounded-full hover:bg-secondary transition-all z-10"
+          title={isBookmarked ? "Remove Bookmark" : "Add Bookmark"}
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${isBookmarked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`}
+          />
+        </button>
+        <h3 className="font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors pr-10">{item.name}</h3>
 
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -105,7 +205,38 @@ const PlaceCard = ({ item, index }: { item: ExplorePlace; index: number }) => {
           </div>
         </div>
 
-        <p className="text-muted-foreground text-xs italic">"{item.comment}"</p>
+        <p className="text-muted-foreground text-xs italic mb-3">"{item.comment}"</p>
+
+        <div className="mt-auto pt-2">
+          <div className="flex items-center justify-end">
+            <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
+          </div>
+
+          <div className="mt-2 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={(e) => handleReaction(e, "like")}
+              aria-label="Like"
+              title="Like"
+              aria-pressed={reaction === "like"}
+              disabled={reactionLoading}
+              className={`inline-flex items-center transition-opacity ${reaction === "like" ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
+            >
+              <ThumbsUp className={`w-5 h-5 ${reaction === "like" ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground fill-transparent"}`} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleReaction(e, "dislike")}
+              aria-label="Dislike"
+              title="Dislike"
+              aria-pressed={reaction === "dislike"}
+              disabled={reactionLoading}
+              className={`inline-flex items-center transition-opacity ${reaction === "dislike" ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
+            >
+              <ThumbsDown className={`w-5 h-5 ${reaction === "dislike" ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground fill-transparent"}`} />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,55 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2, Heart, Navigation, Map as MapIcon, List } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, SlidersHorizontal, X, Loader2, Heart, Navigation, Map as MapIcon, List, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AccommodationMap } from "@/components/AccommodationMap";
 import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations";
+import { useAuth } from "@clerk/clerk-react";
+import { supabase } from "@/lib/supabase";
 
 type TypeFilter = "all" | "Hostel" | "PG" | "Apartment";
 type SortType = "default" | "price-low" | "price-high" | "rating" | "distance";
 
 const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation; index: number; userLocation: { lat: number; lng: number } | null }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bookmarkedAccommodations');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.includes(item.id);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return false;
-  });
   const cardRef = useRef<HTMLDivElement>(null);
-
-  const toggleBookmark = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    setIsBookmarked(prev => {
-      const newState = !prev;
-      try {
-        const saved = localStorage.getItem('bookmarkedAccommodations');
-        let parsed: string[] = saved ? JSON.parse(saved) : [];
-
-        if (newState) {
-          if (!parsed.includes(item.id)) parsed.push(item.id);
-        } else {
-          parsed = parsed.filter((id: string) => id !== item.id);
-        }
-
-        localStorage.setItem('bookmarkedAccommodations', JSON.stringify(parsed));
-      } catch (e) {
-        console.error(e);
-      }
-      return newState;
-    });
-  };
+  const { userId } = useAuth();
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [reaction, setReaction] = useState<"like" | "dislike" | null>(null);
+  const [reactionLoading, setReactionLoading] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -75,6 +46,120 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
     window.open(url, "_blank");
   };
 
+  useEffect(() => {
+    const checkBookmark = async () => {
+      if (!userId) return;
+
+      const { data } = await supabase
+        .from("bookmarks")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("item_id", String(item.id))
+        .eq("item_type", "accommodation")
+        .maybeSingle();
+
+      if (data) setIsBookmarked(true);
+    };
+
+    checkBookmark();
+  }, [userId, item.id]);
+
+  useEffect(() => {
+    const checkReaction = async () => {
+      if (!userId) return;
+
+      const { data } = await supabase
+        .from("item_reactions")
+        .select("reaction_type")
+        .eq("user_id", userId)
+        .eq("item_id", String(item.id))
+        .eq("item_type", "accommodation")
+        .maybeSingle();
+
+      if (data?.reaction_type === "like" || data?.reaction_type === "dislike") {
+        setReaction(data.reaction_type);
+      }
+    };
+
+    checkReaction();
+  }, [userId, item.id]);
+
+  const toggleBookmark = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!userId) {
+      alert("Please sign in to bookmark items!");
+      return;
+    }
+
+    setLoading(true);
+
+    if (isBookmarked) {
+      const { error } = await supabase
+        .from("bookmarks")
+        .delete()
+        .eq("user_id", userId)
+        .eq("item_id", String(item.id))
+        .eq("item_type", "accommodation");
+
+      if (!error) setIsBookmarked(false);
+    } else {
+      const { error } = await supabase
+        .from("bookmarks")
+        .insert([
+          {
+            user_id: userId,
+            item_id: String(item.id),
+            item_type: "accommodation"
+          }
+        ]);
+
+      if (!error) setIsBookmarked(true);
+    }
+
+    setLoading(false);
+  };
+
+  const handleReaction = async (e: React.MouseEvent<HTMLButtonElement>, nextReaction: "like" | "dislike") => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!userId) {
+      alert("Please sign in to react to items!");
+      return;
+    }
+
+    setReactionLoading(true);
+
+    if (reaction === nextReaction) {
+      const { error } = await supabase
+        .from("item_reactions")
+        .delete()
+        .eq("user_id", userId)
+        .eq("item_id", String(item.id))
+        .eq("item_type", "accommodation");
+
+      if (!error) setReaction(null);
+    } else {
+      const { error } = await supabase
+        .from("item_reactions")
+        .upsert(
+          {
+            user_id: userId,
+            item_id: String(item.id),
+            item_type: "accommodation",
+            reaction_type: nextReaction,
+          },
+          { onConflict: "user_id,item_id,item_type" }
+        );
+
+      if (!error) setReaction(nextReaction);
+    }
+
+    setReactionLoading(false);
+  };
+
   const getAmenityIcon = (amenity: string) => {
     switch (amenity) {
       case "wifi": return <Wifi className="w-4 h-4" />;
@@ -87,8 +172,7 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
   return (
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-        }`}
+      className={`group h-full bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 flex flex-col ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
       style={{ transitionDelay: `${index * 50}ms` }}
     >
       <div className="relative h-48 overflow-hidden">
@@ -96,65 +180,94 @@ const AccommodationCard = ({ item, index, userLocation }: { item: Accommodation;
           src={item.image}
           alt={item.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          referrerPolicy="no-referrer-when-downgrade"
+          loading="lazy"
         />
         <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
           {item.type}
         </Badge>
-        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-          <button
-            onClick={toggleBookmark}
-            className="p-1.5 bg-black/70 backdrop-blur-sm rounded-lg hover:bg-black/90 transition-colors"
-            aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
-          >
-            <Heart className={`w-4 h-4 transition-colors ${isBookmarked ? 'fill-red-500 text-red-500' : 'text-white'}`} />
-          </button>
-          <div className="bg-black/70 backdrop-blur-sm px-2 py-1 flex items-center gap-1 rounded-lg h-[28px]">
+        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 z-10">
             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
             <span className="text-white text-sm font-medium">{item.rating}</span>
           </div>
         </div>
-      </div>
 
-      <div className="p-4">
-        <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
-          {item.name}
-        </h3>
-
-        <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
-          <MapPin className="w-3 h-3" />
-          <span>{item.distance} from campus</span>
-        </div>
-
-        <div className="flex gap-2 mb-3">
-          {item.amenities.slice(0, 3).map((amenity) => (
-            <div key={amenity} className="p-1.5 bg-secondary rounded-lg" title={amenity}>
-              {getAmenityIcon(amenity)}
-            </div>
-          ))}
-        </div>
-
-        <p className="text-muted-foreground text-xs italic mb-3">"{item.comment}"</p>
-
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <span className="text-xl font-bold text-primary">₹{item.price.toLocaleString()}</span>
-            <span className="text-muted-foreground text-xs">/month</span>
-          </div>
-          <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
-        </div>
-
-        {userLocation && (
-          <Button
-            onClick={handleGetDirections}
-            variant="default"
-            size="sm"
-            className="w-full"
+        <div className="p-4 relative flex flex-1 flex-col">
+          <button
+            onClick={toggleBookmark}
+            disabled={loading}
+            className="absolute -top-5 right-4 p-2.5 bg-background shadow-md border border-border rounded-full hover:bg-secondary transition-all z-10"
+            title={isBookmarked ? "Remove Bookmark" : "Add Bookmark"}
           >
-            <Navigation className="w-4 h-4 mr-2" />
-            Get Directions
-          </Button>
-        )}
-      </div>
+            <Heart
+              className={`w-4 h-4 transition-colors ${isBookmarked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`}
+            />
+          </button>
+          <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors pr-10">
+            {item.name}
+          </h3>
+
+          <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
+            <MapPin className="w-3 h-3" />
+            <span>{item.distance} from campus</span>
+          </div>
+
+          <div className="flex gap-2 mb-3">
+            {item.amenities.slice(0, 3).map((amenity) => (
+              <div key={amenity} className="p-1.5 bg-secondary rounded-lg" title={amenity}>
+                {getAmenityIcon(amenity)}
+              </div>
+            ))}
+          </div>
+
+          <p className="text-muted-foreground text-xs italic mb-3">"{item.comment}"</p>
+
+          <div className="mt-auto pt-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xl font-bold text-primary">₹{item.price.toLocaleString()}</span>
+                <span className="text-muted-foreground text-xs">/month</span>
+              </div>
+              <span className="text-xs text-muted-foreground">{item.reviews} reviews</span>
+            </div>
+
+            <div className="mt-2 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={(e) => handleReaction(e, "like")}
+                aria-label="Like"
+                title="Like"
+                aria-pressed={reaction === "like"}
+                disabled={reactionLoading}
+                className={`inline-flex items-center transition-opacity ${reaction === "like" ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
+              >
+                <ThumbsUp className={`w-5 h-5 ${reaction === "like" ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground fill-transparent"}`} />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleReaction(e, "dislike")}
+                aria-label="Dislike"
+                title="Dislike"
+                aria-pressed={reaction === "dislike"}
+                disabled={reactionLoading}
+                className={`inline-flex items-center transition-opacity ${reaction === "dislike" ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
+              >
+                <ThumbsDown className={`w-5 h-5 ${reaction === "dislike" ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground fill-transparent"}`} />
+              </button>
+            </div>
+          </div>
+          {userLocation && (
+            <Button
+              onClick={handleGetDirections}
+              variant="default"
+              size="sm"
+              className="w-full mt-3"
+            >
+              <Navigation className="w-4 h-4 mr-2" />
+              Get Directions
+            </Button>
+          )}
+        </div>
     </div>
   );
 };
