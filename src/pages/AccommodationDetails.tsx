@@ -21,7 +21,7 @@ import {
   type Accommodation,
 } from "@/hooks/useAccommodations";
 
-type TypeFilter = "all" | "Hostel" | "PG" | "Apartment";
+type TypeFilter = "all" | "Hostel" | "PG" | "Co-living";
 type SortType = "default" | "price-low" | "price-high" | "rating" | "distance";
 const STAY_TYPE_OPTIONS = [
   { value: "short-stay", label: "Short stay" },
@@ -239,7 +239,7 @@ const AccommodationDetails = () => {
             <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Type:</span>
-                {(["all", "Hostel", "PG", "Apartment"] as TypeFilter[]).map(
+                {(["all", "Hostel", "PG", "Co-living"] as TypeFilter[]).map(
                   (f) => (
                     <Button
                       key={f}
@@ -298,7 +298,7 @@ const AccommodationDetails = () => {
                     Type
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {(["all", "Hostel", "PG", "Apartment"] as TypeFilter[]).map(
+                    {(["all", "Hostel", "PG", "Co-living"] as TypeFilter[]).map(
                       (f) => (
                         <Button
                           key={f}
