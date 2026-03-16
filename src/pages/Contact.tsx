@@ -7,7 +7,6 @@ import {
   Phone,
   MapPin,
   Clock,
-  MessageSquare,
   User,
   Building,
 } from "lucide-react";
@@ -94,7 +93,7 @@ const Contact = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Logo />
             <Link
@@ -109,31 +108,28 @@ const Contact = () => {
         </div>
       </header>
 
-      <main className="flex-1 py-10 md:py-14 px-4 md:px-6">
+      <main className="flex-1 py-4 md:py-6 px-4 md:px-6">
         <div className="container max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12 md:mb-16 animate-fade-up">
-            <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary/10 mb-4">
-              <MessageSquare className="w-7 h-7 md:w-8 md:h-8 text-primary" />
-            </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+          <div className="text-center mb-4 md:mb-6 animate-fade-up">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2 md:mb-3">
               Get in Touch
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-sm md:text-base">
+            <p className="text-muted-foreground max-w-3xl mx-auto text-sm md:text-base">
               Have questions, feedback, or just want to say hello? We'd love to
               hear from you. Fill out the form below and we'll get back to you
               as soon as possible.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-5 gap-6 md:gap-10">
+          <div className="grid lg:grid-cols-5 gap-5 md:gap-7">
             {/* Contact Info */}
-            <div className="lg:col-span-2 space-y-4 md:space-y-6">
+            <div className="lg:col-span-2 space-y-3 md:space-y-4 lg:-mt-5">
               <div className="animate-fade-up">
-                <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-4 md:mb-6">
+                <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-3 md:mb-4">
                   Contact Information
                 </h2>
-                <p className="text-muted-foreground mb-6 md:mb-8 text-sm md:text-base">
+                <p className="text-muted-foreground mb-3 md:mb-4 text-sm md:text-base">
                   Reach out through any of these channels and we'll respond
                   promptly.
                 </p>
@@ -143,11 +139,11 @@ const Contact = () => {
                 {contactInfo.map((item, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border hover:border-primary/30 transition-all duration-300 animate-fade-up group overflow-hidden"
+                    className="flex items-start gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 transition-all duration-300 animate-fade-up group overflow-hidden"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:scale-110 transition-all">
-                      <item.icon className="w-5 h-5 md:w-6 md:h-6 text-primary group-hover:text-primary-foreground transition-colors" />
+                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:scale-110 transition-all">
+                      <item.icon className="w-5 h-5 md:w-5 md:h-5 text-primary group-hover:text-primary-foreground transition-colors" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm text-muted-foreground">
@@ -176,16 +172,16 @@ const Contact = () => {
 
             {/* Contact Form */}
             <div className="lg:col-span-3 animate-fade-up stagger-1">
-              <div className="bg-card rounded-2xl border border-border p-5 sm:p-6 md:p-8 overflow-hidden">
-                <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-6">
+              <div className="bg-card rounded-2xl border border-border p-5 sm:p-6 md:p-6 overflow-hidden">
+                <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-4">
                   Send us a Message
                 </h2>
 
                 <form
                   onSubmit={handleSubmit}
-                  className="space-y-5 md:space-y-6"
+                  className="space-y-3 md:space-y-4"
                 >
-                  <div className="grid sm:grid-cols-2 gap-4 md:gap-5">
+                  <div className="grid sm:grid-cols-2 gap-4 md:gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">
                         Full Name *
@@ -222,7 +218,7 @@ const Contact = () => {
                     </div>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4 md:gap-5">
+                  <div className="grid sm:grid-cols-2 gap-4 md:gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">
                         Phone Number
@@ -272,7 +268,7 @@ const Contact = () => {
                       placeholder="Tell us how we can help you..."
                       value={formData.message}
                       onChange={handleChange}
-                      rows={5}
+                      rows={3}
                       className="w-full px-4 py-3 bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                       required
                     />
