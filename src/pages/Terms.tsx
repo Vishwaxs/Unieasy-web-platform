@@ -38,59 +38,69 @@ const sections = [
   {
     icon: Mail,
     title: "Contact Information",
-    content: "If you have any questions about these Terms of Service, please contact us at legal@unieasy.com. We aim to respond to all inquiries within 48 business hours."
+    content: "If you have any questions about these Terms of Service, please contact us at unieasy.app@gmail.com."
   }
 ];
 
 const Terms = () => {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="relative isolate min-h-screen overflow-hidden bg-background flex flex-col">
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <div className="home-grid-overlay" />
+        <div className="home-aurora home-aurora-one left-auto right-0 md:right-[-4rem] opacity-60" />
+        <div className="home-aurora home-aurora-two" />
+      </div>
+
       <Header />
 
-      <main className="flex-1 pt-16 md:pt-20 pb-16 px-6">
-        <div className="container max-w-4xl mx-auto">
-          {/* Hero */}
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-              <FileText className="w-8 h-8 text-primary" />
+      <main className="relative z-10 flex-1 pt-16 md:pt-20 pb-16 px-4 md:px-6">
+        <div className="container max-w-7xl mx-auto px-0">
+          {/* Header */}
+          <div className="mb-8 md:mb-10">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-primary/10">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-foreground">
+                  Terms of Service
+                </h1>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                  Last updated: January 19, 2026
+                </p>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Terms of Service
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="mt-4 text-muted-foreground text-sm md:text-base leading-relaxed max-w-3xl">
               Please read these terms carefully before using UniEasy. By using our platform, you agree to these terms.
-            </p>
-            <p className="text-sm text-muted-foreground mt-4">
-              Last updated: January 19, 2026
             </p>
           </div>
           
           {/* Sections */}
-          <div className="space-y-8">
+          <div className="space-y-5 md:space-y-6">
             {sections.map((section, index) => (
               <div 
                 key={index}
-                className="bg-card rounded-2xl p-8 border border-border hover:border-primary/30 transition-colors"
+                className="bg-card/70 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-border/80 shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <section.icon className="w-6 h-6 text-primary" />
+                  <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <section.icon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-foreground mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg md:text-xl font-semibold tracking-tight text-foreground mb-2">
                       {index + 1}. {section.title}
                     </h2>
                     {section.content && (
-                      <p className="text-muted-foreground leading-relaxed">
+                      <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
                         {section.content}
                       </p>
                     )}
                     {section.items && (
-                      <ul className="space-y-2 mt-2">
+                      <ul className="space-y-2 mt-3">
                         {section.items.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                            {item}
+                          <li key={i} className="flex items-start gap-3 text-muted-foreground text-sm md:text-base">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 flex-shrink-0" />
+                            <span className="leading-relaxed">{item}</span>
                           </li>
                         ))}
                       </ul>
@@ -99,13 +109,6 @@ const Terms = () => {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Agreement Notice */}
-          <div className="mt-12 p-6 bg-primary/5 rounded-2xl border border-primary/20 text-center">
-            <p className="text-muted-foreground">
-              By continuing to use UniEasy, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
-            </p>
           </div>
         </div>
       </main>

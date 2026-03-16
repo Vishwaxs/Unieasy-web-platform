@@ -90,10 +90,10 @@ const Contact = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-16 md:pt-20 pb-4 md:pb-6 px-4 md:px-6">
+      <main className="flex-1 pt-16 md:pt-20 pb-14 md:pb-16 px-4 md:px-6">
         <div className="container max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-4 md:mb-6 animate-fade-up">
+          <div className="text-center mt-8 md:mt-10 mb-4 md:mb-6 animate-fade-up">
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2 md:mb-3">
               Get in Touch
             </h1>

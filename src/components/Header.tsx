@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { User, Menu, X, Home, Mail, FileText, Shield, LogIn } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft, User, Menu, X, Home, Mail, FileText, Shield, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 import Logo from "@/components/Logo";
@@ -8,6 +8,21 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const backEnabledRoutes = new Set(["/home", "/contact", "/terms", "/privacy"]);
+  const showBack = backEnabledRoutes.has(location.pathname);
+
+  const handleBack = () => {
+    // If there is browser history, go back; otherwise fallback to Home.
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/home");
+  };
 
   const navLinks = [
     { to: "/home", label: "Home", icon: Home },
@@ -25,7 +40,21 @@ const Header = () => {
           <div className="mirror-header-sheen" />
         </div>
         <div className="relative w-full px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
-          <Logo imgClassName="h-[5.25rem] md:h-24 w-auto" />
+          <div className="flex items-center gap-2">
+            {showBack && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={handleBack}
+                className="text-foreground/60 hover:text-foreground hover:bg-foreground/10 transition-colors"
+                aria-label="Back"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            )}
+            <Logo imgClassName="h-[5.25rem] md:h-24 w-auto" />
+          </div>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-3">
