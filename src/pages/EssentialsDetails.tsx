@@ -5,9 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
-import SponsoredCard from "@/components/SponsoredCard";
 import { useEssentials, type EssentialItem } from "@/hooks/useEssentials";
-import { useActiveAds } from "@/hooks/useActiveAds";
 import { EssentialsCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 
 const ESSENTIALS_FILTER_GROUPS = [
@@ -109,7 +107,6 @@ const ItemCard = ({
 
 const EssentialsDetails = () => {
   const { items: essentialItems, loading } = useEssentials();
-  const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ category: "all", rating: "all" });
   const [sort, setSort] = useState("default");
 
@@ -182,12 +179,7 @@ const EssentialsDetails = () => {
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredItems.map((item, index) => (
-              <React.Fragment key={item.id}>
-                <ItemCard item={item} index={index} />
-                {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
-                  <SponsoredCard ad={activeAds[Math.floor(index / 5) % activeAds.length]} />
-                )}
-              </React.Fragment>
+              <ItemCard key={item.id} item={item} index={index} />
             ))}
           </div>
           )}

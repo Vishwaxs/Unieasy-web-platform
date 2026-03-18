@@ -5,9 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
-import SponsoredCard from "@/components/SponsoredCard";
 import { useCampusPlaces, type CampusPlace } from "@/hooks/useCampusPlaces";
-import { useActiveAds } from "@/hooks/useActiveAds";
 import { CampusCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 import { shortAddress } from "@/lib/utils";
 
@@ -118,7 +116,6 @@ const CampusCard = ({ item, index }: { item: CampusPlace; index: number }) => {
 
 const OnCampusDetails = () => {
   const { items: places, loading } = useCampusPlaces();
-  const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
   const [sort, setSort] = useState("default");
 
@@ -193,12 +190,7 @@ const OnCampusDetails = () => {
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
-              <React.Fragment key={item.id}>
-                <CampusCard item={item} index={index} />
-                {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
-                  <SponsoredCard ad={activeAds[Math.floor(index / 5) % activeAds.length]} />
-                )}
-              </React.Fragment>
+              <CampusCard key={item.id} item={item} index={index} />
             ))}
           </div>
           )}

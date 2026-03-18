@@ -7,9 +7,7 @@ import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStat
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
-import SponsoredCard from "@/components/SponsoredCard";
 import { useStudySpots, type StudySpot } from "@/hooks/useStudySpots";
-import { useActiveAds } from "@/hooks/useActiveAds";
 import { StudyCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 
 const STUDY_SESSION_TYPE_OPTIONS = [
@@ -177,7 +175,6 @@ const StudyCard = ({
 
 const StudyDetails = () => {
   const { items: studySpots, loading } = useStudySpots();
-  const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", noise: "all", wifi: "all" });
   const [sort, setSort] = useState("default");
 
@@ -254,12 +251,7 @@ const StudyDetails = () => {
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
-              <React.Fragment key={item.id}>
-                <StudyCard item={item} index={index} />
-                {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
-                  <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
-                )}
-              </React.Fragment>
+              <StudyCard key={item.id} item={item} index={index} />
             ))}
           </div>
           )}

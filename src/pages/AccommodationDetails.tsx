@@ -7,9 +7,7 @@ import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStat
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
-import SponsoredCard from "@/components/SponsoredCard";
 import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations";
-import { useActiveAds } from "@/hooks/useActiveAds";
 import { AccommodationCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 import { shortAddress } from "@/lib/utils";
 
@@ -195,7 +193,6 @@ const AccommodationCard = ({
 
 const AccommodationDetails = () => {
   const { items: accommodations, loading } = useAccommodations();
-  const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", price: "all" });
   const [sort, setSort] = useState("default");
 
@@ -288,12 +285,7 @@ const AccommodationDetails = () => {
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
-              <React.Fragment key={item.id}>
-                <AccommodationCard item={item} index={index} />
-                {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
-                  <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
-                )}
-              </React.Fragment>
+              <AccommodationCard key={item.id} item={item} index={index} />
             ))}
           </div>
           )}

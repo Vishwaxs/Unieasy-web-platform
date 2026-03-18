@@ -7,9 +7,7 @@ import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStat
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
-import SponsoredCard from "@/components/SponsoredCard";
 import { useFoodItems, type FoodItem } from "@/hooks/useFoodItems";
-import { useActiveAds } from "@/hooks/useActiveAds";
 import { FoodCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 
 const VISIT_TYPE_OPTIONS = [
@@ -170,7 +168,6 @@ const FoodCard = ({
 
 const FoodDetails = () => {
   const { items: foodItems, loading } = useFoodItems();
-  const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ diet: "all", rating: "all", price: "all" });
   const [sort, setSort] = useState("default");
 
@@ -264,12 +261,7 @@ const FoodDetails = () => {
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredItems.map((item, index) => (
-              <React.Fragment key={item.id}>
-                <FoodCard item={item} index={index} />
-                {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
-                  <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
-                )}
-              </React.Fragment>
+              <FoodCard key={item.id} item={item} index={index} />
             ))}
           </div>
           )}
