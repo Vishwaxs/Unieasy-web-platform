@@ -100,6 +100,9 @@ export function createAd(
     description?: string;
     imageUrl: string;
     targetLocation?: string;
+    linkUrl?: string;
+    buttonText?: string;
+    categoryTarget?: string;
     durationDays: number;
   }
 ) {
@@ -112,6 +115,33 @@ export function createAd(
 /** Fetch the current merchant's own ads. */
 export function fetchMyAds(getToken: GetToken) {
   return apiFetch(getToken, "/merchant/ads");
+}
+
+/** Submit a merchant upgrade request (student -> merchant). */
+export function requestMerchantUpgrade(
+  getToken: GetToken,
+  payload: {
+    business_name: string;
+    business_type: string;
+    contact_number: string;
+    description: string;
+    website?: string;
+  },
+) {
+  return apiFetch(getToken, "/merchant/request-upgrade", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Fetch the current user's merchant upgrade request status. */
+export function fetchMerchantUpgradeStatus(getToken: GetToken) {
+  return apiFetch(getToken, "/merchant/request-upgrade/status");
+}
+
+/** Delete an ad (pending only). */
+export function deleteMyAd(getToken: GetToken, adId: string) {
+  return apiFetch(getToken, `/merchant/ads/${adId}`, { method: "DELETE" });
 }
 
 // ─── Named helpers — Admin ──────────────────────────────────────────────────
