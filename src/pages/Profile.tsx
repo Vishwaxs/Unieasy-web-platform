@@ -17,6 +17,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useUser, useClerk } from "@clerk/clerk-react";
@@ -25,11 +32,13 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 interface ProfileData {
+  full_name: string;
   phone: string;
   student_id: string;
   programme: string;
   year_of_study: string;
   bio: string;
+  avatar_url: string;
 }
 
 const Profile = () => {
@@ -78,11 +87,13 @@ const Profile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData>({
+    full_name: "",
     phone: "",
     student_id: "",
     programme: "",
     year_of_study: "",
     bio: "",
+    avatar_url: "",
   });
   const [editData, setEditData] = useState<ProfileData>(profileData);
 
@@ -93,7 +104,9 @@ const Profile = () => {
       try {
         const { data, error } = await supabase
           .from("app_users")
-          .select("phone, student_id, programme, year_of_study, bio")
+          .select(
+            "phone, bio, student_id, programme, year_of_study, full_name, avatar_url",
+          )
           .eq("clerk_user_id", user.id)
           .single();
 
@@ -101,11 +114,13 @@ const Profile = () => {
           console.error("[Profile] Fetch error:", error.message);
         } else if (data) {
           const fetched: ProfileData = {
+            full_name: data.full_name ?? "",
             phone: data.phone ?? "",
             student_id: data.student_id ?? "",
             programme: data.programme ?? "",
             year_of_study: data.year_of_study ?? "",
             bio: data.bio ?? "",
+            avatar_url: data.avatar_url ?? "",
           };
           setProfileData(fetched);
           setEditData(fetched);
@@ -122,16 +137,36 @@ const Profile = () => {
 
   const handleSave = async () => {
     if (!user) return;
+
+    const normalizedPhone = editData.phone.replace(/\s+/g, "").trim();
+    if (normalizedPhone && !/^[6-9]\d{9}$/.test(normalizedPhone)) {
+      toast.error("Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+    const normalizedBio = editData.bio.trim();
+    if (normalizedBio.length > 200) {
+      toast.error("Bio must be 200 characters or less");
+      return;
+    }
+
     setIsSaving(true);
     try {
+      const full_name = editData.full_name.trim();
+      const phone = normalizedPhone;
+      const bio = normalizedBio;
+      const student_id = editData.student_id.trim();
+      const programme = editData.programme.trim();
+      const year_of_study = editData.year_of_study;
+
       const { error } = await supabase
         .from("app_users")
         .update({
-          phone: editData.phone || null,
-          student_id: editData.student_id || null,
-          programme: editData.programme || null,
-          year_of_study: editData.year_of_study || null,
-          bio: editData.bio || null,
+          phone,
+          bio,
+          full_name,
+          programme,
+          year_of_study,
+          student_id,
         })
         .eq("clerk_user_id", user.id);
 
@@ -140,9 +175,23 @@ const Profile = () => {
         return;
       }
 
-      setProfileData(editData);
+      if (full_name) {
+        const [firstName, ...rest] = full_name.split(/\s+/);
+        const lastName = rest.join(" ");
+        await user.update({ firstName, lastName });
+      }
+
+      setProfileData({
+        ...editData,
+        full_name,
+        phone,
+        bio,
+        student_id,
+        programme,
+        year_of_study,
+      });
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
+      toast.success("Profile updated successfully");
     } catch (err) {
       toast.error("An unexpected error occurred");
       console.error("[Profile] Save error:", err);
@@ -328,7 +377,9 @@ const Profile = () => {
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Phone</p>
                       <p className="text-sm font-medium text-foreground truncate">
-                        {user?.primaryPhoneNumber?.phoneNumber ?? "Not set"}
+                        {profileData.phone ||
+                          user?.primaryPhoneNumber?.phoneNumber ||
+                          "Not set"}
                       </p>
                     </div>
                   </div>
@@ -372,47 +423,97 @@ const Profile = () => {
                     Edit Profile
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground">Phone</label>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Full Name
+                      </label>
                       <Input
-                        value={editData.phone}
-                        onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
-                        placeholder="+91 XXXXX XXXXX"
+                        value={editData.full_name}
+                        onChange={(e) =>
+                          setEditData({ ...editData, full_name: e.target.value })
+                        }
+                        placeholder="e.g. Asha Kumar"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground">Student ID</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Phone
+                      </label>
+                      <Input
+                        value={editData.phone}
+                        onChange={(e) =>
+                          setEditData({ ...editData, phone: e.target.value })
+                        }
+                        placeholder="10-digit mobile (e.g. 9876543210)"
+                        inputMode="numeric"
+                        pattern="^[6-9]\d{9}$"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Student ID
+                      </label>
                       <Input
                         value={editData.student_id}
-                        onChange={(e) => setEditData({ ...editData, student_id: e.target.value })}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            student_id: e.target.value,
+                          })
+                        }
                         placeholder="e.g. 2312456"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground">Programme</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Programme
+                      </label>
                       <Input
                         value={editData.programme}
-                        onChange={(e) => setEditData({ ...editData, programme: e.target.value })}
-                        placeholder="e.g. BCA, BBA, MCA"
+                        onChange={(e) =>
+                          setEditData({ ...editData, programme: e.target.value })
+                        }
+                        placeholder='e.g. "B.Com Computer Applications"'
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground">Year of Study</label>
-                      <Input
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Year of Study
+                      </label>
+                      <Select
                         value={editData.year_of_study}
-                        onChange={(e) => setEditData({ ...editData, year_of_study: e.target.value })}
-                        placeholder="e.g. 2nd Year"
-                      />
+                        onValueChange={(value) =>
+                          setEditData({ ...editData, year_of_study: value })
+                        }
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1st Year">1st Year</SelectItem>
+                          <SelectItem value="2nd Year">2nd Year</SelectItem>
+                          <SelectItem value="3rd Year">3rd Year</SelectItem>
+                          <SelectItem value="4th Year">4th Year</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="sm:col-span-2 space-y-1.5">
-                      <label className="text-xs font-medium text-muted-foreground">Bio</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Bio
+                      </label>
                       <textarea
                         value={editData.bio}
-                        onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                        onChange={(e) =>
+                          setEditData({ ...editData, bio: e.target.value })
+                        }
                         placeholder="Tell us about yourself..."
                         rows={3}
+                        maxLength={200}
                         className="w-full px-3 py-2 bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none text-sm"
                       />
+                      <p className="text-xs text-muted-foreground text-right">
+                        {editData.bio.length}/200
+                      </p>
                     </div>
                   </div>
                 </div>
