@@ -19,7 +19,7 @@ import Footer from "@/components/Footer";
 import { DetailPageSkeleton } from "@/components/CardSkeleton";
 import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
-import ReactionBar from "@/components/ReactionBar";
+import ReactionButtons from "@/components/ReactionButtons";
 import { usePlaceDetail, placePhotoUrl } from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,7 +117,14 @@ const FoodRestaurantDetails = () => {
                 <p className="text-white/85 mt-2 max-w-2xl">{place.address}</p>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-3 text-white/90">
-                <ReactionBar placeId={place.id} />
+                <ReactionButtons
+                  placeId={place.id}
+                  initialCounts={{
+                    likes: place.like_count ?? 0,
+                    dislikes: place.dislike_count ?? 0,
+                    bookmarks: place.bookmark_count ?? 0,
+                  }}
+                />
                 <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                   <span className="text-sm font-medium">{place.rating}</span>

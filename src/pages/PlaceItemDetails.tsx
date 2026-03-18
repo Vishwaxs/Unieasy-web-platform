@@ -19,7 +19,7 @@ import Footer from "@/components/Footer";
 import { DetailPageSkeleton } from "@/components/CardSkeleton";
 import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
-import ReactionBar from "@/components/ReactionBar";
+import ReactionButtons from "@/components/ReactionButtons";
 import { usePlaceDetail, placePhotoUrl } from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -218,7 +218,14 @@ const PlaceItemDetails = () => {
 
           {/* Community */}
           <SentimentPoll placeId={place.id} />
-          <ReactionBar placeId={place.id} />
+          <ReactionButtons
+            placeId={place.id}
+            initialCounts={{
+              likes: place.like_count ?? 0,
+              dislikes: place.dislike_count ?? 0,
+              bookmarks: place.bookmark_count ?? 0,
+            }}
+          />
           <section id="reviews" className="scroll-mt-24">
             <ReviewSection placeId={place.id} />
           </section>
