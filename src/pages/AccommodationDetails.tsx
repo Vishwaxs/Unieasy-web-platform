@@ -13,6 +13,7 @@ import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations
 import { useActiveAds } from "@/hooks/useActiveAds";
 import ReviewDialog from "@/components/ReviewDialog";
 import { AccommodationCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
+import { shortAddress } from "@/lib/utils";
 
 const STAY_TYPE_OPTIONS = [
   { value: "hostel", label: "Hostel" },
@@ -140,7 +141,11 @@ const AccommodationCard = ({
         <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
           <MapPin className="w-4 h-4 shrink-0" />
           <span>
-            {showsDistanceKm ? `${item.distance} from campus` : item.distance}
+            {item.distance
+              ? showsDistanceKm
+                ? `${item.distance} from campus`
+                : item.distance
+              : shortAddress(item.address)}
           </span>
         </div>
 
@@ -221,8 +226,13 @@ const AccommodationDetails = () => {
       if (sort === "price-low") return a.price - b.price;
       if (sort === "price-high") return b.price - a.price;
       if (sort === "rating") return b.rating - a.rating;
-      if (sort === "distance")
-        return parseFloat(a.distance) - parseFloat(b.distance);
+      if (sort === "distance") {
+        const aNum = parseFloat(a.distance || "");
+        const bNum = parseFloat(b.distance || "");
+        const safeA = Number.isFinite(aNum) ? aNum : Number.POSITIVE_INFINITY;
+        const safeB = Number.isFinite(bNum) ? bNum : Number.POSITIVE_INFINITY;
+        return safeA - safeB;
+      }
       return 0;
     });
 

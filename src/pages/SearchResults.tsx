@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { shortAddress } from "@/lib/utils";
 
 interface SearchResult {
   id: string;
@@ -126,16 +127,14 @@ const ResultCard = ({ item }: { item: SearchResult }) => (
         ) : null}
       </div>
 
-      {item.distance_from_campus ? (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-          <MapPin className="h-3.5 w-3.5" />
-          <span className="truncate">{item.distance_from_campus}</span>
-        </div>
-      ) : null}
-
-      {item.address ? (
-        <p className="text-sm text-muted-foreground line-clamp-2">{item.address}</p>
-      ) : null}
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+        <MapPin className="h-3.5 w-3.5" />
+        <span className="truncate">
+          {item.distance_from_campus
+            ? `${item.distance_from_campus} from campus`
+            : shortAddress(item.address)}
+        </span>
+      </div>
     </div>
   </Link>
 );

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { shortAddress } from "@/lib/utils";
 
 export interface StudySpot {
   id: string;
@@ -48,6 +49,8 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
   const idStr = (place.id as string) || "a";
   const fallbackIndex = idStr.charCodeAt(0) % STUDY_FALLBACK_IMAGES.length;
   const rawType = (place.sub_type as string) || (place.type as string) || "library";
+  const dist = (place.distance_from_campus as string) || "";
+  const address = (place.address as string) || null;
 
   return {
     id: place.id as string,
@@ -55,14 +58,14 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
     type: rawType.charAt(0).toUpperCase() + rawType.slice(1),
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: (place.distance_from_campus as string) || (place.address as string) || "Nearby",
+    distance: dist ? `${dist} from campus` : shortAddress(address),
     timing,
     noise: formatNoise(place.noise_level as string | null),
     has_wifi: typeof place.has_wifi === "boolean" ? place.has_wifi : true,
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
       : STUDY_FALLBACK_IMAGES[fallbackIndex],
-    comment: (place.address as string) || "",
+    comment: ((place.short_description as string) || "").trim(),
   };
 }
 

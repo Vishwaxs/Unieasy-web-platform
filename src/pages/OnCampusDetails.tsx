@@ -9,6 +9,7 @@ import SponsoredCard from "@/components/SponsoredCard";
 import { useCampusPlaces, type CampusPlace } from "@/hooks/useCampusPlaces";
 import { useActiveAds } from "@/hooks/useActiveAds";
 import { CampusCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
+import { shortAddress } from "@/lib/utils";
 
 const CAMPUS_FILTER_GROUPS = [
   {
@@ -96,7 +97,7 @@ const CampusCard = ({ item, index }: { item: CampusPlace; index: number }) => {
           <div className="space-y-2 mb-3">
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <MapPin className="w-3 h-3" />
-              <span>{item.address}</span>
+              <span>{shortAddress(item.address)}</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Clock className="w-3 h-3" />

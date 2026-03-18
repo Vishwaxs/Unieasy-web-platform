@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { shortAddress } from "@/lib/utils";
 
 export interface Accommodation {
   id: string;
@@ -9,6 +10,7 @@ export interface Accommodation {
   rating: number;
   reviews: number;
   distance: string;
+  address: string | null;
   amenities: string[];
   image: string;
   comment: string;
@@ -68,6 +70,8 @@ function placeToAccommodation(place: Record<string, unknown>): Accommodation {
   const firstReview = reviews.length > 0 ? reviews[0] : null;
   const reviewSnippet =
     firstReview && typeof firstReview.text === "string" ? firstReview.text : "";
+  const dist = (place.distance_from_campus as string) || "";
+  const fullAddress = (place.address as string) || null;
 
   const idStr = (place.id as string) || "a";
   const fallbackIndex = idStr.charCodeAt(0) % ACCOMMODATION_FALLBACK_IMAGES.length;
@@ -86,12 +90,13 @@ function placeToAccommodation(place: Record<string, unknown>): Accommodation {
     display_price_label: (place.display_price_label as string) || undefined,
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: (place.distance_from_campus as string) || (place.address as string) || "Nearby",
+    distance: dist,
+    address: fullAddress,
     amenities: Array.isArray(place.amenities) ? (place.amenities as string[]) : ["wifi"],
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
       : ACCOMMODATION_FALLBACK_IMAGES[fallbackIndex],
-    comment: (place.address as string) || "",
+    comment: (reviewSnippet || (place.short_description as string) || shortAddress(fullAddress)).trim(),
     lat: typeof place.lat === "number" ? place.lat : undefined,
     lng: typeof place.lng === "number" ? place.lng : undefined,
   };

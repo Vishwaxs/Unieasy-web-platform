@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { shortAddress } from "@/lib/utils";
 
 export interface FoodItem {
   id: string;
@@ -53,6 +54,8 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
   const firstReview = reviews.length > 0 ? reviews[0] : null;
   const reviewSnippet =
     firstReview && typeof firstReview.text === "string" ? firstReview.text : "";
+  const dist = (place.distance_from_campus as string) || "";
+  const locality = shortAddress((place.address as string) || null);
 
   // B4 fix: deterministic per-card fallback using id
   const idStr = (place.id as string) || "a";
@@ -61,7 +64,7 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
-    restaurant: (place.address as string) || "",
+    restaurant: dist ? `${dist} from campus` : locality,
     // B5 fix: prefer actual price_inr from DB, fall back to price_level mapping
     price: typeof place.price_inr === "number"
       ? place.price_inr
@@ -75,7 +78,7 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
       : FOOD_FALLBACK_IMAGES[fallbackIndex],
-    comment: (place.address as string) || "",
+    comment: (reviewSnippet || (place.short_description as string) || "").trim(),
     lat: typeof place.lat === "number" ? place.lat : undefined,
     lng: typeof place.lng === "number" ? place.lng : undefined,
   };
