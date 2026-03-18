@@ -1,45 +1,122 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { useSentiment, useVoteSentiment, type Sentiment } from "@/hooks/useSentiment";
+import { toast } from "sonner";
+
+import { supabase } from "@/lib/supabase";
 
 interface SentimentPollProps {
   placeId: string;
+  initialCounts: {
+    love: number;
+    like: number;
+    neutral: number;
+    dislike: number;
+    terrible: number;
+  };
 }
 
-const EMOJI_CONFIG: { key: Sentiment; emoji: string; label: string; color: string }[] = [
-  { key: "love", emoji: "\u{1F60D}", label: "Love it", color: "bg-pink-500" },
-  { key: "like", emoji: "\u{1F60A}", label: "Like it", color: "bg-green-500" },
-  { key: "neutral", emoji: "\u{1F610}", label: "It's okay", color: "bg-yellow-500" },
-  { key: "dislike", emoji: "\u{1F615}", label: "Not great", color: "bg-orange-500" },
-  { key: "terrible", emoji: "\u{1F620}", label: "Terrible", color: "bg-red-500" },
+type Sentiment = "love" | "like" | "neutral" | "dislike" | "terrible";
+
+const EMOJI_CONFIG: { key: Sentiment; emoji: string; label: string }[] = [
+  { key: "love", emoji: "❤️", label: "Love" },
+  { key: "like", emoji: "👍", label: "Like" },
+  { key: "neutral", emoji: "😐", label: "Neutral" },
+  { key: "dislike", emoji: "👎", label: "Dislike" },
+  { key: "terrible", emoji: "😡", label: "Terrible" },
 ];
 
-const SentimentPoll = ({ placeId }: SentimentPollProps) => {
-  const { isSignedIn } = useUser();
-  const { data, isLoading } = useSentiment(placeId);
-  const voteMutation = useVoteSentiment(placeId);
-  const [voting, setVoting] = useState(false);
+const SentimentPoll = ({ placeId, initialCounts }: SentimentPollProps) => {
+  const { user } = useUser();
+  const [mySentiment, setMySentiment] = useState<Sentiment | null>(null);
+  const [counts, setCounts] = useState(initialCounts);
+  const [isVoting, setIsVoting] = useState(false);
 
-  const handleVote = async (sentiment: Sentiment) => {
-    if (!isSignedIn || voting) return;
-    setVoting(true);
-    try {
-      await voteMutation.mutateAsync(sentiment);
-    } catch {
-      // Error handled by mutation
-    } finally {
-      setVoting(false);
+  useEffect(() => {
+    setCounts(initialCounts);
+  }, [
+    initialCounts.love,
+    initialCounts.like,
+    initialCounts.neutral,
+    initialCounts.dislike,
+    initialCounts.terrible,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchMine = async () => {
+      if (!user?.id) {
+        if (!cancelled) setMySentiment(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("sentiment_polls")
+        .select("sentiment")
+        .eq("place_id", placeId)
+        .eq("clerk_user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setMySentiment((data?.sentiment as Sentiment | undefined) || null);
+    };
+    fetchMine();
+    return () => {
+      cancelled = true;
+    };
+  }, [placeId, user?.id]);
+
+  const totalVotes = useMemo(() => {
+    return (
+      (counts.love || 0) +
+      (counts.like || 0) +
+      (counts.neutral || 0) +
+      (counts.dislike || 0) +
+      (counts.terrible || 0)
+    );
+  }, [counts]);
+
+  const castVote = async (newSentiment: Sentiment) => {
+    if (!user) {
+      toast.error("Please sign in to vote");
+      return;
     }
-  };
+    if (isVoting) return;
+    setIsVoting(true);
 
-  const total = data?.total || 0;
-  const userVote = data?.userVote;
-  const distribution = data?.distribution || {
-    love: 0,
-    like: 0,
-    neutral: 0,
-    dislike: 0,
-    terrible: 0,
+    try {
+      if (mySentiment === newSentiment) {
+        await supabase
+          .from("sentiment_polls")
+          .delete()
+          .eq("place_id", placeId)
+          .eq("clerk_user_id", user.id);
+        setMySentiment(null);
+      } else {
+        await supabase.from("sentiment_polls").upsert(
+          { place_id: placeId, clerk_user_id: user.id, sentiment: newSentiment },
+          { onConflict: "place_id,clerk_user_id" },
+        );
+        setMySentiment(newSentiment);
+      }
+
+      const { data: place } = await supabase
+        .from("places")
+        .select(
+          "sentiment_love, sentiment_like, sentiment_neutral, sentiment_dislike, sentiment_terrible",
+        )
+        .eq("id", placeId)
+        .single();
+
+      if (place) {
+        setCounts({
+          love: place.sentiment_love ?? 0,
+          like: place.sentiment_like ?? 0,
+          neutral: place.sentiment_neutral ?? 0,
+          dislike: place.sentiment_dislike ?? 0,
+          terrible: place.sentiment_terrible ?? 0,
+        });
+      }
+    } finally {
+      setIsVoting(false);
+    }
   };
 
   return (
@@ -48,71 +125,41 @@ const SentimentPoll = ({ placeId }: SentimentPollProps) => {
         How do you feel about this place?
       </h3>
       <p className="text-sm text-muted-foreground mb-4">
-        {userVote
-          ? "You voted! Here are the results."
-          : isSignedIn
-          ? "Share your vibe!"
-          : "Sign in to vote"}
+        {mySentiment ? "You voted! Tap again to remove." : user ? "Share your vibe!" : "Sign in to vote"}
       </p>
 
       {/* Emoji buttons */}
       <div className="flex flex-wrap justify-center gap-3 mb-5">
         {EMOJI_CONFIG.map(({ key, emoji, label }) => {
-          const isSelected = userVote === key;
+          const isSelected = mySentiment === key;
+          const count = counts[key] ?? 0;
           return (
             <button
               key={key}
               type="button"
-              onClick={() => handleVote(key)}
-              disabled={!isSignedIn || voting || isLoading}
+              onClick={() => castVote(key)}
+              disabled={isVoting}
               className={`
-                flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all
+                flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all
                 ${
                   isSelected
                     ? "bg-primary/15 ring-2 ring-primary scale-110 shadow-md"
                     : "bg-muted/50 hover:bg-muted hover:scale-105"
                 }
-                ${!isSignedIn ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                ${!user ? "opacity-50" : ""}
               `}
             >
               <span className="text-2xl">{emoji}</span>
-              <span className="text-xs text-muted-foreground font-medium">
-                {label}
-              </span>
+              <span className="text-xs text-muted-foreground font-medium">{label}</span>
+              <span className="text-xs font-semibold text-foreground/80">{count}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Results bars */}
-      {total > 0 && (
-        <div className="space-y-2">
-          {EMOJI_CONFIG.map(({ key, emoji, label, color }) => {
-            const count = distribution[key];
-            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-            return (
-              <div key={key} className="flex items-center gap-2">
-                <span className="text-sm w-6 text-center">{emoji}</span>
-                <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden relative">
-                  <div
-                    className={`h-full ${color} rounded-full transition-all duration-500`}
-                    style={{ width: `${pct}%` }}
-                  />
-                  <span className="absolute inset-0 flex items-center pl-2 text-xs font-medium text-foreground">
-                    {label}
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground w-10 text-right">
-                  {pct}%
-                </span>
-              </div>
-            );
-          })}
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            {total} vote{total !== 1 ? "s" : ""}
-          </p>
-        </div>
-      )}
+      <p className="text-xs text-muted-foreground text-center">
+        {totalVotes} student{totalVotes === 1 ? "" : "s"} voted
+      </p>
     </div>
   );
 };

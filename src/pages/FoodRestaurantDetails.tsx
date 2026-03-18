@@ -257,7 +257,16 @@ const FoodRestaurantDetails = () => {
             <section id="reviews" className="scroll-mt-24">
               <ReviewSection placeId={place.id} />
             </section>
-            <SentimentPoll placeId={place.id} />
+            <SentimentPoll
+              placeId={place.id}
+              initialCounts={{
+                love: place.sentiment_love ?? 0,
+                like: place.sentiment_like ?? 0,
+                neutral: place.sentiment_neutral ?? 0,
+                dislike: place.sentiment_dislike ?? 0,
+                terrible: place.sentiment_terrible ?? 0,
+              }}
+            />
           </div>
 
           {/* Sidebar */}
