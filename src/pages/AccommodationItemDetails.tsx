@@ -253,9 +253,7 @@ const AccommodationItemDetails = () => {
             )}
 
             {/* Reviews & Sentiment */}
-            <section id="reviews" className="scroll-mt-24">
-              <ReviewSection placeId={place.id} />
-            </section>
+            <ReviewSection placeId={place.id} placeName={place.name} />
             <SentimentPoll
               placeId={place.id}
               initialCounts={{

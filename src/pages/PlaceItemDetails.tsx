@@ -236,9 +236,7 @@ const PlaceItemDetails = () => {
               bookmarks: place.bookmark_count ?? 0,
             }}
           />
-          <section id="reviews" className="scroll-mt-24">
-            <ReviewSection placeId={place.id} />
-          </section>
+          <ReviewSection placeId={place.id} placeName={place.name} />
         </div>
       </main>
       <Footer />
