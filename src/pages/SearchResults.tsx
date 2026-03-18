@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Search, Star, Wallet } from "lucide-react";
+import { MapPin, Search, Wallet } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shortAddress } from "@/lib/utils";
+import RatingBadge from "@/components/RatingBadge";
 
 interface SearchResult {
   id: string;
@@ -76,25 +77,6 @@ function sectionForResult(item: SearchResult): CategorySection {
   return "Essentials";
 }
 
-function Stars({ rating }: { rating: number }) {
-  const safe = Number.isFinite(rating) ? rating : 0;
-  const full = Math.max(0, Math.min(5, Math.round(safe)));
-  return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          className={[
-            "h-4 w-4",
-            i < full ? "fill-primary text-primary" : "text-muted-foreground/40",
-          ].join(" ")}
-        />
-      ))}
-      <span className="ml-1 text-xs text-muted-foreground">{safe > 0 ? safe.toFixed(1) : "—"}</span>
-    </div>
-  );
-}
-
 const ResultCard = ({ item }: { item: SearchResult }) => (
   <Link
     to={resultLink(item)}
@@ -118,7 +100,7 @@ const ResultCard = ({ item }: { item: SearchResult }) => (
         {item.name}
       </h3>
       <div className="flex items-center justify-between gap-3 mb-2">
-        <Stars rating={item.rating} />
+        <RatingBadge rating={item.rating} ratingCount={item.rating_count} size="sm" source="google" />
         {item.price_display ? (
           <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <Wallet className="h-3.5 w-3.5" />

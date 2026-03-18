@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useLocation, useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
-  Star,
   MapPin,
   Phone,
   Clock3,
@@ -20,6 +19,7 @@ import { DetailPageSkeleton } from "@/components/CardSkeleton";
 import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionButtons from "@/components/ReactionButtons";
+import RatingBadge from "@/components/RatingBadge";
 import { usePlaceDetail, placePhotoUrl } from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -86,12 +86,13 @@ const PlaceItemDetails = () => {
             <div className="flex flex-wrap items-center gap-3 mt-2">
               {place.sub_type && <Badge className="bg-white/20 text-white border-0">{place.sub_type}</Badge>}
               <Badge className="bg-primary/80 text-white border-0">{place.category}</Badge>
-              {place.rating > 0 && (
-                <span className="flex items-center gap-1 text-white text-sm">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  {place.rating} ({place.rating_count || 0})
-                </span>
-              )}
+              <RatingBadge
+                rating={place.rating}
+                ratingCount={place.rating_count}
+                reviewCount={place.review_count}
+                source="both"
+                size="lg"
+              />
             </div>
           </div>
         </div>

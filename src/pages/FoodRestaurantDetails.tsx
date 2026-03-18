@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useLocation, useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
-  Star,
   MapPin,
   Phone,
   Clock3,
@@ -20,6 +19,7 @@ import { DetailPageSkeleton } from "@/components/CardSkeleton";
 import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionButtons from "@/components/ReactionButtons";
+import RatingBadge from "@/components/RatingBadge";
 import { usePlaceDetail, placePhotoUrl } from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,11 +125,13 @@ const FoodRestaurantDetails = () => {
                     bookmarks: place.bookmark_count ?? 0,
                   }}
                 />
-                <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  <span className="text-sm font-medium">{place.rating}</span>
-                  <span className="text-xs text-white/70">({place.rating_count} reviews)</span>
-                </div>
+                <RatingBadge
+                  rating={place.rating}
+                  ratingCount={place.rating_count}
+                  reviewCount={place.review_count}
+                  source="both"
+                  size="lg"
+                />
                 {place.is_veg !== null && (
                   <Badge
                     className={`${place.is_veg ? "bg-green-500" : "bg-red-500"} text-white border-0`}
