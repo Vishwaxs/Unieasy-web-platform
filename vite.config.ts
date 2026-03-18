@@ -8,7 +8,7 @@ export default defineConfig(() => ({
     host: "::",
     port: 5173,
     hmr: {
-      overlay: false,
+      overlay: true,
     },
   },
   plugins: [react()],

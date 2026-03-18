@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Clock, Users, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -8,6 +8,7 @@ import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import SponsoredCard from "@/components/SponsoredCard";
 import { useCampusPlaces, type CampusPlace } from "@/hooks/useCampusPlaces";
 import { useActiveAds } from "@/hooks/useActiveAds";
+import { CampusCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 
 const CAMPUS_FILTER_GROUPS = [
   {
@@ -140,14 +141,6 @@ const OnCampusDetails = () => {
     return result;
   }, [places, filters, sort]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -192,6 +185,11 @@ const OnCampusDetails = () => {
             />
           </div>
 
+          {loading ? (
+            <SkeletonGrid count={6} gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <CampusCardSkeleton />
+            </SkeletonGrid>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
               <React.Fragment key={item.id}>
@@ -202,6 +200,7 @@ const OnCampusDetails = () => {
               </React.Fragment>
             ))}
           </div>
+          )}
 
           {!loading && filteredItems.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">

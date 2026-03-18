@@ -70,28 +70,3 @@ export function formatCompactCount(count: number): string {
   const value = safe / 1_000_000;
   return `${value.toFixed(1).replace(/\.0$/, "")}M`;
 }
-
-const USER_REVIEW_COUNT_PREFIX = "unieasy:userReviewCount:";
-
-export function getUserReviewCount(userId: string): number {
-  if (!userId) return 0;
-  try {
-    const raw = localStorage.getItem(`${USER_REVIEW_COUNT_PREFIX}${userId}`);
-    const parsed = raw ? Number(raw) : 0;
-    return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
-  } catch {
-    return 0;
-  }
-}
-
-export function incrementUserReviewCount(userId: string, delta = 1): number {
-  if (!userId) return 0;
-  const current = getUserReviewCount(userId);
-  const next = Math.max(0, current + delta);
-  try {
-    localStorage.setItem(`${USER_REVIEW_COUNT_PREFIX}${userId}`, String(next));
-  } catch {
-    // ignore storage errors
-  }
-  return next;
-}

@@ -15,78 +15,31 @@ import { listQuerySchema, idParamSchema, photoParamSchema, searchQuerySchema } f
 
 const router = Router();
 
-// Demo dataset for on-campus page, exposed via API for frontend fetching.
-const campusShops = [
-  {
-    id: "1",
-    name: "Mingos",
-    block: "Central Block",
-    floor: "Gourmet, Birdspark",
-    category: "Cafe",
-    image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400",
-    comment: "Located in Central Block near Gourmet and Birdspark.",
-  },
-  {
-    id: "2",
-    name: "Michael",
-    block: "Central Block",
-    floor: "Gourmet",
-    category: "Cafe",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400",
-    comment: "Located in Central Block at Gourmet.",
-  },
-  {
-    id: "3",
-    name: "Nandini",
-    block: "Opp. to Central Block",
-    floor: "Ground Level",
-    category: "Cafe",
-    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400",
-    comment: "Located opposite to Central Block",
-  },
-  {
-    id: "4",
-    name: "Fresteria",
-    block: "Opp. to Central Block",
-    floor: "Ground Level",
-    category: "Cafe",
-    image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
-    comment: "Located opposite to Central Block.",
-  },
-  {
-    id: "5",
-    name: "Kiosk",
-    block: "Near Block 2",
-    floor: "Ground Level",
-    category: "Cafe",
-    image: "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400",
-    comment: "Located near Block 2.",
-  },
-  {
-    id: "6",
-    name: "JustBake",
-    block: "Near Basketball",
-    floor: "Ground Level",
-    category: "Cake Shop",
-    image: "https://images.unsplash.com/photo-1559622214-f8a9850965bb?w=400",
-    comment: "Cake shop located near the basketball court.",
-  },
-  {
-    id: "7",
-    name: "Punjabi Bites",
-    block: "Central Block",
-    floor: "Ground Level",
-    category: "Food",
-    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400",
-    comment: "Punjabi food outlet in Central Block.",
-  },
-];
+// ═══════════════════════════════════════════════════════════════════════════════
+// GET /api/campus/shops — On-campus places from Supabase
+// ═══════════════════════════════════════════════════════════════════════════════
 
-router.get("/campus/shops", (_req, res) => {
-  res.json({
-    data: campusShops,
-    count: campusShops.length,
-  });
+router.get("/campus/shops", listLimiter, async (_req, res) => {
+  try {
+    const { data, error, count } = await supabaseAdmin
+      .from("places")
+      .select("*", { count: "exact" })
+      .eq("is_on_campus", true)
+      .order("name", { ascending: true });
+
+    if (error) {
+      logger.error({ err: error }, "GET /campus/shops query error");
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({
+      data: data || [],
+      count: count || 0,
+    });
+  } catch (err) {
+    logger.error({ err }, "GET /campus/shops unexpected error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -179,75 +132,6 @@ router.get("/places", listLimiter, async (req, res) => {
         logger.error({ err, latency_ms: latency }, "GET /places unexpected error");
         return res.status(500).json({ error: "Internal server error" });
     }
-
-    const { category, type, bbox, is_on_campus, limit, offset } = parsed.data;
-
-    // ── Build query ────────────────────────────────────────────────────────
-    let query = supabaseAdmin.from("places").select("*", { count: "exact" });
-
-    if (category) {
-      query = query.eq("category", category);
-    }
-
-    if (type) {
-      query = query.eq("type", type);
-    }
-
-    if (is_on_campus !== undefined) {
-      query = query.eq("is_on_campus", is_on_campus === "true");
-    }
-
-    // Bounding box filter: "lat1,lng1,lat2,lng2" (SW corner, NE corner)
-    if (bbox) {
-      const parts = bbox.split(",").map((s) => parseFloat(s.trim()));
-      const [lat1, lng1, lat2, lng2] = parts;
-      const minLat = Math.min(lat1, lat2);
-      const maxLat = Math.max(lat1, lat2);
-      const minLng = Math.min(lng1, lng2);
-      const maxLng = Math.max(lng1, lng2);
-
-      query = query
-        .gte("lat", minLat)
-        .lte("lat", maxLat)
-        .gte("lng", minLng)
-        .lte("lng", maxLng);
-    }
-
-    // Pagination
-    query = query
-      .order("rating", { ascending: false, nullsFirst: false })
-      .range(offset, offset + limit - 1);
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      logger.error({ err: error }, "GET /places query error");
-      return res.status(500).json({ error: error.message });
-    }
-
-    const latency = Date.now() - start;
-    logger.info(
-      {
-        method: "GET",
-        path: "/places",
-        params: req.query,
-        status: 200,
-        latency_ms: latency,
-      },
-      "places list",
-    );
-
-    return res.json({
-      data: data || [],
-      count: count || 0,
-      offset,
-      limit,
-    });
-  } catch (err) {
-    const latency = Date.now() - start;
-    logger.error({ err, latency_ms: latency }, "GET /places unexpected error");
-    return res.status(500).json({ error: "Internal server error" });
-  }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

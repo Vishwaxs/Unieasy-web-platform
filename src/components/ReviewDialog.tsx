@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   computeCombinedReviewStats,
-  incrementUserReviewCount,
   ratingOptions,
 } from "@/lib/reviewStats";
 import GoogleRatingBadge from "@/components/GoogleRatingBadge";
@@ -113,10 +112,6 @@ export default function ReviewDialog({
       ...prev,
       [activeItem.id]: [newReview, ...(prev[activeItem.id] || [])],
     }));
-
-    if (user?.id) {
-      incrementUserReviewCount(user.id, 1);
-    }
 
     setReviewText("");
     setReviewRating(null);

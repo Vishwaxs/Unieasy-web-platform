@@ -235,34 +235,7 @@ router.post(
 // ═══════════════════════════════════════════════════════════════════════════════
 // AUDIT LOGS (superadmin only)
 // ═══════════════════════════════════════════════════════════════════════════════
-
-/**
- * GET /api/admin/audit-logs
- * Returns recent audit log entries (last 100).
- */
-router.get(
-  "/audit-logs",
-  verifyClerkToken(["superadmin"]),
-  async (req, res) => {
-    try {
-      const { data, error } = await supabaseAdmin
-        .from("audit_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (error) {
-        logger.error({ err: error }, "GET /audit-logs");
-        return res.status(500).json({ error: error.message });
-      }
-      return res.json(data);
-    } catch (err) {
-      logger.error({ err }, "GET /audit-logs unexpected");
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  }
-);
-
+// NOTE: Audit logs route is defined below in the SUPERADMIN section (paginated).
 // ═══════════════════════════════════════════════════════════════════════════════
 // MERCHANT UPGRADE REQUESTS (admin + superadmin)
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -8,6 +8,7 @@ import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import SponsoredCard from "@/components/SponsoredCard";
 import { useEssentials, type EssentialItem } from "@/hooks/useEssentials";
 import { useActiveAds } from "@/hooks/useActiveAds";
+import { EssentialsCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 
 const ESSENTIALS_FILTER_GROUPS = [
   {
@@ -40,49 +41,12 @@ const ESSENTIALS_SORT_OPTIONS = [
   { value: "name", label: "Name A–Z" },
 ];
 
-const categories = [
-  {
-    id: "essentials",
-    name: "Student Essentials",
-    icon: ShoppingBag,
-    color: "from-pink-500 to-rose-500",
-  },
-  {
-    id: "safety",
-    name: "Safety & Emergency",
-    icon: Shield,
-    color: "from-red-500 to-orange-500",
-  },
-  {
-    id: "discounts",
-    name: "Student Discounts & Deals",
-    icon: Tag,
-    color: "from-green-500 to-emerald-500",
-  },
-  {
-    id: "events",
-    name: "Events & Community",
-    icon: Calendar,
-    color: "from-purple-500 to-indigo-500",
-  },
-  {
-    id: "career",
-    name: "Career & Skill Support",
-    icon: Briefcase,
-    color: "from-blue-500 to-cyan-500",
-  },
-];
-
 const ItemCard = ({
   item,
   index,
-  onReview,
-  userReviews,
 }: {
   item: EssentialItem;
   index: number;
-  onReview: (item: EssentialItem) => void;
-  userReviews?: ReviewEntry[];
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -169,14 +133,6 @@ const EssentialsDetails = () => {
     return result;
   }, [essentialItems, filters, sort]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -219,6 +175,11 @@ const EssentialsDetails = () => {
             />
           </div>
 
+          {loading ? (
+            <SkeletonGrid count={8} gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <EssentialsCardSkeleton />
+            </SkeletonGrid>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredItems.map((item, index) => (
               <React.Fragment key={item.id}>
@@ -229,6 +190,7 @@ const EssentialsDetails = () => {
               </React.Fragment>
             ))}
           </div>
+          )}
 
           {!loading && filteredItems.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">

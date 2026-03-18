@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, Github, Linkedin, Twitter } from "lucide-react";
-import { toast } from "sonner";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 import Logo from "@/components/Logo";
 import christLogoHref from "@/assets/Christ-logo.png";
@@ -43,27 +42,6 @@ const Footer = () => {
                   Central Campus{" "}
                 </div>
               </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => toast.info("Twitter coming soon!")}
-                className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]"
-              >
-                <Twitter className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => toast.info("LinkedIn coming soon!")}
-                className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]"
-              >
-                <Linkedin className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => toast.info("GitHub coming soon!")}
-                className="w-10 h-10 rounded-full bg-[hsl(var(--footer-border))] flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all hover:scale-110 text-[hsl(var(--footer-muted))]"
-              >
-                <Github className="w-5 h-5" />
-              </button>
             </div>
           </div>
 

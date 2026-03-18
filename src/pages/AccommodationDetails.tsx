@@ -1,13 +1,25 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Wifi, Car, Shield, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Wifi, Car, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { ReviewEntry, ReviewItemSummary } from "@/components/ReviewDialog";
+import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStats";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import SponsoredCard from "@/components/SponsoredCard";
 import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations";
 import { useActiveAds } from "@/hooks/useActiveAds";
+import ReviewDialog from "@/components/ReviewDialog";
+import { AccommodationCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
+
+const STAY_TYPE_OPTIONS = [
+  { value: "hostel", label: "Hostel" },
+  { value: "pg", label: "PG" },
+  { value: "apartment", label: "Apartment" },
+  { value: "co-living", label: "Co-living" },
+];
 
 const ACCOMMODATION_FILTER_GROUPS = [
   {
@@ -182,6 +194,14 @@ const AccommodationDetails = () => {
   const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", price: "all" });
   const [sort, setSort] = useState("default");
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState<ReviewItemSummary | null>(null);
+  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
+
+  const handleReview = (item: Accommodation) => {
+    setActiveItem({ id: item.id, name: item.name, rating: item.rating, reviews: item.reviews });
+    setReviewOpen(true);
+  };
 
   const filteredItems = useMemo(() => {
     let result = accommodations.filter((item) => {
@@ -208,14 +228,6 @@ const AccommodationDetails = () => {
 
     return result;
   }, [accommodations, filters, sort]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -261,16 +273,22 @@ const AccommodationDetails = () => {
             />
           </div>
 
+          {loading ? (
+            <SkeletonGrid count={6} gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <AccommodationCardSkeleton />
+            </SkeletonGrid>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
               <React.Fragment key={item.id}>
-                <AccommodationCard item={item} index={index} />
+                <AccommodationCard item={item} index={index} onReview={handleReview} userReviews={reviewsByItem[item.id]} />
                 {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
                   <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
                 )}
               </React.Fragment>
             ))}
           </div>
+          )}
 
           <ReviewDialog
             open={reviewOpen}

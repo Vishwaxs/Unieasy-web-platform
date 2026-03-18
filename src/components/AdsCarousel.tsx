@@ -27,11 +27,12 @@ const AdsCarousel = () => {
   }, [next, activeAds.length]);
 
   // Track impression when ad changes
+  const currentAdId = activeAds[current]?.id;
   useEffect(() => {
-    if (activeAds.length > 0 && activeAds[current]) {
-      trackImpression(activeAds[current].id);
+    if (currentAdId) {
+      trackImpression(currentAdId);
     }
-  }, [current, activeAds]);
+  }, [currentAdId]);
 
   if (activeAds.length === 0) return null;
 

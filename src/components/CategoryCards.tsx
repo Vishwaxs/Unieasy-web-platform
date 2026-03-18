@@ -10,6 +10,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { modulesEnabled, modulesDisabledHint } from "@/lib/featureFlags";
+import { supabase } from "@/lib/supabase";
 
 const resolveVideoSrc = (video: string) => {
   if (!video) return video;
@@ -27,7 +28,7 @@ const categories = [
     icon: Store,
     video: "/campus.mp4",
     playbackRate: 1.1,
-    count: "Shops",
+    countKey: "campus" as const,
     link: "/campus",
   },
   {
@@ -36,7 +37,7 @@ const categories = [
     description: "Cafes, restaurants & street food",
     icon: Utensils,
     video: "/5780171-uhd_3840_2160_24fps.mp4",
-    count: "150+",
+    countKey: "food" as const,
     link: "/food",
   },
   {
@@ -45,7 +46,7 @@ const categories = [
     description: "Hostels, PGs & rentals",
     icon: Home,
     video: "/11050698-uhd_3840_2160_30fps.mp4",
-    count: "80+",
+    countKey: "accommodation" as const,
     link: "/accommodation",
   },
   {
@@ -54,7 +55,7 @@ const categories = [
     description: "Parks & hangout spots",
     icon: MapPin,
     video: "/18733706-uhd_3840_2160_60fps.mp4",
-    count: "60+",
+    countKey: "hangout" as const,
     link: "/explore",
   },
   {
@@ -63,7 +64,7 @@ const categories = [
     description: "Libraries & quiet spaces",
     icon: BookOpen,
     video: "7653221-hd_1080_1920_25fps.mp4",
-    count: "40+",
+    countKey: "study" as const,
     link: "/study",
   },
   {
@@ -72,17 +73,23 @@ const categories = [
     description: "Gyms, laundry & more",
     icon: MoreHorizontal,
     video: "/Video Project 3.mp4",
-    count: "100+",
+    countKey: "essentials" as const,
     link: "/essentials",
   },
 ];
 
+type CategoryCounts = Record<string, number>;
+
+const ESSENTIALS_CATEGORIES = ["services", "health", "fitness", "safety", "essentials"];
+
 const CategoryCard = ({
   category,
   index,
+  count,
 }: {
   category: (typeof categories)[0];
   index: number;
+  count: number;
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -204,7 +211,7 @@ const CategoryCard = ({
               <span
                 className={`inline-block px-3 sm:px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold mb-3 shadow-lg transition-all duration-300 ${isHovered ? "bg-white/30" : ""}`}
               >
-                {category.count} Places
+                {count > 0 ? `${count}+` : ""} Places
               </span>
               <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 drop-shadow-lg">
                 {category.name}
@@ -232,6 +239,42 @@ const CategoryCard = ({
 
 const CategoryCards = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [counts, setCounts] = useState<CategoryCounts>({});
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      const singleCategories = ["food", "accommodation", "hangout", "study", "campus"];
+      const queries = singleCategories.map((cat) =>
+        supabase
+          .from("places")
+          .select("id", { count: "exact", head: true })
+          .eq("category", cat)
+      );
+      // Essentials: multiple categories combined
+      const essentialsQueries = ESSENTIALS_CATEGORIES.map((cat) =>
+        supabase
+          .from("places")
+          .select("id", { count: "exact", head: true })
+          .eq("category", cat)
+      );
+
+      const [singleResults, essentialsResults] = await Promise.all([
+        Promise.all(queries),
+        Promise.all(essentialsQueries),
+      ]);
+
+      const newCounts: CategoryCounts = {};
+      singleCategories.forEach((cat, i) => {
+        newCounts[cat] = singleResults[i].count ?? 0;
+      });
+      newCounts.essentials = essentialsResults.reduce(
+        (sum, res) => sum + (res.count ?? 0),
+        0
+      );
+      setCounts(newCounts);
+    };
+    fetchCounts();
+  }, []);
 
   const scrollNext = () => {
     const el = scrollRef.current;
@@ -282,7 +325,7 @@ const CategoryCards = () => {
           className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 overscroll-x-contain"
         >
           {categories.map((category, index) => (
-            <CategoryCard key={category.id} category={category} index={index} />
+            <CategoryCard key={category.id} category={category} index={index} count={counts[category.countKey] ?? 0} />
           ))}
         </div>
       </div>

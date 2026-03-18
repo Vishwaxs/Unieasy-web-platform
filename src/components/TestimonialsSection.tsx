@@ -1,53 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const testimonials = [
-    {
-        name: "Aarav Sharma",
-        role: "BCA 2nd Year",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav",
-        text: "UniEasy helped me find an affordable PG within walking distance of campus. The verified listings saved me from so many scams!",
-        rating: 5,
-        category: "Accommodation",
-    },
-    {
-        name: "Priya Menon",
-        role: "MCA 1st Year",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya",
-        text: "Best food recommendations ever! I discovered this amazing South Indian place through UniEasy that's now my go-to spot.",
-        rating: 5,
-        category: "Food & Dining",
-    },
-    {
-        name: "Rohan Gupta",
-        role: "BBA 3rd Year",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rohan",
-        text: "The study zone finder is incredible. Found a quiet library I never knew existed just 5 minutes from my hostel.",
-        rating: 4,
-        category: "Study Zones",
-    },
-    {
-        name: "Anisha Patel",
-        role: "BCom 2nd Year",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Anisha",
-        text: "As a merchant, I love how easy it is to reach students. My café got 40% more footfall after listing on UniEasy!",
-        rating: 5,
-        category: "Merchant",
-    },
-    {
-        name: "Vikram Das",
-        role: "MCA 2nd Year",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vikram",
-        text: "The explore section led me to some amazing hidden spots around Hosur Road. Perfect weekend hangouts!",
-        rating: 5,
-        category: "Explore",
-    },
-];
+interface Testimonial {
+    name: string;
+    avatar: string;
+    text: string;
+    rating: number;
+    category: string;
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+    food: "Food & Dining",
+    accommodation: "Accommodation",
+    study: "Study Zones",
+    hangout: "Explore",
+    campus: "On Campus",
+    services: "Essentials",
+    health: "Essentials",
+    fitness: "Essentials",
+    safety: "Essentials",
+    essentials: "Essentials",
+};
 
 const TestimonialCard = ({
     testimonial,
 }: {
-    testimonial: (typeof testimonials)[0];
+    testimonial: Testimonial;
 }) => (
     <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-sm hover:shadow-lg transition-all duration-500 hover:-translate-y-1 hover:border-primary/20 flex flex-col h-full relative overflow-hidden group">
         {/* Decorative quote */}
@@ -73,7 +53,7 @@ const TestimonialCard = ({
 
         {/* Text */}
         <p className="text-foreground/90 text-sm md:text-base leading-relaxed flex-1 mb-6 italic">
-            "{testimonial.text}"
+            &ldquo;{testimonial.text}&rdquo;
         </p>
 
         {/* Author */}
@@ -88,13 +68,32 @@ const TestimonialCard = ({
                 <p className="font-semibold text-foreground text-sm">
                     {testimonial.name}
                 </p>
-                <p className="text-muted-foreground text-xs">{testimonial.role}</p>
             </div>
         </div>
     </div>
 );
 
+const TestimonialSkeleton = () => (
+    <div className="bg-card rounded-2xl border border-border p-6 md:p-8 flex flex-col h-full">
+        <div className="flex gap-0.5 mb-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="w-4 h-4 rounded-full" />
+            ))}
+        </div>
+        <Skeleton className="w-20 h-6 rounded-full mb-3" />
+        <Skeleton className="w-full h-4 mb-2" />
+        <Skeleton className="w-full h-4 mb-2" />
+        <Skeleton className="w-3/4 h-4 mb-6" />
+        <div className="flex items-center gap-3 pt-4 border-t border-border/60">
+            <Skeleton className="w-10 h-10 rounded-full" />
+            <Skeleton className="w-24 h-4" />
+        </div>
+    </div>
+);
+
 const TestimonialsSection = () => {
+    const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+    const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
     const sectionRef = useRef<HTMLElement>(null);
@@ -114,7 +113,38 @@ const TestimonialsSection = () => {
         return () => window.removeEventListener("resize", updatePerPage);
     }, []);
 
-    const totalPages = Math.ceil(testimonials.length / perPage);
+    // Fetch top-rated reviews from Supabase
+    useEffect(() => {
+        const fetchTestimonials = async () => {
+            const { data } = await supabase
+                .from("reviews")
+                .select("body, rating, is_anonymous, app_users!inner(full_name), places!inner(category)")
+                .eq("status", "active")
+                .gte("rating", 4)
+                .order("created_at", { ascending: false })
+                .limit(9);
+
+            if (data && data.length > 0) {
+                const mapped: Testimonial[] = data.map((r: any) => {
+                    const isAnon = r.is_anonymous;
+                    const fullName = isAnon ? "Anonymous Student" : (r.app_users?.full_name || "Student");
+                    const placeCategory = r.places?.category || "";
+                    return {
+                        name: fullName,
+                        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName)}`,
+                        text: r.body,
+                        rating: r.rating,
+                        category: CATEGORY_LABELS[placeCategory] || placeCategory,
+                    };
+                });
+                setTestimonials(mapped);
+            }
+            setLoading(false);
+        };
+        fetchTestimonials();
+    }, []);
+
+    const totalPages = Math.max(1, Math.ceil(testimonials.length / perPage));
 
     const goToPage = useCallback(
         (page: number) => {
@@ -125,13 +155,14 @@ const TestimonialsSection = () => {
 
     // Auto-play
     useEffect(() => {
+        if (testimonials.length <= perPage) return;
         autoPlayRef.current = setInterval(() => {
             goToPage(currentPage + 1);
         }, 6000);
         return () => {
             if (autoPlayRef.current) clearInterval(autoPlayRef.current);
         };
-    }, [currentPage, goToPage]);
+    }, [currentPage, goToPage, testimonials.length, perPage]);
 
     // Intersection observer
     useEffect(() => {
@@ -149,6 +180,9 @@ const TestimonialsSection = () => {
         currentPage * perPage,
         currentPage * perPage + perPage
     );
+
+    // Don't render section if no reviews at all (after loading)
+    if (!loading && testimonials.length === 0) return null;
 
     return (
         <section
@@ -175,40 +209,47 @@ const TestimonialsSection = () => {
 
                 {/* Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto mb-8">
-                    {visibleTestimonials.map((t) => (
-                        <TestimonialCard key={t.name} testimonial={t} />
-                    ))}
+                    {loading
+                        ? Array.from({ length: perPage }).map((_, i) => (
+                            <TestimonialSkeleton key={i} />
+                        ))
+                        : visibleTestimonials.map((t, i) => (
+                            <TestimonialCard key={`${t.name}-${i}`} testimonial={t} />
+                        ))
+                    }
                 </div>
 
                 {/* Carousel Controls */}
-                <div className="flex items-center justify-center gap-4">
-                    <button
-                        onClick={() => goToPage(currentPage - 1)}
-                        className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
+                {testimonials.length > perPage && (
+                    <div className="flex items-center justify-center gap-4">
+                        <button
+                            onClick={() => goToPage(currentPage - 1)}
+                            className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
 
-                    <div className="flex gap-2">
-                        {Array.from({ length: totalPages }).map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => goToPage(i)}
-                                className={`h-2 rounded-full transition-all duration-300 ${i === currentPage
-                                        ? "bg-primary w-6"
-                                        : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-2"
-                                    }`}
-                            />
-                        ))}
+                        <div className="flex gap-2">
+                            {Array.from({ length: totalPages }).map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => goToPage(i)}
+                                    className={`h-2 rounded-full transition-all duration-300 ${i === currentPage
+                                            ? "bg-primary w-6"
+                                            : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-2"
+                                        }`}
+                                />
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => goToPage(currentPage + 1)}
+                            className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                        >
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
                     </div>
-
-                    <button
-                        onClick={() => goToPage(currentPage + 1)}
-                        className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
-                </div>
+                )}
             </div>
         </section>
     );

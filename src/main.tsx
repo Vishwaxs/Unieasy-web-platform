@@ -26,8 +26,16 @@ if (!CLERK_PUBLISHABLE_KEY) {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
-      <App />
-    </ClerkProvider>
+    <Sentry.ErrorBoundary fallback={
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", fontFamily: "system-ui", padding: "2rem", textAlign: "center" }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "0.5rem" }}>Something went wrong</h1>
+        <p style={{ color: "#666", marginBottom: "1rem" }}>Please hard-refresh (Ctrl+Shift+R) or restart the dev server.</p>
+        <button onClick={() => window.location.reload()} style={{ padding: "0.5rem 1.5rem", background: "#10b981", color: "#fff", border: "none", borderRadius: "0.5rem", cursor: "pointer" }}>Reload</button>
+      </div>
+    }>
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+        <App />
+      </ClerkProvider>
+    </Sentry.ErrorBoundary>
   </StrictMode>
 );

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { DetailPageSkeleton } from "@/components/CardSkeleton";
 import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionBar from "@/components/ReactionBar";
@@ -45,8 +46,12 @@ const AccommodationItemDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-20 pb-8">
+          <DetailPageSkeleton />
+        </main>
+        <Footer />
       </div>
     );
   }

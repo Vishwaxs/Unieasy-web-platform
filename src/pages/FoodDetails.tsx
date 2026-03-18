@@ -1,13 +1,24 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MessageSquare, Leaf, Drumstick, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, MapPin, MessageSquare, Leaf, Drumstick } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { ReviewEntry, ReviewItemSummary } from "@/components/ReviewDialog";
+import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStats";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import SponsoredCard from "@/components/SponsoredCard";
 import { useFoodItems, type FoodItem } from "@/hooks/useFoodItems";
 import { useActiveAds } from "@/hooks/useActiveAds";
+import ReviewDialog from "@/components/ReviewDialog";
+import { FoodCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
+
+const VISIT_TYPE_OPTIONS = [
+  { value: "dine-in", label: "Dine-in" },
+  { value: "takeaway", label: "Takeaway" },
+  { value: "delivery", label: "Delivery" },
+];
 
 const FOOD_FILTER_GROUPS = [
   {
@@ -163,6 +174,14 @@ const FoodDetails = () => {
   const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ diet: "all", rating: "all", price: "all" });
   const [sort, setSort] = useState("default");
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState<ReviewItemSummary | null>(null);
+  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
+
+  const handleReview = (item: FoodItem) => {
+    setActiveItem({ id: item.id, name: item.name, rating: item.rating, reviews: item.reviews });
+    setReviewOpen(true);
+  };
 
   const filteredItems = useMemo(() => {
     let result = foodItems.filter((item) => {
@@ -199,14 +218,6 @@ const FoodDetails = () => {
 
     return result;
   }, [foodItems, filters, sort]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -255,16 +266,22 @@ const FoodDetails = () => {
           </div>
 
           {/* Food Grid */}
+          {loading ? (
+            <SkeletonGrid count={8} gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <FoodCardSkeleton />
+            </SkeletonGrid>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredItems.map((item, index) => (
               <React.Fragment key={item.id}>
-                <FoodCard item={item} index={index} />
+                <FoodCard item={item} index={index} onReview={handleReview} userReviews={reviewsByItem[item.id]} />
                 {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
                   <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
                 )}
               </React.Fragment>
             ))}
           </div>
+          )}
 
           <ReviewDialog
             open={reviewOpen}

@@ -23,7 +23,6 @@ import { useUser, useClerk } from "@clerk/clerk-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { getUserReviewCount } from "@/lib/reviewStats";
 
 interface ProfileData {
   phone: string;
@@ -38,14 +37,41 @@ const Profile = () => {
   const { signOut } = useClerk();
   const role = useUserRole();
   const [reviewCount, setReviewCount] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
+  const [likedCount, setLikedCount] = useState(0);
 
   useEffect(() => {
     if (!user?.id) {
       setReviewCount(0);
+      setSavedCount(0);
+      setLikedCount(0);
       return;
     }
 
-    setReviewCount(getUserReviewCount(user.id));
+    const fetchStats = async () => {
+      const [reviewRes, bookmarkRes, likeRes] = await Promise.all([
+        supabase
+          .from("reviews")
+          .select("id", { count: "exact", head: true })
+          .eq("clerk_user_id", user.id)
+          .eq("status", "active"),
+        supabase
+          .from("user_reactions")
+          .select("id", { count: "exact", head: true })
+          .eq("clerk_user_id", user.id)
+          .eq("reaction", "bookmark"),
+        supabase
+          .from("user_reactions")
+          .select("id", { count: "exact", head: true })
+          .eq("clerk_user_id", user.id)
+          .eq("reaction", "like"),
+      ]);
+      setReviewCount(reviewRes.count ?? 0);
+      setSavedCount(bookmarkRes.count ?? 0);
+      setLikedCount(likeRes.count ?? 0);
+    };
+
+    fetchStats();
   }, [user?.id]);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -152,18 +178,13 @@ const Profile = () => {
   const menuItems = [
     {
       icon: Bell,
-      label: "Notifications",
-      action: () => toast.info("Notifications coming soon!"),
+      label: "My Reviews",
+      action: () => window.location.assign("/home"),
     },
     {
       icon: Shield,
-      label: "Privacy & Security",
-      action: () => toast.info("Privacy settings coming soon!"),
-    },
-    {
-      icon: Settings,
-      label: "Settings",
-      action: () => toast.info("Settings coming soon!"),
+      label: "Contact Support",
+      action: () => window.location.assign("/contact"),
     },
   ];
 
@@ -180,15 +201,39 @@ const Profile = () => {
               <ArrowLeft className="w-4 h-4" />
               Back
             </Link>
+            {isEditing ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            ) : (
             <Button
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={() => toast.info("Profile editing coming soon!")}
+              onClick={() => {
+                setEditData(profileData);
+                setIsEditing(true);
+              }}
             >
               <Edit2 className="w-4 h-4" />
               Edit Profile
             </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-7">
@@ -213,7 +258,7 @@ const Profile = () => {
                         )}
                       </div>
                       <button
-                        onClick={() => toast.info("Photo upload coming soon!")}
+                        onClick={handleAvatarUpload}
                         className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
                       >
                         <Camera className="w-4 h-4" />
@@ -241,7 +286,7 @@ const Profile = () => {
                     </div>
                     <div className="text-center p-3 sm:p-4 bg-muted/50 rounded-xl">
                       <p className="text-lg sm:text-xl font-bold text-primary">
-                        28
+                        {savedCount}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Saved
@@ -249,10 +294,10 @@ const Profile = () => {
                     </div>
                     <div className="text-center p-3 sm:p-4 bg-muted/50 rounded-xl">
                       <p className="text-lg sm:text-xl font-bold text-primary">
-                        5
+                        {likedCount}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Visited
+                        Liked
                       </p>
                     </div>
                   </div>
@@ -320,6 +365,105 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
+
+              {isEditing ? (
+                <div className="bg-card rounded-2xl shadow-sm p-5 sm:p-6 animate-fade-up stagger-1">
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+                    Edit Profile
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Phone</label>
+                      <Input
+                        value={editData.phone}
+                        onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                        placeholder="+91 XXXXX XXXXX"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Student ID</label>
+                      <Input
+                        value={editData.student_id}
+                        onChange={(e) => setEditData({ ...editData, student_id: e.target.value })}
+                        placeholder="e.g. 2312456"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Programme</label>
+                      <Input
+                        value={editData.programme}
+                        onChange={(e) => setEditData({ ...editData, programme: e.target.value })}
+                        placeholder="e.g. BCA, BBA, MCA"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Year of Study</label>
+                      <Input
+                        value={editData.year_of_study}
+                        onChange={(e) => setEditData({ ...editData, year_of_study: e.target.value })}
+                        placeholder="e.g. 2nd Year"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Bio</label>
+                      <textarea
+                        value={editData.bio}
+                        onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                        placeholder="Tell us about yourself..."
+                        rows={3}
+                        className="w-full px-3 py-2 bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : profileData.bio || profileData.programme || profileData.student_id ? (
+                <div className="bg-card rounded-2xl shadow-sm p-5 sm:p-6 animate-fade-up stagger-1">
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+                    Profile Info
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {profileData.programme && (
+                      <div className="flex items-center gap-3 p-3.5 bg-muted/30 rounded-xl min-h-[76px]">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <GraduationCap className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Programme</p>
+                          <p className="text-sm font-medium text-foreground">{profileData.programme}</p>
+                        </div>
+                      </div>
+                    )}
+                    {profileData.year_of_study && (
+                      <div className="flex items-center gap-3 p-3.5 bg-muted/30 rounded-xl min-h-[76px]">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Calendar className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Year of Study</p>
+                          <p className="text-sm font-medium text-foreground">{profileData.year_of_study}</p>
+                        </div>
+                      </div>
+                    )}
+                    {profileData.student_id && (
+                      <div className="flex items-center gap-3 p-3.5 bg-muted/30 rounded-xl min-h-[76px]">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Student ID</p>
+                          <p className="text-sm font-medium text-foreground">{profileData.student_id}</p>
+                        </div>
+                      </div>
+                    )}
+                    {profileData.bio && (
+                      <div className="sm:col-span-2 p-3.5 bg-muted/30 rounded-xl">
+                        <p className="text-xs text-muted-foreground mb-1">Bio</p>
+                        <p className="text-sm text-foreground">{profileData.bio}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </section>
 
             <aside className="h-fit space-y-4 md:space-y-5">
