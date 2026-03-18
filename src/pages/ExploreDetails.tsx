@@ -173,15 +173,20 @@ const PlaceCard = ({
 };
 
 const ExploreDetails = () => {
-  const { items: places, loading } = useExplorePlaces();
   const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
   const [sort, setSort] = useState("default");
+  const { items: places, loading } = useExplorePlaces({
+    category: "hangout",
+    selectedType: (filters.type as string) || "all",
+  });
 
   const filteredItems = useMemo(() => {
     let result = places.filter((item) => {
       const typeVal = filters.type as string;
-      if (typeVal !== "all" && item.type !== typeVal) return false;
+      // Type filtering is handled in the data hook (type/sub_type aware).
+      // Keep a no-op guard here so UI logic stays stable if hook params change.
+      if (typeVal !== "all" && !item.type) return false;
 
       const crowdVal = filters.crowd as string;
       if (crowdVal !== "all" && item.crowd !== crowdVal) return false;
@@ -239,6 +244,18 @@ const ExploreDetails = () => {
               onSortChange={setSort}
               resultCount={filteredItems.length}
             />
+            <div className="mt-3 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFilters({ type: "all", crowd: "all" });
+                  setSort("default");
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
 
           {loading ? (

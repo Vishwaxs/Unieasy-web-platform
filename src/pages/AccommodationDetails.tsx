@@ -202,7 +202,14 @@ const AccommodationDetails = () => {
   const filteredItems = useMemo(() => {
     let result = accommodations.filter((item) => {
       const typeVal = filters.type as string;
-      if (typeVal !== "all" && item.type !== typeVal) return false;
+      if (typeVal !== "all") {
+        // DB often stores "flat" while UI shows "Apartment"
+        if (typeVal === "Apartment" && (item.type === "Apartment" || item.type === "Flat")) {
+          // ok
+        } else if (item.type !== typeVal) {
+          return false;
+        }
+      }
 
       const priceVal = filters.price as string;
       if (priceVal === "0-5000" && item.price > 5000) return false;
