@@ -1,4 +1,5 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import type { ReactNode } from "react";
 import {
   ArrowLeft,
@@ -42,7 +43,18 @@ const amenityMeta: Record<string, { icon: ReactNode; label: string }> = {
 const AccommodationItemDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: place, isLoading, isError } = usePlaceDetail(id);
+
+  useEffect(() => {
+    if (location.hash === "#reviews") {
+      setTimeout(() => {
+        document
+          .getElementById("reviews")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [location.hash]);
 
   if (isLoading) {
     return (
@@ -232,7 +244,9 @@ const AccommodationItemDetails = () => {
             )}
 
             {/* Reviews & Sentiment */}
-            <ReviewSection placeId={place.id} />
+            <section id="reviews" className="scroll-mt-24">
+              <ReviewSection placeId={place.id} />
+            </section>
             <SentimentPoll placeId={place.id} />
           </div>
 

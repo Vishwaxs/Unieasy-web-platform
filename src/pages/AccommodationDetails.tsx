@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Wifi, Car, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ReviewEntry, ReviewItemSummary } from "@/components/ReviewDialog";
 import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStats";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,7 +10,6 @@ import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import SponsoredCard from "@/components/SponsoredCard";
 import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations";
 import { useActiveAds } from "@/hooks/useActiveAds";
-import ReviewDialog from "@/components/ReviewDialog";
 import { AccommodationCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 import { shortAddress } from "@/lib/utils";
 
@@ -58,19 +56,16 @@ const ACCOMMODATION_SORT_OPTIONS = [
 const AccommodationCard = ({
   item,
   index,
-  onReview,
-  userReviews,
 }: {
   item: Accommodation;
   index: number;
-  onReview: (item: Accommodation) => void;
-  userReviews?: ReviewEntry[];
 }) => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const showsDistanceKm = /\bkm\b/i.test(item.distance);
 
-  const stats = computeCombinedReviewStats(item.rating, item.reviews, userReviews);
+  const stats = computeCombinedReviewStats(item.rating, item.reviews, undefined);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -183,7 +178,11 @@ const AccommodationCard = ({
             variant="outline"
             size="sm"
             className="mt-3 w-full"
-            onClick={() => onReview(item)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/accommodation/${item.id}#reviews`);
+            }}
           >
             Review
           </Button>
@@ -199,14 +198,6 @@ const AccommodationDetails = () => {
   const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", price: "all" });
   const [sort, setSort] = useState("default");
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<ReviewItemSummary | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
-
-  const handleReview = (item: Accommodation) => {
-    setActiveItem({ id: item.id, name: item.name, rating: item.rating, reviews: item.reviews });
-    setReviewOpen(true);
-  };
 
   const filteredItems = useMemo(() => {
     let result = accommodations.filter((item) => {
@@ -291,7 +282,7 @@ const AccommodationDetails = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
               <React.Fragment key={item.id}>
-                <AccommodationCard item={item} index={index} onReview={handleReview} userReviews={reviewsByItem[item.id]} />
+                <AccommodationCard item={item} index={index} />
                 {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
                   <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
                 )}
@@ -299,17 +290,6 @@ const AccommodationDetails = () => {
             ))}
           </div>
           )}
-
-          <ReviewDialog
-            open={reviewOpen}
-            onOpenChange={setReviewOpen}
-            activeItem={activeItem}
-            reviewsByItem={reviewsByItem}
-            setReviewsByItem={setReviewsByItem}
-            contextLabel="Stay type"
-            contextPlaceholder="Select stay type"
-            contextOptions={STAY_TYPE_OPTIONS}
-          />
         </div>
       </main>
 

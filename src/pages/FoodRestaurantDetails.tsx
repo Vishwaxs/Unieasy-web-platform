@@ -1,4 +1,5 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useLocation, useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
   Star,
@@ -26,7 +27,18 @@ import { Button } from "@/components/ui/button";
 const FoodRestaurantDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: place, isLoading, isError } = usePlaceDetail(id);
+
+  useEffect(() => {
+    if (location.hash === "#reviews") {
+      setTimeout(() => {
+        document
+          .getElementById("reviews")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [location.hash]);
 
   if (isLoading) {
     return (
@@ -233,7 +245,9 @@ const FoodRestaurantDetails = () => {
             )}
 
             {/* Reviews & Sentiment */}
-            <ReviewSection placeId={place.id} />
+            <section id="reviews" className="scroll-mt-24">
+              <ReviewSection placeId={place.id} />
+            </section>
             <SentimentPoll placeId={place.id} />
           </div>
 

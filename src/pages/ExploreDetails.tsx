@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Clock, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ReviewEntry, ReviewItemSummary } from "@/components/ReviewDialog";
 import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStats";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,7 +10,6 @@ import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import SponsoredCard from "@/components/SponsoredCard";
 import { useExplorePlaces, type ExplorePlace } from "@/hooks/useExplorePlaces";
 import { useActiveAds } from "@/hooks/useActiveAds";
-import ReviewDialog from "@/components/ReviewDialog";
 import { ExploreCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 
 const HANGOUT_TYPE_OPTIONS = [
@@ -54,14 +52,11 @@ const EXPLORE_SORT_OPTIONS = [
 const PlaceCard = ({
   item,
   index,
-  onReview,
-  userReviews,
 }: {
   item: ExplorePlace;
   index: number;
-  onReview: (item: ExplorePlace) => void;
-  userReviews?: ReviewEntry[];
 }) => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +77,7 @@ const PlaceCard = ({
     return () => observer.disconnect();
   }, []);
 
-  const stats = computeCombinedReviewStats(item.rating, item.reviews, userReviews);
+  const stats = computeCombinedReviewStats(item.rating, item.reviews, undefined);
 
   const getCrowdColor = (crowd: string) => {
     switch (crowd) {
@@ -162,7 +157,11 @@ const PlaceCard = ({
             variant="outline"
             size="sm"
             className="mt-3 w-full"
-            onClick={() => onReview(item)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/explore/${item.id}#reviews`);
+            }}
           >
             Review
           </Button>
@@ -178,14 +177,6 @@ const ExploreDetails = () => {
   const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
   const [sort, setSort] = useState("default");
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<ReviewItemSummary | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
-
-  const handleReview = (item: ExplorePlace) => {
-    setActiveItem({ id: item.id, name: item.name, rating: item.rating, reviews: item.reviews });
-    setReviewOpen(true);
-  };
 
   const filteredItems = useMemo(() => {
     let result = places.filter((item) => {
@@ -258,7 +249,7 @@ const ExploreDetails = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
               <React.Fragment key={item.id}>
-                <PlaceCard item={item} index={index} onReview={handleReview} userReviews={reviewsByItem[item.id]} />
+                <PlaceCard item={item} index={index} />
                 {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
                   <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
                 )}
@@ -266,17 +257,6 @@ const ExploreDetails = () => {
             ))}
           </div>
           )}
-
-          <ReviewDialog
-            open={reviewOpen}
-            onOpenChange={setReviewOpen}
-            activeItem={activeItem}
-            reviewsByItem={reviewsByItem}
-            setReviewsByItem={setReviewsByItem}
-            contextLabel="Hangout type"
-            contextPlaceholder="Select hangout type"
-            contextOptions={HANGOUT_TYPE_OPTIONS}
-          />
         </div>
       </main>
 

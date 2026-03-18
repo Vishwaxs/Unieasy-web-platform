@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, User, Menu, X, Home, Mail, FileText, Shield, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, SignInButton, useUser } from "@clerk/clerk-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -10,6 +10,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useUser();
 
   const backEnabledRoutes = new Set(["/home", "/contact", "/terms", "/privacy"]);
   const showBack = backEnabledRoutes.has(location.pathname);
@@ -61,14 +62,24 @@ const Header = () => {
             <ThemeToggle />
             
             <SignedIn>
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "w-10 h-10 rounded-full border-2 border-border/60"
-                  }
-                }}
-              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300 overflow-hidden p-0"
+                onClick={() => navigate("/profile")}
+                aria-label="Profile"
+              >
+                {user?.imageUrl ? (
+                  <img
+                    src={user.imageUrl}
+                    alt={user.fullName ?? "Profile"}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                ) : (
+                  <User className="w-5 h-5 text-foreground" />
+                )}
+              </Button>
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">

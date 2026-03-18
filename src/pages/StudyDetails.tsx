@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Clock, Wifi, Volume2, VolumeX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ReviewEntry, ReviewItemSummary } from "@/components/ReviewDialog";
 import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStats";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,7 +10,6 @@ import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import SponsoredCard from "@/components/SponsoredCard";
 import { useStudySpots, type StudySpot } from "@/hooks/useStudySpots";
 import { useActiveAds } from "@/hooks/useActiveAds";
-import ReviewDialog from "@/components/ReviewDialog";
 import { StudyCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 
 const STUDY_SESSION_TYPE_OPTIONS = [
@@ -60,14 +58,11 @@ const STUDY_SORT_OPTIONS = [
 const StudyCard = ({
   item,
   index,
-  onReview,
-  userReviews,
 }: {
   item: StudySpot;
   index: number;
-  onReview: (item: StudySpot) => void;
-  userReviews?: ReviewEntry[];
 }) => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +77,7 @@ const StudyCard = ({
     return () => observer.disconnect();
   }, []);
 
-  const stats = computeCombinedReviewStats(item.rating, item.reviews, userReviews);
+  const stats = computeCombinedReviewStats(item.rating, item.reviews, undefined);
 
   const getNoiseIcon = (noise: string) => {
     return noise === "Silent" ? (
@@ -165,7 +160,11 @@ const StudyCard = ({
             variant="outline"
             size="sm"
             className="mt-3 w-full"
-            onClick={() => onReview(item)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/study/${item.id}#reviews`);
+            }}
           >
             Review
           </Button>
@@ -181,14 +180,6 @@ const StudyDetails = () => {
   const { data: activeAds } = useActiveAds();
   const [filters, setFilters] = useState<FilterState>({ type: "all", noise: "all", wifi: "all" });
   const [sort, setSort] = useState("default");
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<ReviewItemSummary | null>(null);
-  const [reviewsByItem, setReviewsByItem] = useState<Record<string, ReviewEntry[]>>({});
-
-  const handleReview = (item: StudySpot) => {
-    setActiveItem({ id: item.id, name: item.name, rating: item.rating, reviews: item.reviews });
-    setReviewOpen(true);
-  };
 
   const filteredItems = useMemo(() => {
     let result = studySpots.filter((item) => {
@@ -264,7 +255,7 @@ const StudyDetails = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item, index) => (
               <React.Fragment key={item.id}>
-                <StudyCard item={item} index={index} onReview={handleReview} userReviews={reviewsByItem[item.id]} />
+                <StudyCard item={item} index={index} />
                 {activeAds && activeAds.length > 0 && (index + 1) % 5 === 0 && (
                   <SponsoredCard ad={activeAds[(Math.floor(index / 5)) % activeAds.length]} />
                 )}
@@ -272,17 +263,6 @@ const StudyDetails = () => {
             ))}
           </div>
           )}
-
-          <ReviewDialog
-            open={reviewOpen}
-            onOpenChange={setReviewOpen}
-            activeItem={activeItem}
-            reviewsByItem={reviewsByItem}
-            setReviewsByItem={setReviewsByItem}
-            contextLabel="Session type"
-            contextPlaceholder="Select session type"
-            contextOptions={STUDY_SESSION_TYPE_OPTIONS}
-          />
         </div>
       </main>
 

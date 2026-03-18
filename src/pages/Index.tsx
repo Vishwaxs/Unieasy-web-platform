@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import Footer from "@/components/Footer";
@@ -9,6 +9,7 @@ import {
   SignedOut,
   SignInButton,
   UserButton,
+  useAuth,
 } from "@clerk/clerk-react";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -18,6 +19,8 @@ import christLogoHref from "@/assets/Christ-logo.png";
 
 const Index = () => {
   const { theme } = useTheme();
+  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
 
   const scrollToContent = () => {
     window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
@@ -93,20 +96,27 @@ const Index = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up stagger-2 landing-hero-actions">
-              <Link to="/signup">
-                <Button variant="hero" size="xl">
-                  Get Started
-                </Button>
-              </Link>
-              <Link to="/home">
-                <Button
-                  variant="outline"
-                  size="xl"
-                  className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                >
-                  Explore as Guest
-                </Button>
-              </Link>
+              <Button
+                variant="hero"
+                size="xl"
+                onClick={() => {
+                  if (isSignedIn) {
+                    navigate("/home");
+                  } else {
+                    navigate("/signup");
+                  }
+                }}
+              >
+                Get Started
+              </Button>
+              <Button
+                variant="outline"
+                size="xl"
+                className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                onClick={() => navigate("/home")}
+              >
+                Explore as Guest
+              </Button>
             </div>
 
             <p className="mt-8 text-sm text-muted-foreground animate-fade-up stagger-3 landing-hero-footnote">
