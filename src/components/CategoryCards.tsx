@@ -5,6 +5,7 @@ import {
   MoreHorizontal,
   BookOpen,
   ArrowRight,
+  ArrowLeft,
   Store,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -283,7 +284,14 @@ const CategoryCards = () => {
     el.scrollBy({ left: amount, behavior: "smooth" });
   };
 
-  const handleWheel = (e: WheelEvent) => {
+  const scrollPrev = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = Math.max(280, Math.floor(el.clientWidth * 0.8));
+    el.scrollBy({ left: -amount, behavior: "smooth" });
+  };
+
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
     const el = scrollRef.current;
     if (!el) return;
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
@@ -292,12 +300,7 @@ const CategoryCards = () => {
     }
   };
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    return () => el.removeEventListener("wheel", handleWheel);
-  }, []);
+  // Attach wheel handler directly in JSX, no need for useEffect
 
   return (
     <section
@@ -314,20 +317,30 @@ const CategoryCards = () => {
               Everything you need around campus
             </p>
           </div>
-          <button
-            type="button"
-            onClick={scrollNext}
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-            aria-label="Scroll categories"
-          >
-            <span className="text-sm">Scroll</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="hidden sm:flex items-center gap-2">
+            <button
+              type="button"
+              onClick={scrollPrev}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+              aria-label="Scroll left"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={scrollNext}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+              aria-label="Scroll right"
+            >
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Horizontal scrollable container */}
         <div
           ref={scrollRef}
+          onWheel={handleWheel}
           className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 overscroll-x-contain"
         >
           {categories.map((category, index) => (

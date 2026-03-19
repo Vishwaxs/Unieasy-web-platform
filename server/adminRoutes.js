@@ -1281,4 +1281,156 @@ router.post(
   }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// CAMPUS PLACES CRUD (admin + superadmin)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CAMPUS_WRITABLE_FIELDS = [
+  "name", "sub_type", "type", "address", "lat", "lng",
+  "timing", "crowd_level", "rating", "rating_count",
+  "phone", "website", "photo_refs", "amenities", "cuisine_tags",
+  "price_range_min", "price_range_max", "display_price_label",
+  "has_wifi", "noise_level", "is_veg", "waiting_time_mins",
+  "distance_from_campus", "business_status", "is_open_now",
+];
+
+/**
+ * GET /api/admin/campus
+ * Returns all campus places (category=campus, is_on_campus=true), newest first.
+ */
+router.get(
+  "/campus",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (_req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("places")
+        .select("*")
+        .eq("category", "campus")
+        .eq("is_on_campus", true)
+        .order("name", { ascending: true });
+
+      if (error) {
+        logger.error({ err: error }, "GET /admin/campus");
+        return res.status(500).json({ error: error.message });
+      }
+      return res.json({ data: data || [] });
+    } catch (err) {
+      logger.error({ err }, "GET /admin/campus unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/campus
+ * Create a new campus place.
+ */
+router.post(
+  "/campus",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const body = req.body || {};
+    if (!body.name || !body.name.trim()) {
+      return res.status(400).json({ error: "name is required" });
+    }
+
+    const insert = { category: "campus", is_on_campus: true, data_source: "manual", lat: 0, lng: 0 };
+    for (const field of CAMPUS_WRITABLE_FIELDS) {
+      if (body[field] !== undefined) insert[field] = body[field];
+    }
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("places")
+        .insert(insert)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error }, "POST /admin/campus");
+        return res.status(500).json({ error: error.message });
+      }
+      await auditLog(req.clerkUserId, req.clerkUserRole, "create_campus_place", "place", data.id, { name: data.name });
+      return res.status(201).json({ data });
+    } catch (err) {
+      logger.error({ err }, "POST /admin/campus unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * PUT /api/admin/campus/:id
+ * Update a campus place (partial update — only sent fields are changed).
+ */
+router.put(
+  "/campus/:id",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const { id } = req.params;
+    const body = req.body || {};
+
+    const update = { updated_at: new Date().toISOString() };
+    for (const field of CAMPUS_WRITABLE_FIELDS) {
+      if (body[field] !== undefined) update[field] = body[field];
+    }
+
+    if (Object.keys(update).length === 1) {
+      return res.status(400).json({ error: "No valid fields provided for update" });
+    }
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("places")
+        .update(update)
+        .eq("id", id)
+        .eq("category", "campus")
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error }, "PUT /admin/campus/:id");
+        return res.status(500).json({ error: error.message });
+      }
+      if (!data) return res.status(404).json({ error: "Place not found" });
+      await auditLog(req.clerkUserId, req.clerkUserRole, "update_campus_place", "place", id, { fields: Object.keys(update) });
+      return res.json({ data });
+    } catch (err) {
+      logger.error({ err }, "PUT /admin/campus/:id unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * DELETE /api/admin/campus/:id
+ * Permanently delete a campus place.
+ */
+router.delete(
+  "/campus/:id",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const { id } = req.params;
+
+    try {
+      const { error } = await supabaseAdmin
+        .from("places")
+        .delete()
+        .eq("id", id)
+        .eq("category", "campus");
+
+      if (error) {
+        logger.error({ err: error }, "DELETE /admin/campus/:id");
+        return res.status(500).json({ error: error.message });
+      }
+      await auditLog(req.clerkUserId, req.clerkUserRole, "delete_campus_place", "place", id, {});
+      return res.json({ message: "Deleted" });
+    } catch (err) {
+      logger.error({ err }, "DELETE /admin/campus/:id unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 export default router;

@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Store, LogOut, Loader2, CheckCircle, Clock, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Store,
+  LogOut,
+  Loader2,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,7 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useUser, useClerk, useAuth, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
+import {
+  useUser,
+  useClerk,
+  useAuth,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+} from "@clerk/clerk-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { apiFetch } from "@/lib/adminApi";
 import Header from "@/components/Header";
@@ -58,7 +73,10 @@ const MerchantAuth = () => {
 
     const checkRequest = async () => {
       try {
-        const data = await apiFetch(getToken, "/merchant/upgrade-request/status");
+        const data = await apiFetch(
+          getToken,
+          "/merchant/upgrade-request/status",
+        );
         if (data.status) {
           setRequestStatus(data.status);
           if (data.review_note) setReviewNote(data.review_note);
@@ -93,7 +111,9 @@ const MerchantAuth = () => {
           description: description.trim(),
         }),
       });
-      toast.success("Merchant upgrade request submitted! An admin will review it shortly.");
+      toast.success(
+        "Merchant upgrade request submitted! An admin will review it shortly.",
+      );
       setRequestStatus("pending");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
@@ -108,7 +128,7 @@ const MerchantAuth = () => {
       <Header />
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-4 md:px-6 pt-16 md:pt-20 pb-8 md:pb-12">
+      <main className="flex-1 flex items-center justify-center px-4 md:px-6 pt-24 md:pt-28 pb-8 md:pb-12">
         <div className="w-full max-w-md animate-fade-up">
           {/* Icon */}
           <div className="text-center mb-6 md:mb-8">
@@ -143,9 +163,12 @@ const MerchantAuth = () => {
               <div className="text-center space-y-6">
                 <div className="p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl">
                   <Clock className="w-10 h-10 text-yellow-500 mx-auto mb-3" />
-                  <h2 className="text-lg font-semibold text-foreground mb-2">Request Pending</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">
+                    Request Pending
+                  </h2>
                   <p className="text-muted-foreground text-sm">
-                    Your merchant upgrade request is being reviewed by an admin. You'll be notified once it's approved.
+                    Your merchant upgrade request is being reviewed by an admin.
+                    You'll be notified once it's approved.
                   </p>
                 </div>
               </div>
@@ -154,12 +177,19 @@ const MerchantAuth = () => {
               <div className="text-center space-y-6">
                 <div className="p-6 bg-destructive/10 border border-destructive/30 rounded-2xl">
                   <XCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
-                  <h2 className="text-lg font-semibold text-foreground mb-2">Request Rejected</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">
+                    Request Rejected
+                  </h2>
                   <p className="text-muted-foreground text-sm">
-                    {reviewNote || "Your merchant upgrade request was not approved. You may submit a new request."}
+                    {reviewNote ||
+                      "Your merchant upgrade request was not approved. You may submit a new request."}
                   </p>
                 </div>
-                <Button size="lg" className="w-full" onClick={() => setRequestStatus("none")}>
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setRequestStatus("none")}
+                >
                   Submit New Request
                 </Button>
               </div>
@@ -167,13 +197,19 @@ const MerchantAuth = () => {
               /* Upgrade Request Form */
               <div className="space-y-6">
                 <p className="text-muted-foreground text-center">
-                  Welcome, <span className="font-medium text-foreground">{user?.fullName}</span>!
-                  Merchant accounts are verified by admin. Submit your details for review.
+                  Welcome,{" "}
+                  <span className="font-medium text-foreground">
+                    {user?.fullName}
+                  </span>
+                  ! Merchant accounts are verified by admin. Submit your details
+                  for review.
                 </p>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Business Name *</label>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Business Name *
+                    </label>
                     <Input
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
@@ -182,21 +218,30 @@ const MerchantAuth = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Business Type *</label>
-                    <Select value={businessType} onValueChange={setBusinessType}>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Business Type *
+                    </label>
+                    <Select
+                      value={businessType}
+                      onValueChange={setBusinessType}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select business type" />
                       </SelectTrigger>
                       <SelectContent>
                         {BUSINESS_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Contact Number</label>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Contact Number
+                    </label>
                     <Input
                       value={contactNumber}
                       onChange={(e) => setContactNumber(e.target.value)}
@@ -205,7 +250,9 @@ const MerchantAuth = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Brief Description</label>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Brief Description
+                    </label>
                     <Input
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -232,11 +279,22 @@ const MerchantAuth = () => {
 
                 {/* Benefits */}
                 <div className="p-4 bg-muted/50 rounded-xl text-left">
-                  <p className="text-sm font-medium text-foreground mb-2">Why advertise with UniEasy?</p>
+                  <p className="text-sm font-medium text-foreground mb-2">
+                    Why advertise with UniEasy?
+                  </p>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /> Reach thousands of university students</li>
-                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /> Targeted advertising near campuses</li>
-                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /> Affordable and flexible pricing</li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-primary" /> Reach
+                      thousands of university students
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-primary" /> Targeted
+                      advertising near campuses
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-primary" />{" "}
+                      Affordable and flexible pricing
+                    </li>
                   </ul>
                 </div>
               </div>

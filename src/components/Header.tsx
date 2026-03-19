@@ -1,11 +1,34 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Menu, X, Home, Mail, FileText, Shield, LogIn, Bell, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  Menu,
+  X,
+  Home,
+  Mail,
+  FileText,
+  Shield,
+  LogIn,
+  Bell,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SignedIn, SignedOut, SignInButton, UserButton, useUser, useAuth } from "@clerk/clerk-react";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useUser,
+  useAuth,
+} from "@clerk/clerk-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
-import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/adminApi";
+import {
+  fetchNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "@/lib/adminApi";
 
 // ── Notification type ─────────────────────────────────────────────────────────
 interface Notification {
@@ -59,7 +82,10 @@ function NotificationBell() {
   // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -72,10 +98,12 @@ function NotificationBell() {
       try {
         await markNotificationRead(() => getToken(), notif.id);
         setNotifications((prev) =>
-          prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n))
+          prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n)),
         );
         setUnreadCount((c) => Math.max(0, c - 1));
-      } catch { /* silent */ }
+      } catch {
+        /* silent */
+      }
     }
     setOpen(false);
     if (notif.link) navigate(notif.link);
@@ -86,7 +114,9 @@ function NotificationBell() {
       await markAllNotificationsRead(() => getToken());
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   };
 
   return (
@@ -111,7 +141,9 @@ function NotificationBell() {
         <div className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-            <span className="text-sm font-semibold text-foreground">Notifications</span>
+            <span className="text-sm font-semibold text-foreground">
+              Notifications
+            </span>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
@@ -146,7 +178,9 @@ function NotificationBell() {
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={`text-sm leading-tight ${!notif.is_read ? "font-semibold" : "font-medium"} text-foreground truncate`}>
+                    <p
+                      className={`text-sm leading-tight ${!notif.is_read ? "font-semibold" : "font-medium"} text-foreground truncate`}
+                    >
                       {notif.title}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
@@ -176,16 +210,23 @@ const Header = () => {
   const location = useLocation();
   const { user } = useUser();
 
-  const backEnabledRoutes = new Set(["/home", "/contact", "/terms", "/privacy"]);
-  const showBack = backEnabledRoutes.has(location.pathname);
+  // Show back on every page except the root landing page
+  const showBack = location.pathname !== "/";
+
+  // Category listing pages — back should land on home at the category section
+  const CATEGORY_PATHS = new Set([
+    "/food", "/accommodation", "/explore", "/study", "/essentials", "/campus",
+  ]);
 
   const handleBack = () => {
-    // If there is browser history, go back; otherwise fallback to Home.
+    if (CATEGORY_PATHS.has(location.pathname)) {
+      navigate("/home", { state: { scrollTo: "category-cards" } });
+      return;
+    }
     if (window.history.length > 1) {
       navigate(-1);
       return;
     }
-
     navigate("/home");
   };
 
@@ -218,13 +259,13 @@ const Header = () => {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             )}
-            <Logo imgClassName="h-[5.25rem] md:h-24 w-auto" />
+            <Logo />
           </div>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            
+
             <SignedIn>
               <NotificationBell />
               <UserButton afterSignOutUrl="/">
@@ -239,9 +280,9 @@ const Header = () => {
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 gap-2 transition-all duration-300"
                 >
                   <LogIn className="w-4 h-4" />
@@ -254,7 +295,7 @@ const Header = () => {
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
             <ThemeToggle />
-            
+
             <SignedIn>
               <NotificationBell />
             </SignedIn>
@@ -275,15 +316,15 @@ const Header = () => {
         </div>
 
         {/* Mobile Menu Dropdown */}
-        <div 
+        <div
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
             isMobileMenuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
           <div className="px-4 py-4 space-y-2 bg-background/90 backdrop-blur-xl border-t border-border/60">
             <SignedIn>
-              <Link 
-                to="/profile" 
+              <Link
+                to="/profile"
                 className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -293,7 +334,7 @@ const Header = () => {
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
-                <button 
+                <button
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors w-full text-left"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -302,7 +343,7 @@ const Header = () => {
                 </button>
               </SignInButton>
             </SignedOut>
-            
+
             {navLinks.map((link) => (
               <Link
                 key={link.to}
@@ -311,7 +352,9 @@ const Header = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <link.icon className="w-5 h-5 text-primary" />
-                <span className="font-medium text-foreground">{link.label}</span>
+                <span className="font-medium text-foreground">
+                  {link.label}
+                </span>
               </Link>
             ))}
           </div>

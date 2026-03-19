@@ -158,7 +158,7 @@ const FoodRestaurantDetails = () => {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 md:px-6 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="container mx-auto px-4 md:px-6 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Quick Action Buttons */}
@@ -268,7 +268,7 @@ const FoodRestaurantDetails = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:sticky lg:top-24">
             {/* Quick Info */}
             <div className="rounded-2xl border border-border bg-card p-6">
               <h3 className="text-lg font-semibold text-foreground mb-3">Quick Info</h3>

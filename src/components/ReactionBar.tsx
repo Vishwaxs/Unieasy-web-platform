@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   useReactionCounts,
   useToggleReaction,
+  useUserReactions,
   type ReactionType,
 } from "@/hooks/useReactions";
 
@@ -14,12 +15,23 @@ interface ReactionBarProps {
 const ReactionBar = ({ placeId }: ReactionBarProps) => {
   const { isSignedIn } = useAuth();
   const { data: counts } = useReactionCounts(placeId);
+  const { data: userReactions } = useUserReactions();
   const toggleMutation = useToggleReaction(placeId);
+
+  // Collect all reactions the current user has for this place
+  const myReactionSet = new Set(
+    userReactions?.filter((r) => r.place_id === placeId).map((r) => r.reaction) ?? []
+  );
+  const liked = myReactionSet.has("like");
+  const disliked = myReactionSet.has("dislike");
+  const bookmarked = myReactionSet.has("bookmark");
 
   const handleReaction = (reaction: ReactionType) => {
     if (!isSignedIn) return;
     toggleMutation.mutate(reaction);
   };
+
+  const pending = !isSignedIn || toggleMutation.isPending;
 
   return (
     <div className="flex items-center gap-2">
@@ -27,33 +39,30 @@ const ReactionBar = ({ placeId }: ReactionBarProps) => {
         variant="outline"
         size="sm"
         onClick={() => handleReaction("like")}
-        disabled={!isSignedIn || toggleMutation.isPending}
-        className="gap-1.5"
+        disabled={pending || disliked}
+        className={`gap-1.5 transition-colors ${liked ? "border-green-500 text-green-500" : ""} ${disliked ? "opacity-30" : ""}`}
       >
-        <ThumbsUp className="w-4 h-4" />
-        <span>{counts?.like_count || 0}</span>
+        <ThumbsUp className={`w-4 h-4 ${liked ? "fill-green-500 text-green-500" : ""}`} />
       </Button>
 
       <Button
         variant="outline"
         size="sm"
         onClick={() => handleReaction("dislike")}
-        disabled={!isSignedIn || toggleMutation.isPending}
-        className="gap-1.5"
+        disabled={pending || liked}
+        className={`gap-1.5 transition-colors ${disliked ? "border-red-500 text-red-500" : ""} ${liked ? "opacity-30" : ""}`}
       >
-        <ThumbsDown className="w-4 h-4" />
-        <span>{counts?.dislike_count || 0}</span>
+        <ThumbsDown className={`w-4 h-4 ${disliked ? "fill-red-500 text-red-500" : ""}`} />
       </Button>
 
       <Button
         variant="outline"
         size="sm"
         onClick={() => handleReaction("bookmark")}
-        disabled={!isSignedIn || toggleMutation.isPending}
-        className="gap-1.5"
+        disabled={pending}
+        className={`gap-1.5 transition-colors ${bookmarked ? "border-primary text-primary" : ""}`}
       >
-        <Bookmark className="w-4 h-4" />
-        <span>{counts?.bookmark_count || 0}</span>
+        <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-primary text-primary" : ""}`} />
       </Button>
     </div>
   );

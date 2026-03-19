@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { getCampusImage } from "@/lib/campusData";
 
 export interface CampusPlace {
   id: string;
@@ -15,33 +16,25 @@ export interface CampusPlace {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
-const CAMPUS_FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400",
-  "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400",
-  "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400",
-  "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
-  "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400",
-];
-
 function placeToCampusPlace(place: Record<string, unknown>): CampusPlace {
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
   const hasPhoto = photoRefs.length > 0;
-  const idStr = (place.id as string) || "a";
-  const fallbackIndex = idStr.charCodeAt(0) % CAMPUS_FALLBACK_IMAGES.length;
-
+  const name = (place.name as string) || "Unknown";
+  const subType = (place.sub_type as string) || "";
   const crowdLabels: Record<string, string> = { low: "Low", moderate: "Medium", high: "High" };
 
   return {
     id: place.id as string,
-    name: (place.name as string) || "Unknown",
+    name,
     type: (place.type as string) || "Shop",
-    subType: (place.sub_type as string) || "",
+    subType,
     address: (place.address as string) || "",
     rating: typeof place.rating === "number" ? place.rating : 0,
     ratingCount: typeof place.rating_count === "number" ? place.rating_count : 0,
+    // Prefer Google photo, then contextual name/subtype image
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
-      : CAMPUS_FALLBACK_IMAGES[fallbackIndex],
+      : getCampusImage(name, subType),
     timing: (place.timing as string) || "Check on-site",
     crowdLevel: crowdLabels[(place.crowd_level as string)] || "Varies",
   };

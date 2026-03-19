@@ -97,7 +97,7 @@ const PlaceCard = ({
           referrerPolicy="no-referrer-when-downgrade"
           loading="lazy"
         />
-        <Badge className="absolute top-3 left-3 bg-primary">{item.type}</Badge>
+        <Badge className="absolute top-3 left-3 bg-primary capitalize">{item.type}</Badge>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
           <span className="text-white text-sm">
@@ -214,13 +214,6 @@ const ExploreDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/80 to-teal-600/80 dark:from-emerald-700/70 dark:to-teal-800/70" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link
-                to="/home"
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </Link>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
                 Explore Nearby
               </h1>

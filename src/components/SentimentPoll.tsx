@@ -151,7 +151,6 @@ const SentimentPoll = ({ placeId, initialCounts }: SentimentPollProps) => {
             >
               <span className="text-2xl">{emoji}</span>
               <span className="text-xs text-muted-foreground font-medium">{label}</span>
-              <span className="text-xs font-semibold text-foreground/80">{count}</span>
             </button>
           );
         })}

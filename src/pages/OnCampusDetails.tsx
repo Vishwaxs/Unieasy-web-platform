@@ -1,13 +1,42 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Clock, Users } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, Users, Plus, Pencil, Trash2, X } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import { useCampusPlaces, type CampusPlace } from "@/hooks/useCampusPlaces";
 import { CampusCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
 import { shortAddress } from "@/lib/utils";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  createCampusPlace,
+  updateCampusPlace,
+  deleteCampusPlace,
+  type CampusPlacePayload,
+} from "@/lib/adminApi";
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const CAMPUS_FILTER_GROUPS = [
   {
@@ -39,15 +68,148 @@ const CAMPUS_SORT_OPTIONS = [
   { value: "name", label: "Name A–Z" },
 ];
 
-const CampusCard = ({ item, index }: { item: CampusPlace; index: number }) => {
+const EMPTY_FORM: CampusPlacePayload = {
+  name: "",
+  type: "Food",
+  sub_type: "",
+  address: "",
+  timing: "",
+  crowd_level: "low",
+  distance_from_campus: "",
+  phone: "",
+  website: "",
+  display_price_label: "",
+};
+
+// ─── Place Form Dialog ────────────────────────────────────────────────────────
+
+interface PlaceFormDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: (data: CampusPlacePayload) => Promise<void>;
+  initial?: Partial<CampusPlacePayload>;
+  title: string;
+  saving: boolean;
+}
+
+function PlaceFormDialog({ open, onClose, onSave, initial, title, saving }: PlaceFormDialogProps) {
+  const [form, setForm] = useState<CampusPlacePayload>({ ...EMPTY_FORM, ...initial });
+
+  useEffect(() => {
+    setForm({ ...EMPTY_FORM, ...initial });
+  }, [initial, open]);
+
+  const set = (field: keyof CampusPlacePayload, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Name *</label>
+            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Mingos Cafe" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Type</label>
+              <Select value={form.type} onValueChange={(v) => set("type", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Food">Food</SelectItem>
+                  <SelectItem value="Shop">Shop</SelectItem>
+                  <SelectItem value="Services">Services</SelectItem>
+                  <SelectItem value="Study">Study</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Sub-type</label>
+              <Input value={form.sub_type ?? ""} onChange={(e) => set("sub_type", e.target.value)} placeholder="e.g. cafe, snacks" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Address</label>
+            <Input value={form.address ?? ""} onChange={(e) => set("address", e.target.value)} placeholder="Block / Floor / Location" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Timing</label>
+              <Input value={form.timing ?? ""} onChange={(e) => set("timing", e.target.value)} placeholder="e.g. 8:00 AM – 9:00 PM" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Crowd Level</label>
+              <Select value={form.crowd_level ?? "low"} onValueChange={(v) => set("crowd_level", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="moderate">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Distance from campus</label>
+              <Input value={form.distance_from_campus ?? ""} onChange={(e) => set("distance_from_campus", e.target.value)} placeholder="e.g. On campus" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Price label</label>
+              <Input value={form.display_price_label ?? ""} onChange={(e) => set("display_price_label", e.target.value)} placeholder="e.g. ₹50–₹200" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Phone</label>
+              <Input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} placeholder="+91..." />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Website</label>
+              <Input value={form.website ?? ""} onChange={(e) => set("website", e.target.value)} placeholder="https://..." />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            <X className="w-4 h-4 mr-1" /> Cancel
+          </Button>
+          <Button onClick={() => onSave(form)} disabled={saving || !form.name.trim()}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Campus Card ─────────────────────────────────────────────────────────────
+
+interface CampusCardProps {
+  item: CampusPlace;
+  index: number;
+  isAdmin: boolean;
+  onEdit: (item: CampusPlace) => void;
+  onDelete: (item: CampusPlace) => void;
+}
+
+const CampusCard = ({ item, index, isAdmin, onEdit, onDelete }: CampusCardProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
-      },
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
       { threshold: 0.1 }
     );
     if (cardRef.current) observer.observe(cardRef.current);
@@ -68,7 +230,7 @@ const CampusCard = ({ item, index }: { item: CampusPlace; index: number }) => {
       <div
         ref={cardRef}
         className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-          isVisible ? "opacity-100" : "opacity-0"
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}
         style={{ transitionDelay: `${index * 50}ms` }}
       >
@@ -117,30 +279,136 @@ const CampusCard = ({ item, index }: { item: CampusPlace; index: number }) => {
   );
 };
 
+// ─── Delete Confirm Dialog ────────────────────────────────────────────────────
+
+function DeleteConfirmDialog({
+  item,
+  onConfirm,
+  onCancel,
+  deleting,
+}: {
+  item: CampusPlace | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+  deleting: boolean;
+}) {
+  return (
+    <Dialog open={!!item} onOpenChange={(v) => !v && onCancel()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Delete place?</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          This will permanently delete <span className="font-medium text-foreground">{item?.name}</span>. This cannot be undone.
+        </p>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onCancel} disabled={deleting}>Cancel</Button>
+          <Button variant="destructive" onClick={onConfirm} disabled={deleting}>
+            {deleting ? "Deleting…" : "Delete"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 const OnCampusDetails = () => {
   const { items: places, loading } = useCampusPlaces();
   const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
   const [sort, setSort] = useState("default");
+  const role = useUserRole();
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  const isAdmin = role === "admin" || role === "superadmin";
+
+  // ── Form dialog state
+  const [formOpen, setFormOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<CampusPlace | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // ── Delete dialog state
+  const [deleteTarget, setDeleteTarget] = useState<CampusPlace | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleAdd = () => {
+    setEditTarget(null);
+    setFormOpen(true);
+  };
+
+  const handleEdit = (item: CampusPlace) => {
+    setEditTarget(item);
+    setFormOpen(true);
+  };
+
+  const handleSave = async (data: CampusPlacePayload) => {
+    setSaving(true);
+    try {
+      if (editTarget) {
+        await updateCampusPlace(getToken, editTarget.id, data);
+        toast.success("Place updated");
+      } else {
+        await createCampusPlace(getToken, data);
+        toast.success("Place created");
+      }
+      setFormOpen(false);
+      setEditTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["campus_places"] });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteCampusPlace(getToken, deleteTarget.id);
+      toast.success("Place deleted");
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["campus_places"] });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     let result = places.filter((item) => {
       const typeVal = filters.type as string;
       if (typeVal !== "all" && item.type !== typeVal) return false;
-
       const crowdVal = filters.crowd as string;
       if (crowdVal !== "all" && item.crowdLevel !== crowdVal) return false;
-
       return true;
     });
-
     result = [...result].sort((a, b) => {
       if (sort === "rating") return b.rating - a.rating;
       if (sort === "name") return a.name.localeCompare(b.name);
       return 0;
     });
-
     return result;
   }, [places, filters, sort]);
+
+  // Build initial values for edit form from CampusPlace
+  const editInitial = editTarget
+    ? ({
+        name: editTarget.name,
+        type: editTarget.type,
+        sub_type: editTarget.subType,
+        address: editTarget.address,
+        timing: editTarget.timing,
+        crowd_level:
+          editTarget.crowdLevel === "Low" ? "low"
+          : editTarget.crowdLevel === "Medium" ? "moderate"
+          : editTarget.crowdLevel === "High" ? "high"
+          : "low",
+      } satisfies Partial<CampusPlacePayload>)
+    : undefined;
 
   return (
     <div className="min-h-screen bg-background">
@@ -156,24 +424,37 @@ const OnCampusDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-slate-700/80 to-slate-900/80 dark:from-slate-800/70 dark:to-background/80" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link
-                to="/home"
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </Link>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
-                On Christ Central Campus
-              </h1>
-              <p className="text-white/90 mt-2">
-                Find on-campus shops, cafes, and services
-              </p>
+              <div className="flex items-end justify-between">
+                <div>
+                  <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                    On Christ Central Campus
+                  </h1>
+                  <p className="text-white/90 mt-2">
+                    Find on-campus shops, cafes, and services
+                  </p>
+                </div>
+                {isAdmin && (
+                  <Button
+                    onClick={handleAdd}
+                    className="gap-2 bg-primary/90 hover:bg-primary text-primary-foreground shadow"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Place
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="container mx-auto px-4 py-6">
+          {isAdmin && (
+            <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-primary flex items-center gap-2">
+              <Pencil className="w-4 h-4" />
+              Admin mode — hover a card to edit or delete it.
+            </div>
+          )}
+
           <div className="mb-6">
             <FilterSortBar
               filterGroups={CAMPUS_FILTER_GROUPS}
@@ -191,11 +472,18 @@ const OnCampusDetails = () => {
               <CampusCardSkeleton />
             </SkeletonGrid>
           ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map((item, index) => (
-              <CampusCard key={item.id} item={item} index={index} />
-            ))}
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredItems.map((item, index) => (
+                <CampusCard
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  isAdmin={isAdmin}
+                  onEdit={handleEdit}
+                  onDelete={setDeleteTarget}
+                />
+              ))}
+            </div>
           )}
 
           {!loading && filteredItems.length === 0 && (
@@ -207,6 +495,24 @@ const OnCampusDetails = () => {
       </main>
 
       <Footer />
+
+      {/* Create / Edit dialog */}
+      <PlaceFormDialog
+        open={formOpen}
+        onClose={() => { setFormOpen(false); setEditTarget(null); }}
+        onSave={handleSave}
+        initial={editInitial}
+        title={editTarget ? `Edit — ${editTarget.name}` : "Add campus place"}
+        saving={saving}
+      />
+
+      {/* Delete confirm dialog */}
+      <DeleteConfirmDialog
+        item={deleteTarget}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+        deleting={deleting}
+      />
     </div>
   );
 };

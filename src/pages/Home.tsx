@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import CategoryCards from "@/components/CategoryCards";
@@ -7,8 +8,18 @@ import HighlightSection from "@/components/HighlightSection";
 import Footer from "@/components/Footer";
 
 const Home = () => {
+  const location = useLocation();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [pointer, setPointer] = useState({ x: 50, y: 30 });
+
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      const el = document.getElementById(location.state.scrollTo);
+      if (el) {
+        requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
+      }
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const updateScrollProgress = () => {
