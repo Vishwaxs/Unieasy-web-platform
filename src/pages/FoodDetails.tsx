@@ -123,7 +123,7 @@ const FoodCard = ({
       </div>
 
       <div className="p-4 flex flex-1 flex-col">
-        <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
+        <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors capitalize">
           {item.name}
         </h3>
         <div className="mb-3 flex min-h-6 items-start gap-2 text-muted-foreground text-sm">

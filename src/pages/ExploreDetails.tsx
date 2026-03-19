@@ -121,7 +121,7 @@ const PlaceCard = ({
       </div>
 
       <div className="p-4 flex flex-1 flex-col">
-        <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
+        <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors capitalize">
           {item.name}
         </h3>
 

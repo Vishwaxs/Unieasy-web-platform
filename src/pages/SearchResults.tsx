@@ -39,12 +39,154 @@ function resultLink(item: SearchResult): string {
   return `/essentials/${item.id}`;
 }
 
+const FALLBACKS: Record<string, string[]> = {
+  food: [
+    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
+    "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400",
+    "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",
+    "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400",
+    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=400",
+  ],
+  accommodation: [
+    "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400",
+    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400",
+    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400",
+    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400",
+    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400",
+  ],
+  study: [
+    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400",
+    "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400",
+    "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400",
+    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400",
+  ],
+  campus: [
+    "https://images.unsplash.com/photo-1562774053-701939374585?w=400",
+    "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400",
+    "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=400",
+    "https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=400",
+  ],
+  explore: [
+    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400",
+    "https://images.unsplash.com/photo-1514395462725-fb4566210144?w=400",
+    "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400",
+    "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=400",
+  ],
+  default: [
+    "https://images.unsplash.com/photo-1562774053-701939374585?w=400",
+    "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400",
+    "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=400",
+    "https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=400",
+  ],
+};
+
+// Type/name-based image overrides — checked before category fallback
+const TYPE_IMAGE_RULES: Array<{ keywords: string[]; images: string[] }> = [
+  {
+    keywords: ["swimming", "pool", "aquatic"],
+    images: [
+      "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=400",
+      "https://images.unsplash.com/photo-1519315901367-f34ff9154487?w=400",
+      "https://images.unsplash.com/photo-1560090995-01632a28895b?w=400",
+    ],
+  },
+  {
+    keywords: ["barber", "salon", "hair", "beauty", "grooming", "spa"],
+    images: [
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400",
+      "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=400",
+      "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400",
+    ],
+  },
+  {
+    keywords: ["gym", "fitness", "workout", "sports complex", "badminton", "cricket", "basketball", "football", "tennis", "volleyball"],
+    images: [
+      "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400",
+      "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=400",
+    ],
+  },
+  {
+    keywords: ["medical", "health", "clinic", "hospital", "pharmacy", "dispensary", "infirmary"],
+    images: [
+      "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400",
+      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400",
+      "https://images.unsplash.com/photo-1551076805-e1869033e561?w=400",
+    ],
+  },
+  {
+    keywords: ["bank", "atm", "finance", "cash"],
+    images: [
+      "https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=400",
+      "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400",
+    ],
+  },
+  {
+    keywords: ["library", "reading", "books"],
+    images: [
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400",
+      "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=400",
+      "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400",
+    ],
+  },
+  {
+    keywords: ["canteen", "cafeteria", "mess", "dining hall", "food court"],
+    images: [
+      "https://images.unsplash.com/photo-1567521464027-f127ff144326?w=400",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400",
+    ],
+  },
+  {
+    keywords: ["auditorium", "hall", "seminar", "conference", "theatre", "theater"],
+    images: [
+      "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400",
+      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400",
+      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400",
+    ],
+  },
+  {
+    keywords: ["stationery", "bookshop", "bookstore", "shop", "store", "xerox", "photocopy", "print"],
+    images: [
+      "https://images.unsplash.com/photo-1568667256549-094345857637?w=400",
+      "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400",
+      "https://images.unsplash.com/photo-1509266272358-7701da638078?w=400",
+    ],
+  },
+  {
+    keywords: ["hostel", "dormitory", "dorm", "residence"],
+    images: [
+      "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400",
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400",
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400",
+    ],
+  },
+];
+
 function resultImage(item: SearchResult): string {
   if (Array.isArray(item.photo_refs) && item.photo_refs.length > 0) {
     return `${API_BASE}/api/places/${item.id}/photo/0`;
   }
   if (item.primary_photo_url) return item.primary_photo_url;
-  return "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400";
+
+  // Check type/name keywords for a more relevant image
+  const searchStr = [item.name, item.type, item.sub_type]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  for (const rule of TYPE_IMAGE_RULES) {
+    if (rule.keywords.some((k) => searchStr.includes(k))) {
+      const idx = (item.id?.charCodeAt(0) ?? 0) % rule.images.length;
+      return rule.images[idx];
+    }
+  }
+
+  // Fall back to category pool
+  const catKey =
+    item.is_on_campus || item.category === "oncampus" ? "campus" : item.category;
+  const pool = FALLBACKS[catKey] ?? FALLBACKS.default;
+  const idx = (item.id?.charCodeAt(0) ?? 0) % pool.length;
+  return pool[idx];
 }
 
 function categoryBadgeLabel(item: SearchResult): string {
@@ -102,7 +244,7 @@ const ResultCard = ({ item }: { item: SearchResult }) => (
       </Badge>
     </div>
     <div className="p-4">
-      <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+      <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors capitalize">
         {item.name}
       </h3>
       <div className="flex items-center justify-between gap-3 mb-2">
