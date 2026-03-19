@@ -50,16 +50,6 @@ const CAMPUS_FILTER_GROUPS = [
       { value: "Study", label: "Study" },
     ],
   },
-  {
-    key: "crowd",
-    label: "Crowd Level",
-    options: [
-      { value: "all", label: "Any" },
-      { value: "Low", label: "Low" },
-      { value: "Medium", label: "Medium" },
-      { value: "High", label: "High" },
-    ],
-  },
 ];
 
 const CAMPUS_SORT_OPTIONS = [
@@ -338,7 +328,7 @@ function DeleteConfirmDialog({
 
 const OnCampusDetails = () => {
   const { items: places, loading } = useCampusPlaces();
-  const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
+  const [filters, setFilters] = useState<FilterState>({ type: "all" });
   const [sort, setSort] = useState("default");
   const role = useUserRole();
   const { getToken } = useAuth();
@@ -404,9 +394,7 @@ const OnCampusDetails = () => {
     let result = places.filter((item) => {
       const typeVal = filters.type as string;
       if (typeVal !== "all" && item.type !== typeVal) return false;
-      const crowdVal = filters.crowd as string;
-      if (crowdVal !== "all" && item.crowdLevel !== crowdVal) return false;
-      return true;
+return true;
     });
     result = [...result].sort((a, b) => {
       if (sort === "rating") return b.rating - a.rating;
@@ -439,7 +427,7 @@ const OnCampusDetails = () => {
       <main className="pt-20 pb-8">
         <div className="relative h-48 md:h-64 overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200"
+            src="/Photo-CU.jpg"
             alt="On Campus Banner"
             className="w-full h-full object-cover"
           />

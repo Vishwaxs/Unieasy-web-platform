@@ -9,11 +9,14 @@ import {
   LogOut,
   Edit2,
   Camera,
-  Settings,
   Bell,
   Shield,
   ChevronRight,
   Calendar,
+  Bookmark,
+  MapPin,
+  Star,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +51,32 @@ const Profile = () => {
   const [reviewCount, setReviewCount] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
   const [likedCount, setLikedCount] = useState(0);
+
+  // Saved places panel
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [savedPlaces, setSavedPlaces] = useState<Array<{
+    id: string; name: string; category: string; sub_type: string | null;
+    address: string | null; rating: number | null; rating_count: number | null; photo_refs: string[] | null;
+  }>>([]);
+  const [savedLoading, setSavedLoading] = useState(false);
+
+  const loadSavedPlaces = async () => {
+    if (!user?.id) return;
+    setSavedLoading(true);
+    const { data } = await supabase
+      .from("user_reactions")
+      .select("places(id, name, category, sub_type, address, rating, rating_count, photo_refs)")
+      .eq("clerk_user_id", user.id)
+      .eq("reaction", "bookmark")
+      .order("created_at", { ascending: false });
+    setSavedPlaces((data ?? []).map((r: any) => r.places).filter(Boolean));
+    setSavedLoading(false);
+  };
+
+  const toggleSaved = () => {
+    if (!savedOpen) loadSavedPlaces();
+    setSavedOpen((v) => !v);
+  };
 
   useEffect(() => {
     if (!user?.id) {
@@ -326,32 +355,103 @@ const Profile = () => {
 
                   <div className="grid grid-cols-3 gap-3 sm:gap-4">
                     <div className="text-center p-3 sm:p-4 bg-muted/50 rounded-xl">
-                      <p className="text-lg sm:text-xl font-bold text-primary">
-                        {reviewCount}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Reviews
-                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-primary">{reviewCount}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Reviews</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={toggleSaved}
+                      className={`text-center p-3 sm:p-4 rounded-xl transition-colors ${savedOpen ? "bg-primary/10 ring-1 ring-primary/30" : "bg-muted/50 hover:bg-muted/80"}`}
+                    >
+                      <p className="text-lg sm:text-xl font-bold text-primary">{savedCount}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center justify-center gap-1">
+                        <Bookmark className="w-3 h-3" /> Saved
+                      </p>
+                    </button>
                     <div className="text-center p-3 sm:p-4 bg-muted/50 rounded-xl">
-                      <p className="text-lg sm:text-xl font-bold text-primary">
-                        {savedCount}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Saved
-                      </p>
-                    </div>
-                    <div className="text-center p-3 sm:p-4 bg-muted/50 rounded-xl">
-                      <p className="text-lg sm:text-xl font-bold text-primary">
-                        {likedCount}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Liked
-                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-primary">{likedCount}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Liked</p>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Saved Places Panel */}
+              {savedOpen && (
+                <div className="bg-card rounded-2xl shadow-sm p-5 sm:p-6 animate-fade-up">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                      <Bookmark className="w-4 h-4 text-primary" /> Saved Places
+                    </h2>
+                    <button type="button" onClick={() => setSavedOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {savedLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-20 bg-muted/40 rounded-xl animate-pulse" />
+                      ))}
+                    </div>
+                  ) : savedPlaces.length === 0 ? (
+                    <div className="text-center py-10">
+                      <Bookmark className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">No saved places yet.</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">Bookmark places to find them here.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {savedPlaces.map((place) => {
+                        const section = place.category === "accommodation" ? "accommodation"
+                          : place.category === "campus" ? "campus"
+                          : place.category === "study" ? "study"
+                          : place.category === "essentials" ? "essentials"
+                          : place.category === "explore" ? "explore"
+                          : "food";
+                        return (
+                          <Link
+                            key={place.id}
+                            to={`/${section}/${place.id}`}
+                            className="flex items-start gap-3 p-3 rounded-xl border border-border bg-muted/20 hover:bg-muted/50 transition-colors group"
+                          >
+                            {place.photo_refs?.length ? (
+                              <img
+                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/places/${place.id}/photo/0`}
+                                alt={place.name}
+                                className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Bookmark className="w-5 h-5 text-primary/40" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate capitalize">{place.name}</p>
+                              {place.sub_type && (
+                                <p className="text-xs text-muted-foreground capitalize mt-0.5">{place.sub_type}</p>
+                              )}
+                              {place.address && (
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                                  <MapPin className="w-3 h-3 flex-shrink-0" />{place.address}
+                                </p>
+                              )}
+                              {place.rating != null && place.rating > 0 && (
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                  {place.rating.toFixed(1)}
+                                  {place.rating_count ? ` (${place.rating_count})` : ""}
+                                </p>
+                              )}
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="bg-card rounded-2xl shadow-sm p-5 sm:p-6 animate-fade-up stagger-1">
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">

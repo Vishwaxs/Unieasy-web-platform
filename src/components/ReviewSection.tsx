@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 import { Star, ThumbsUp, ThumbsDown, ShieldCheck, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -66,6 +68,7 @@ function Stars({ value }: { value: number }) {
 
 export default function ReviewSection({ placeId, placeName }: ReviewSectionProps) {
   const { user, isSignedIn } = useUser();
+  const { getToken } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
@@ -162,27 +165,30 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
 
     setIsSubmitting(true);
     try {
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
+
       if (myReview) {
-        const { error } = await supabase
-          .from("reviews")
-          .update({
-            rating: selectedRating,
-            body,
-            is_anonymous: isAnonymous,
-          })
-          .eq("id", myReview.id);
-        if (error) throw new Error(error.message);
+        const res = await fetch(`${API_BASE}/api/reviews/${myReview.id}`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ rating: selectedRating, body, is_anonymous: isAnonymous }),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(d.error || `HTTP ${res.status}`);
+        }
         toast.success("Review updated");
       } else {
-        const { error } = await supabase.from("reviews").insert({
-          place_id: placeId,
-          clerk_user_id: user.id,
-          rating: selectedRating,
-          body,
-          is_anonymous: isAnonymous,
-          verified_student: true,
+        const res = await fetch(`${API_BASE}/api/reviews/${placeId}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ rating: selectedRating, body, is_anonymous: isAnonymous }),
         });
-        if (error) throw new Error(error.message);
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(d.error || `HTTP ${res.status}`);
+        }
         toast.success("Review submitted");
       }
 
@@ -203,11 +209,16 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
     if (!myReview) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("reviews")
-        .update({ status: "deleted" })
-        .eq("id", myReview.id);
-      if (error) throw new Error(error.message);
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
+      const res = await fetch(`${API_BASE}/api/reviews/${myReview.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || `HTTP ${res.status}`);
+      }
       toast.success("Review deleted");
       setIsEditing(false);
       await fetchReviews();

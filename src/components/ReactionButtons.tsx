@@ -143,8 +143,8 @@ export default function ReactionButtons({ placeId, initialCounts }: ReactionButt
         variant="outline"
         size="sm"
         onClick={() => toggleReaction("like")}
-        disabled={isProcessing || disliked}
-        className={`gap-1.5 transition-colors ${liked ? "border-green-500 text-green-500" : ""} ${disliked ? "opacity-30" : ""}`}
+        disabled={isProcessing}
+        className={`gap-1.5 transition-colors ${liked ? "border-green-500 text-green-500" : ""}`}
       >
         <ThumbsUp className={`w-4 h-4 ${liked ? "fill-green-500 text-green-500" : ""}`} />
       </Button>
@@ -153,8 +153,8 @@ export default function ReactionButtons({ placeId, initialCounts }: ReactionButt
         variant="outline"
         size="sm"
         onClick={() => toggleReaction("dislike")}
-        disabled={isProcessing || liked}
-        className={`gap-1.5 transition-colors ${disliked ? "border-red-500 text-red-500" : ""} ${liked ? "opacity-30" : ""}`}
+        disabled={isProcessing}
+        className={`gap-1.5 transition-colors ${disliked ? "border-red-500 text-red-500" : ""}`}
       >
         <ThumbsDown className={`w-4 h-4 ${disliked ? "fill-red-500 text-red-500" : ""}`} />
       </Button>
