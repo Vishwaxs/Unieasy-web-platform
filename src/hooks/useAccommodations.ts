@@ -32,8 +32,8 @@ const ACCOMMODATION_FALLBACK_IMAGES = [
 
 /** Map price_level to monthly rent INR — used only when price_inr is null */
 function priceLevelToRent(level: number): number {
-  const map: Record<number, number> = { 0: 5000, 1: 7000, 2: 10000, 3: 15000, 4: 20000 };
-  return map[level] ?? 10000;
+  const map: Record<number, number> = { 0: 4000, 1: 7000, 2: 11000, 3: 16000, 4: 25000 };
+  return map[level] ?? 8000;
 }
 
 /** Capitalize the first letter of a sub_type for display */

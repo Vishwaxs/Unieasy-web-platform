@@ -35,10 +35,10 @@ const ACCOMMODATION_FILTER_GROUPS = [
     label: "Price Range",
     options: [
       { value: "all", label: "Any" },
-      { value: "0-5000", label: "Under \u20B95K/mo" },
-      { value: "5000-10000", label: "\u20B95K\u2013\u20B910K" },
-      { value: "10000-20000", label: "\u20B910K\u2013\u20B920K" },
-      { value: "20000+", label: "\u20B920K+" },
+      { value: "under-8k", label: "Under \u20B98K/mo" },
+      { value: "8k-12k", label: "\u20B98K\u2013\u20B912K" },
+      { value: "12k-20k", label: "\u20B912K\u2013\u20B920K" },
+      { value: "20k+", label: "\u20B920K+" },
     ],
   },
 ];
@@ -209,10 +209,10 @@ const AccommodationDetails = () => {
       }
 
       const priceVal = filters.price as string;
-      if (priceVal === "0-5000" && item.price >= 5000) return false;
-      if (priceVal === "5000-10000" && (item.price < 5000 || item.price > 10000)) return false;
-      if (priceVal === "10000-20000" && (item.price < 10000 || item.price > 20000)) return false;
-      if (priceVal === "20000+" && item.price <= 20000) return false;
+      if (priceVal === "under-8k" && item.price >= 8000) return false;
+      if (priceVal === "8k-12k" && (item.price < 8000 || item.price > 12000)) return false;
+      if (priceVal === "12k-20k" && (item.price < 12000 || item.price > 20000)) return false;
+      if (priceVal === "20k+" && item.price <= 20000) return false;
 
       return true;
     });
