@@ -1,7 +1,6 @@
 import { useEffect } from "react";
-import { useLocation, useParams, useNavigate, Link } from "react-router-dom";
+import { useLocation, useParams, Link } from "react-router-dom";
 import {
-  ArrowLeft,
   MapPin,
   Phone,
   Clock3,
@@ -26,7 +25,6 @@ import { Button } from "@/components/ui/button";
 
 const FoodRestaurantDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
   const { data: place, isLoading, isError } = usePlaceDetail(id);
 
@@ -58,10 +56,6 @@ const FoodRestaurantDetails = () => {
         <Header />
         <main className="pt-24 pb-12">
           <div className="container mx-auto px-4 md:px-6">
-            <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
             <div className="rounded-2xl border border-border bg-card p-6">
               <h1 className="text-2xl font-semibold text-foreground">Restaurant not found</h1>
               <p className="text-muted-foreground mt-2">Please go back and select another restaurant.</p>
@@ -104,14 +98,6 @@ const FoodRestaurantDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-orange-950/85 via-black/60 to-black/40 dark:from-orange-950/70 dark:via-background/50 dark:to-background/30" />
           <div className="absolute inset-0 flex items-end">
             <div className="container mx-auto px-4 md:px-6 pb-6">
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-3 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </button>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">{place.name}</h1>
               {place.address && (
                 <p className="text-white/85 mt-2 max-w-2xl">{place.address}</p>

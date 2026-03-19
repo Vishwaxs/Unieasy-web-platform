@@ -1,8 +1,7 @@
 import { useEffect } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import type { ReactNode } from "react";
 import {
-  ArrowLeft,
   MapPin,
   Wifi,
   Car,
@@ -42,7 +41,6 @@ const amenityMeta: Record<string, { icon: ReactNode; label: string }> = {
 
 const AccommodationItemDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
   const { data: place, isLoading, isError } = usePlaceDetail(id);
 
@@ -114,12 +112,6 @@ const AccommodationItemDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-violet-950/85 via-black/60 to-black/40 dark:from-violet-950/70 dark:via-background/50 dark:to-background/30" />
           <div className="absolute inset-0 flex items-end">
             <div className="container mx-auto px-4 md:px-6 pb-6">
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-3 transition-colors"
-              >
-                </button>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">{place.name}</h1>
               {place.address && (
                 <p className="text-white/85 mt-2 max-w-2xl">{place.address}</p>
