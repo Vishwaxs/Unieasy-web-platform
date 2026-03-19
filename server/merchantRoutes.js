@@ -29,96 +29,138 @@ const upload = multer({
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * GET /api/merchant/upgrade-request/status
- * Returns the most recent upgrade request status for the current user.
+ * POST /api/merchant/request-upgrade
+ * Also available at /api/merchant/upgrade-request (legacy alias).
+ * Submits a new merchant upgrade request for admin review.
+ * Body: { business_name, business_type, contact_number?, description?, website? }
+ * OR:   { businessName, businessType, contactNumber?, description?, website? } (legacy)
+ * Requires role='student'. Rejects if a pending request already exists.
  */
-router.get(
-  "/upgrade-request/status",
-  verifyClerkToken(),
-  async (req, res) => {
-    try {
-      const { data, error } = await supabaseAdmin
-        .from("merchant_upgrade_requests")
-        .select("status, review_note")
-        .eq("clerk_user_id", req.clerkUserId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+async function handleRequestUpgrade(req, res) {
+  // Accept both snake_case and camelCase body fields
+  const businessName = req.body?.business_name || req.body?.businessName;
+  const businessType = req.body?.business_type || req.body?.businessType;
+  const contactNumber = req.body?.contact_number || req.body?.contactNumber;
+  const description = req.body?.description;
+  const website = req.body?.website;
 
-      if (error) {
-        logger.error({ err: error }, "GET /merchant/upgrade-request/status");
-        return res.status(500).json({ error: error.message });
-      }
-
-      if (!data) {
-        return res.json({ status: null });
-      }
-
-      return res.json({ status: data.status, review_note: data.review_note });
-    } catch (err) {
-      logger.error({ err }, "GET /merchant/upgrade-request/status unexpected");
-      return res.status(500).json({ error: "Internal server error" });
-    }
+  if (!businessName || typeof businessName !== "string" || !businessName.trim()) {
+    return res.status(400).json({ error: "business_name is required" });
   }
-);
+  if (!businessType || typeof businessType !== "string" || !businessType.trim()) {
+    return res.status(400).json({ error: "business_type is required" });
+  }
+
+  // Only students can request merchant upgrade
+  if (req.userRole !== "student") {
+    if (req.userRole === "merchant") {
+      return res.status(400).json({ error: "You are already a merchant" });
+    }
+    return res.status(403).json({ error: "Only students can request a merchant upgrade" });
+  }
+
+  try {
+    // Check for existing pending request
+    const { data: existing } = await supabaseAdmin
+      .from("merchant_upgrade_requests")
+      .select("id, status")
+      .eq("clerk_user_id", req.clerkUserId)
+      .eq("status", "pending")
+      .maybeSingle();
+
+    if (existing) {
+      return res.status(409).json({ error: "You already have a pending request" });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("merchant_upgrade_requests")
+      .insert({
+        clerk_user_id: req.clerkUserId,
+        business_name: businessName.trim(),
+        business_type: businessType.trim(),
+        contact_number: contactNumber?.trim() || null,
+        description: description?.trim() || null,
+        website: website?.trim() || null,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      logger.error({ err: error }, "POST /merchant/request-upgrade insert failed");
+      return res.status(500).json({ error: error.message });
+    }
+
+    logger.info({ requestId: data.id, clerkUserId: req.clerkUserId }, "Merchant upgrade request submitted");
+
+    // ── Notify admins about the new request ───────────────────────────
+    try {
+      const { data: user } = await supabaseAdmin
+        .from("app_users")
+        .select("email, full_name")
+        .eq("clerk_user_id", req.clerkUserId)
+        .single();
+      const userName = user?.full_name || "Unknown";
+      const userEmail = user?.email || "";
+      notifyAdminEmails("new_ad_submitted", {
+        merchantName: userName,
+        merchantEmail: userEmail,
+        adTitle: `Merchant application: ${businessName.trim()}`,
+      });
+      insertAdminNotifications("merchant_upgrade_requested",
+        `New merchant application from ${userName}`,
+        `${userName} (${userEmail}) applied for "${businessName.trim()}"`,
+        "/admin", { requestId: data.id });
+    } catch (_) { /* non-blocking */ }
+
+    return res.status(201).json({ message: "Request submitted", requestId: data.id, request: data });
+  } catch (err) {
+    logger.error({ err }, "POST /merchant/request-upgrade unexpected");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+router.post("/request-upgrade", verifyClerkToken(), handleRequestUpgrade);
+router.post("/upgrade-request", verifyClerkToken(), handleRequestUpgrade); // legacy alias
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MERCHANT UPGRADE STATUS
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * POST /api/merchant/upgrade-request
- * Submits a new merchant upgrade request for admin review.
- * Body: { businessName, businessType, contactNumber?, description? }
+ * GET /api/merchant/upgrade-status
+ * Also available at /api/merchant/upgrade-request/status (legacy alias).
+ * Returns the user's latest merchant_upgrade_requests row.
+ * Response: { status: 'none'|'pending'|'approved'|'rejected', request: {...} | null }
  */
-router.post(
-  "/upgrade-request",
-  verifyClerkToken(),
-  async (req, res) => {
-    const { businessName, businessType, contactNumber, description } = req.body || {};
+async function handleUpgradeStatus(req, res) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("merchant_upgrade_requests")
+      .select("*")
+      .eq("clerk_user_id", req.clerkUserId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (!businessName || typeof businessName !== "string" || !businessName.trim()) {
-      return res.status(400).json({ error: "businessName is required" });
+    if (error) {
+      logger.error({ err: error }, "GET /merchant/upgrade-status");
+      return res.status(500).json({ error: error.message });
     }
-    if (!businessType || typeof businessType !== "string" || !businessType.trim()) {
-      return res.status(400).json({ error: "businessType is required" });
+
+    if (!data) {
+      return res.json({ status: "none", request: null });
     }
 
-    // Check for existing pending request
-    try {
-      const { data: existing } = await supabaseAdmin
-        .from("merchant_upgrade_requests")
-        .select("id, status")
-        .eq("clerk_user_id", req.clerkUserId)
-        .eq("status", "pending")
-        .maybeSingle();
-
-      if (existing) {
-        return res.status(409).json({ error: "You already have a pending request" });
-      }
-
-      const { data, error } = await supabaseAdmin
-        .from("merchant_upgrade_requests")
-        .insert({
-          clerk_user_id: req.clerkUserId,
-          business_name: businessName.trim(),
-          business_type: businessType.trim(),
-          contact_number: contactNumber?.trim() || null,
-          description: description?.trim() || null,
-          status: "pending",
-        })
-        .select()
-        .single();
-
-      if (error) {
-        logger.error({ err: error }, "POST /merchant/upgrade-request insert failed");
-        return res.status(500).json({ error: error.message });
-      }
-
-      logger.info({ requestId: data.id, clerkUserId: req.clerkUserId }, "Merchant upgrade request submitted");
-      return res.status(201).json(data);
-    } catch (err) {
-      logger.error({ err }, "POST /merchant/upgrade-request unexpected");
-      return res.status(500).json({ error: "Internal server error" });
-    }
+    return res.json({ status: data.status, request: data, review_note: data.review_note });
+  } catch (err) {
+    logger.error({ err }, "GET /merchant/upgrade-status unexpected");
+    return res.status(500).json({ error: "Internal server error" });
   }
-);
+}
+
+router.get("/upgrade-status", verifyClerkToken(), handleUpgradeStatus);
+router.get("/upgrade-request/status", verifyClerkToken(), handleUpgradeStatus); // legacy alias
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MERCHANT UPGRADE (legacy — direct upgrade, kept for backward compat)
@@ -293,6 +335,7 @@ router.post(
 /**
  * GET /api/merchant/ads
  * Returns all ads belonging to the authenticated merchant, newest first.
+ * Includes click_count & impression_count.
  */
 router.get(
   "/ads",
@@ -301,7 +344,7 @@ router.get(
     try {
       const { data, error } = await supabaseAdmin
         .from("ads")
-        .select("*")
+        .select("id, title, description, image_url, target_location, duration_days, status, click_count, impression_count, created_at, approved_at, rejected_reason")
         .eq("clerk_user_id", req.clerkUserId)
         .order("created_at", { ascending: false });
 
@@ -313,6 +356,163 @@ router.get(
       return res.json(data);
     } catch (err) {
       logger.error({ err }, "GET /merchant/ads unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DELETE MERCHANT AD (soft-delete, pending only)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * DELETE /api/merchant/ads/:id
+ * Soft-delete an ad by setting status='deleted'.
+ * Only allowed if the ad belongs to this merchant AND status='pending'.
+ */
+router.delete(
+  "/ads/:id",
+  verifyClerkToken(["merchant"]),
+  async (req, res) => {
+    const adId = req.params.id;
+
+    try {
+      // Verify ownership and status
+      const { data: ad, error: fetchErr } = await supabaseAdmin
+        .from("ads")
+        .select("id, clerk_user_id, status")
+        .eq("id", adId)
+        .single();
+
+      if (fetchErr || !ad) {
+        return res.status(404).json({ error: "Ad not found" });
+      }
+
+      if (ad.clerk_user_id !== req.clerkUserId) {
+        return res.status(403).json({ error: "You can only delete your own ads" });
+      }
+
+      if (ad.status !== "pending") {
+        return res.status(400).json({ error: `Cannot delete ad with status '${ad.status}'. Only pending ads can be deleted.` });
+      }
+
+      const { error: updateErr } = await supabaseAdmin
+        .from("ads")
+        .update({ status: "deleted" })
+        .eq("id", adId);
+
+      if (updateErr) {
+        logger.error({ err: updateErr, adId }, "DELETE /merchant/ads/:id");
+        return res.status(500).json({ error: updateErr.message });
+      }
+
+      logger.info({ adId, clerkUserId: req.clerkUserId }, "Ad soft-deleted by merchant");
+      return res.json({ message: "Ad deleted" });
+    } catch (err) {
+      logger.error({ err }, "DELETE /merchant/ads/:id unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MERCHANT NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/merchant/notifications
+ * Returns notifications for this user, newest first, limit 20.
+ * Query: ?unread_only=true
+ */
+router.get(
+  "/notifications",
+  verifyClerkToken(["merchant"]),
+  async (req, res) => {
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const unreadOnly = req.query.unread_only === "true";
+
+    try {
+      let query = supabaseAdmin
+        .from("notifications")
+        .select("*", { count: "exact" })
+        .eq("clerk_user_id", req.clerkUserId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (unreadOnly) {
+        query = query.eq("is_read", false);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        logger.error({ err: error }, "GET /merchant/notifications");
+        return res.status(500).json({ error: error.message });
+      }
+
+      // Unread count for badge
+      const { count: unreadCount } = await supabaseAdmin
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("clerk_user_id", req.clerkUserId)
+        .eq("is_read", false);
+
+      return res.json({ data: data || [], total: count || 0, unread: unreadCount || 0 });
+    } catch (err) {
+      logger.error({ err }, "GET /merchant/notifications unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/merchant/notifications/mark-read
+ * Mark notifications as read.
+ * Body: { notification_ids: string[] } — marks specific IDs
+ *   OR: { all: true }                  — marks all as read
+ */
+router.post(
+  "/notifications/mark-read",
+  verifyClerkToken(["merchant"]),
+  async (req, res) => {
+    const { notification_ids, all } = req.body || {};
+
+    try {
+      if (all === true) {
+        const { error } = await supabaseAdmin
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("clerk_user_id", req.clerkUserId)
+          .eq("is_read", false);
+
+        if (error) {
+          logger.error({ err: error }, "POST /merchant/notifications/mark-read (all)");
+          return res.status(500).json({ error: error.message });
+        }
+        return res.json({ message: "All notifications marked as read" });
+      }
+
+      if (!Array.isArray(notification_ids) || notification_ids.length === 0) {
+        return res.status(400).json({ error: "Provide notification_ids array or { all: true }" });
+      }
+
+      // Cap batch size
+      const ids = notification_ids.slice(0, 50);
+
+      const { error } = await supabaseAdmin
+        .from("notifications")
+        .update({ is_read: true })
+        .in("id", ids)
+        .eq("clerk_user_id", req.clerkUserId); // ensure ownership
+
+      if (error) {
+        logger.error({ err: error }, "POST /merchant/notifications/mark-read");
+        return res.status(500).json({ error: error.message });
+      }
+
+      return res.json({ message: `${ids.length} notification(s) marked as read` });
+    } catch (err) {
+      logger.error({ err }, "POST /merchant/notifications/mark-read unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -334,7 +534,7 @@ router.get(
       // Get ads stats
       const { data: ads, error: adsErr } = await supabaseAdmin
         .from("ads")
-        .select("id, status, impression_count")
+        .select("id, status, impression_count, click_count")
         .eq("clerk_user_id", req.clerkUserId);
 
       if (adsErr) {
@@ -345,9 +545,10 @@ router.get(
       const totalAds = ads?.length || 0;
       const activeAds = ads?.filter(a => a.status === "active").length || 0;
       const totalImpressions = ads?.reduce((sum, a) => sum + (a.impression_count || 0), 0) || 0;
+      const totalClicks = ads?.reduce((sum, a) => sum + (a.click_count || 0), 0) || 0;
 
       return res.json({
-        ads: { total: totalAds, active: activeAds, impressions: totalImpressions },
+        ads: { total: totalAds, active: activeAds, impressions: totalImpressions, clicks: totalClicks },
       });
     } catch (err) {
       logger.error({ err }, "GET /merchant/analytics unexpected");
