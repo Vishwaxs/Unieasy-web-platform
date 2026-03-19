@@ -14,6 +14,14 @@ export interface EssentialItem {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+function getPhotoUrl(place: Record<string, unknown>, fallback: string): string {
+  const refs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const first = refs[0];
+  const ref = first && typeof first === 'object' ? (first as Record<string, string>).ref : null;
+  if (!ref) return fallback;
+  return `${API_BASE}/api/places/photo?ref=${encodeURIComponent(ref)}&maxwidth=800`;
+}
+
 // Essentials page shows items from multiple categories: services, health, fitness, safety, essentials
 const ESSENTIALS_CATEGORIES = [
   "services",
@@ -37,12 +45,8 @@ const ESSENTIALS_FALLBACK_IMAGES = [
  * Adapter: Map a Place record to the EssentialItem shape expected by UI components.
  */
 function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
-  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
-  const hasPhoto = photoRefs.length > 0;
   const idStr = (place.id as string) || "a";
   const fallbackIndex = idStr.charCodeAt(0) % ESSENTIALS_FALLBACK_IMAGES.length;
-  const dist = (place.distance_from_campus as string) || "";
-  const address = (place.address as string) || null;
 
   return {
     id: place.id as string,
@@ -50,11 +54,9 @@ function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
     category: (place.category as string) || "essentials",
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: dist ? `${dist} from campus` : shortAddress(address),
-    image: hasPhoto
-      ? `${API_BASE}/api/places/${place.id}/photo/0`
-      : ESSENTIALS_FALLBACK_IMAGES[fallbackIndex],
-    comment: ((place.short_description as string) || "").trim(),
+    distance: (place.distance_from_campus as string) || "Nearby campus",
+    image: getPhotoUrl(place, ESSENTIALS_FALLBACK_IMAGES[fallbackIndex]),
+    comment: ((place.description as string) || (place.address as string) || "").trim(),
   };
 }
 

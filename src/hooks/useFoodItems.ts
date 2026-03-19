@@ -19,6 +19,14 @@ export interface FoodItem {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+function getPhotoUrl(place: Record<string, unknown>, fallback: string): string {
+  const refs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const first = refs[0];
+  const ref = first && typeof first === 'object' ? (first as Record<string, string>).ref : null;
+  if (!ref) return fallback;
+  return `${API_BASE}/api/places/photo?ref=${encodeURIComponent(ref)}&maxwidth=800`;
+}
+
 // Category-specific fallback images so different cards show different images (B4 fix)
 const FOOD_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
@@ -40,24 +48,10 @@ function priceLevelToINR(level: number): number {
  * expected by existing UI components.
  */
 function placeToFoodItem(place: Record<string, unknown>): FoodItem {
-  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
-  const hasPhoto = photoRefs.length > 0;
-  const address = (place.address as string) || "";
-  const extra =
-    typeof place.extra === "object" && place.extra !== null
-      ? (place.extra as Record<string, unknown>)
-      : null;
-  const reviews =
-    extra && Array.isArray(extra.reviews)
-      ? (extra.reviews as Array<Record<string, unknown>>)
-      : [];
-  const firstReview = reviews.length > 0 ? reviews[0] : null;
-  const reviewSnippet =
-    firstReview && typeof firstReview.text === "string" ? firstReview.text : "";
   const dist = (place.distance_from_campus as string) || "";
   const locality = shortAddress((place.address as string) || null);
 
-  // B4 fix: deterministic per-card fallback using id
+  // Deterministic per-card fallback using id
   const idStr = (place.id as string) || "a";
   const fallbackIndex = idStr.charCodeAt(0) % FOOD_FALLBACK_IMAGES.length;
 
@@ -65,20 +59,16 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
     restaurant: dist ? `${dist} from campus` : locality,
-    // B5 fix: prefer actual price_inr from DB, fall back to price_level mapping
     price: typeof place.price_inr === "number"
       ? place.price_inr
       : priceLevelToINR(typeof place.price_level === "number" ? place.price_level : 1),
     display_price_label: (place.display_price_label as string) || undefined,
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    // B2 fix: read actual is_veg from DB; null means unknown/mixed
     is_veg: typeof place.is_veg === "boolean" ? place.is_veg : null,
     cuisine_tags: Array.isArray(place.cuisine_tags) ? (place.cuisine_tags as string[]) : undefined,
-    image: hasPhoto
-      ? `${API_BASE}/api/places/${place.id}/photo/0`
-      : FOOD_FALLBACK_IMAGES[fallbackIndex],
-    comment: (reviewSnippet || (place.short_description as string) || "").trim(),
+    image: getPhotoUrl(place, FOOD_FALLBACK_IMAGES[fallbackIndex]),
+    comment: ((place.description as string) || (place.address as string) || "").trim(),
     lat: typeof place.lat === "number" ? place.lat : undefined,
     lng: typeof place.lng === "number" ? place.lng : undefined,
   };

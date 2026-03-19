@@ -17,6 +17,14 @@ export interface ExplorePlace {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+function getPhotoUrl(place: Record<string, unknown>, fallback: string): string {
+  const refs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const first = refs[0];
+  const ref = first && typeof first === 'object' ? (first as Record<string, string>).ref : null;
+  if (!ref) return fallback;
+  return `${API_BASE}/api/places/photo?ref=${encodeURIComponent(ref)}&maxwidth=800`;
+}
+
 // Per-card fallback images
 const EXPLORE_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400",
@@ -35,22 +43,10 @@ function placeToExplorePlace(place: Record<string, unknown>): ExplorePlace {
   const weekdayDescs = (openingHours.weekday_descriptions as string[]) || [];
   const timing = (place.timing as string) || weekdayDescs[0] || "Check online";
 
-  // ── Photo URL: build from photo_refs JSONB array ────────────────────────
-  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
-  const firstRef = photoRefs[0];
-  const photoRefStr =
-    typeof firstRef === "object" && firstRef !== null
-      ? (firstRef as Record<string, string>).ref
-      : typeof firstRef === "string"
-        ? firstRef
-        : null;
-
+  // ── Photo URL ───────────────────────────────────────────────────────────
   const idStr = (place.id as string) || "a";
   const fallbackIndex = idStr.charCodeAt(0) % EXPLORE_FALLBACK_IMAGES.length;
-
-  const image = photoRefStr
-    ? `${API_BASE}/api/places/photo?ref=${encodeURIComponent(photoRefStr)}&maxwidth=800`
-    : EXPLORE_FALLBACK_IMAGES[fallbackIndex];
+  const image = getPhotoUrl(place, EXPLORE_FALLBACK_IMAGES[fallbackIndex]);
 
   // ── Crowd level ─────────────────────────────────────────────────────────
   const crowdLabels: Record<string, string> = { low: "Low", moderate: "Medium", high: "High" };

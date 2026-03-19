@@ -17,6 +17,14 @@ export interface StudySpot {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+function getPhotoUrl(place: Record<string, unknown>, fallback: string): string {
+  const refs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
+  const first = refs[0];
+  const ref = first && typeof first === 'object' ? (first as Record<string, string>).ref : null;
+  if (!ref) return fallback;
+  return `${API_BASE}/api/places/photo?ref=${encodeURIComponent(ref)}&maxwidth=800`;
+}
+
 // Per-card fallback images (B4 fix)
 const STUDY_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400",
@@ -44,13 +52,9 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
       : "Check online";
   }
 
-  const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
-  const hasPhoto = photoRefs.length > 0;
   const idStr = (place.id as string) || "a";
   const fallbackIndex = idStr.charCodeAt(0) % STUDY_FALLBACK_IMAGES.length;
   const rawType = (place.sub_type as string) || (place.type as string) || "library";
-  const dist = (place.distance_from_campus as string) || "";
-  const address = (place.address as string) || null;
 
   return {
     id: place.id as string,
@@ -58,14 +62,12 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
     type: rawType.charAt(0).toUpperCase() + rawType.slice(1),
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: dist ? `${dist} from campus` : shortAddress(address),
+    distance: (place.distance_from_campus as string) || "Nearby campus",
     timing,
     noise: formatNoise(place.noise_level as string | null),
     has_wifi: typeof place.has_wifi === "boolean" ? place.has_wifi : true,
-    image: hasPhoto
-      ? `${API_BASE}/api/places/${place.id}/photo/0`
-      : STUDY_FALLBACK_IMAGES[fallbackIndex],
-    comment: ((place.short_description as string) || "").trim(),
+    image: getPhotoUrl(place, STUDY_FALLBACK_IMAGES[fallbackIndex]),
+    comment: ((place.description as string) || (place.address as string) || "").trim(),
   };
 }
 
