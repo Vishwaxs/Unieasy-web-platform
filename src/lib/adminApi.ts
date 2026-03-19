@@ -48,6 +48,20 @@ export async function adminFetch(
 }
 
 /**
+ * Makes an authenticated JSON fetch to `/api/superadmin{path}`.
+ */
+export async function superadminFetch(
+  getToken: GetToken,
+  path: string,
+  options: RequestInit = {}
+): Promise<any> {
+  return authenticatedFetch(getToken, `${API_BASE}/api/superadmin${path}`, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+  });
+}
+
+/**
  * Makes an authenticated JSON fetch to `/api{path}`.
  */
 export async function apiFetch(

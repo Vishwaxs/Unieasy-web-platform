@@ -30,6 +30,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import adminRoutes from "./adminRoutes.js";
+import superadminRoutes from "./superadminRoutes.js";
 import merchantRoutes from "./merchantRoutes.js";
 import placesRoutes from "./placesRoutes.js";
 import reviewRoutes from "./reviewRoutes.js";
@@ -137,6 +138,9 @@ app.use("/api", adsPublicRoutes);
 
 // ── Admin routes (/api/admin/*) ─────────────────────────────────────────────
 app.use("/api/admin", adminRoutes);
+
+// ── Superadmin routes (/api/superadmin/*) ───────────────────────────────────
+app.use("/api/superadmin", superadminRoutes);
 
 // ── Merchant routes (/api/merchant/*) ───────────────────────────────────────
 app.use("/api/merchant", merchantRoutes);
