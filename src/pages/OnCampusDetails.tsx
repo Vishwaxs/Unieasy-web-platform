@@ -216,56 +216,78 @@ const CampusCard = ({ item, index, isAdmin, onEdit, onDelete }: CampusCardProps)
   };
 
   return (
-    <Link to={`/campus/${item.id}`} className="block">
-      <div
-        ref={cardRef}
-        className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-        }`}
-        style={{ transitionDelay: `${index * 50}ms` }}
-      >
-        <div className="relative h-44 overflow-hidden">
-          <img
-            src={item.image}
-            alt={item.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            referrerPolicy="no-referrer-when-downgrade"
-            loading="lazy"
-          />
-          <Badge className="absolute top-3 left-3 bg-primary">{item.subType || item.type}</Badge>
-          {item.rating > 0 && (
-            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-              <span className="text-white text-sm">{item.rating}</span>
-            </div>
-          )}
+    <div className="relative group/card">
+      {/* Admin controls overlay */}
+      {isAdmin && (
+        <div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); onEdit(item); }}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-background/90 border border-border text-foreground hover:bg-primary hover:text-primary-foreground transition-colors shadow"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); onDelete(item); }}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-background/90 border border-border text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors shadow"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
-        <div className="p-4 flex flex-1 flex-col">
-          <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors capitalize">
-            {item.name}
-          </h3>
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <MapPin className="w-3 h-3 shrink-0" />
-              <span className="line-clamp-1">{shortAddress(item.address)}</span>
+      )}
+
+      <Link to={`/campus/${item.id}`} className="block h-full">
+        <div
+          ref={cardRef}
+          className={`h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          }`}
+          style={{ transitionDelay: `${index * 50}ms` }}
+        >
+          <div className="relative h-44 overflow-hidden">
+            <img
+              src={item.image}
+              alt={item.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+              referrerPolicy="no-referrer-when-downgrade"
+              loading="lazy"
+            />
+            <Badge className="absolute top-3 left-3 bg-primary capitalize">{item.subType || item.type}</Badge>
+            {item.rating > 0 && (
+              <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
+                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                <span className="text-white text-sm">{item.rating}</span>
+              </div>
+            )}
+          </div>
+          <div className="p-4 flex flex-1 flex-col">
+            <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover/card:text-primary transition-colors capitalize">
+              {item.name}
+            </h3>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <MapPin className="w-3 h-3 shrink-0" />
+                <span className="line-clamp-1">{shortAddress(item.address)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Clock className="w-3 h-3 shrink-0" />
+                <span className="line-clamp-1">{item.timing}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="w-3 h-3 text-muted-foreground" />
+                <Badge className={`${getCrowdColor(item.crowdLevel)} text-white text-xs`}>
+                  {item.crowdLevel} Crowd
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Clock className="w-3 h-3 shrink-0" />
-              <span className="line-clamp-1">{item.timing}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="w-3 h-3 text-muted-foreground" />
-              <Badge className={`${getCrowdColor(item.crowdLevel)} text-white text-xs`}>
-                {item.crowdLevel} Crowd
-              </Badge>
+            <div className="mt-auto min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
+              <p className="line-clamp-3">{item.address || "Address unavailable"}</p>
             </div>
           </div>
-          <div className="mt-auto min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
-            <p className="line-clamp-3">{item.address || "Address unavailable"}</p>
-          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 };
 
