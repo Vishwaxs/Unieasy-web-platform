@@ -23,11 +23,12 @@ const EXPLORE_FILTER_GROUPS = [
     options: [
       { value: "all", label: "All" },
       { value: "Park", label: "Park" },
-      { value: "Cafe", label: "Cafe" },
+      { value: "Cinema", label: "Cinema" },
       { value: "Mall", label: "Mall" },
-      { value: "Scenic", label: "Scenic" },
-      { value: "Sports", label: "Sports" },
-      { value: "Culture", label: "Culture" },
+      { value: "Museum", label: "Museum" },
+      { value: "Gallery", label: "Gallery" },
+      { value: "Attraction", label: "Attraction" },
+      { value: "Bar", label: "Bar" },
     ],
   },
   {
@@ -173,17 +174,13 @@ const PlaceCard = ({
 const ExploreDetails = () => {
   const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
   const [sort, setSort] = useState("default");
-  const { items: places, loading } = useExplorePlaces({
-    category: "hangout",
-    selectedType: (filters.type as string) || "all",
-  });
+  const { items: places, loading } = useExplorePlaces();
 
   const filteredItems = useMemo(() => {
     let result = places.filter((item) => {
+      // Client-side type filter (compares against the mapped sub_type → type field)
       const typeVal = filters.type as string;
-      // Type filtering is handled in the data hook (type/sub_type aware).
-      // Keep a no-op guard here so UI logic stays stable if hook params change.
-      if (typeVal !== "all" && !item.type) return false;
+      if (typeVal !== "all" && item.type.toLowerCase() !== typeVal.toLowerCase()) return false;
 
       const crowdVal = filters.crowd as string;
       if (crowdVal !== "all" && item.crowd !== crowdVal) return false;
