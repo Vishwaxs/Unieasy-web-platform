@@ -485,32 +485,45 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
                 </p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => updateHelpful(review.id, "helpful")}
-                    className={[
-                      "flex items-center gap-1 text-xs transition-colors",
-                      helpfulVotes[review.id] === "helpful"
-                        ? "text-green-500 font-medium"
-                        : "text-muted-foreground hover:text-green-600",
-                    ].join(" ")}
-                  >
-                    <ThumbsUp className={`w-3.5 h-3.5 ${helpfulVotes[review.id] === "helpful" ? "fill-green-500" : ""}`} />
-                    Helpful ({review.helpful_count ?? 0})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateHelpful(review.id, "not_helpful")}
-                    className={[
-                      "flex items-center gap-1 text-xs transition-colors",
-                      helpfulVotes[review.id] === "not_helpful"
-                        ? "text-red-500 font-medium"
-                        : "text-muted-foreground hover:text-red-500",
-                    ].join(" ")}
-                  >
-                    <ThumbsDown className={`w-3.5 h-3.5 ${helpfulVotes[review.id] === "not_helpful" ? "fill-red-500" : ""}`} />
-                    Not helpful ({review.not_helpful_count ?? 0})
-                  </button>
+                  {(() => {
+                    const myVote = helpfulVotes[review.id];
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => updateHelpful(review.id, "helpful")}
+                          disabled={myVote === "not_helpful"}
+                          className={[
+                            "flex items-center gap-1 text-xs transition-colors",
+                            myVote === "helpful"
+                              ? "text-green-500 font-medium"
+                              : myVote === "not_helpful"
+                              ? "opacity-30 cursor-not-allowed"
+                              : "text-muted-foreground hover:text-green-600",
+                          ].join(" ")}
+                        >
+                          <ThumbsUp className={`w-3.5 h-3.5 ${myVote === "helpful" ? "fill-green-500" : ""}`} />
+                          Helpful ({review.helpful_count ?? 0})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateHelpful(review.id, "not_helpful")}
+                          disabled={myVote === "helpful"}
+                          className={[
+                            "flex items-center gap-1 text-xs transition-colors",
+                            myVote === "not_helpful"
+                              ? "text-red-500 font-medium"
+                              : myVote === "helpful"
+                              ? "opacity-30 cursor-not-allowed"
+                              : "text-muted-foreground hover:text-red-500",
+                          ].join(" ")}
+                        >
+                          <ThumbsDown className={`w-3.5 h-3.5 ${myVote === "not_helpful" ? "fill-red-500" : ""}`} />
+                          Not helpful ({review.not_helpful_count ?? 0})
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {review.merchant_reply ? (
