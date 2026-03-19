@@ -98,9 +98,6 @@ const PlaceItemDetails = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6">
-            <Link to={backPath} className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-3 transition-colors">
-              <ArrowLeft className="w-5 h-5" /><span>Back</span>
-            </Link>
             <h1 className="text-2xl md:text-3xl font-bold text-white">{place.name}</h1>
             <div className="flex flex-wrap items-center gap-3 mt-2">
               {place.sub_type && <Badge className="bg-white/20 text-white border-0 capitalize">{place.sub_type}</Badge>}

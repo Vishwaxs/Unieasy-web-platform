@@ -173,6 +173,58 @@ export function rejectAd(getToken: GetToken, adId: string, reason = "") {
   });
 }
 
+// ─── Named helpers — Campus Places CRUD ─────────────────────────────────────
+
+export interface CampusPlacePayload {
+  name: string;
+  sub_type?: string;
+  type?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+  timing?: string;
+  crowd_level?: string;
+  phone?: string;
+  website?: string;
+  amenities?: string[];
+  cuisine_tags?: string[];
+  price_range_min?: number;
+  price_range_max?: number;
+  display_price_label?: string;
+  has_wifi?: boolean;
+  noise_level?: string;
+  is_veg?: boolean;
+  distance_from_campus?: string;
+  business_status?: string;
+  is_open_now?: boolean;
+}
+
+/** List all campus places (admin). */
+export function fetchAdminCampusPlaces(getToken: GetToken) {
+  return adminFetch(getToken, "/campus");
+}
+
+/** Create a new campus place. */
+export function createCampusPlace(getToken: GetToken, payload: CampusPlacePayload) {
+  return adminFetch(getToken, "/campus", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Update an existing campus place (partial). */
+export function updateCampusPlace(getToken: GetToken, id: string, payload: Partial<CampusPlacePayload>) {
+  return adminFetch(getToken, `/campus/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Delete a campus place. */
+export function deleteCampusPlace(getToken: GetToken, id: string) {
+  return adminFetch(getToken, `/campus/${id}`, { method: "DELETE" });
+}
+
 // ─── Named helpers — Notifications ──────────────────────────────────────────
 
 /** Fetch current user's notifications. Returns { data, total, unread }. */

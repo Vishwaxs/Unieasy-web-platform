@@ -196,13 +196,6 @@ const StudyDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 to-cyan-600/80 dark:from-blue-700/70 dark:to-cyan-800/70" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4">
-              <Link
-                to="/home"
-                className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </Link>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
                 Study Zones
               </h1>
