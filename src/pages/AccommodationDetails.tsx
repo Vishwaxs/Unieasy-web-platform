@@ -209,10 +209,10 @@ const AccommodationDetails = () => {
       }
 
       const priceVal = filters.price as string;
-      if (priceVal === "0-5000" && item.price > 5000) return false;
+      if (priceVal === "0-5000" && item.price >= 5000) return false;
       if (priceVal === "5000-10000" && (item.price < 5000 || item.price > 10000)) return false;
       if (priceVal === "10000-20000" && (item.price < 10000 || item.price > 20000)) return false;
-      if (priceVal === "20000+" && item.price < 20000) return false;
+      if (priceVal === "20000+" && item.price <= 20000) return false;
 
       return true;
     });

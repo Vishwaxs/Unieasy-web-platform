@@ -51,52 +51,58 @@ function formatSubType(raw: string): string {
 
 /**
  * Adapter: Map a Place record to the Accommodation shape expected by UI components.
- * B3 fix: use sub_type for PG/apartment/hostel/coliving instead of just type
- * B5 fix: prefer price_inr from DB over price_level mapping
- * B4 fix: deterministic per-card fallback images
+ * Returns null for food-type places that are misclassified as accommodation.
  */
-function placeToAccommodation(place: Record<string, unknown>): Accommodation {
+function placeToAccommodation(place: Record<string, unknown>): Accommodation | null {
+  // ── Guard: skip food places misclassified as accommodation ──────────────
+  const foodTypes = ['cafe', 'restaurant', 'fast_food', 'bakery', 'juice_bar'];
+  const placeType = ((place.type as string) || '').toLowerCase();
+  const placeSubType = ((place.sub_type as string) || '').toLowerCase();
+  if (foodTypes.some(ft => placeType.includes(ft) || placeSubType.includes(ft))) {
+    return null;
+  }
+
+  // ── Price: prefer DB values, fall back to price_level map ───────────────
+  const priceLevel = typeof place.price_level === 'number' ? place.price_level : 1;
+  const price =
+    (typeof place.price_inr === 'number' && place.price_inr > 0 ? place.price_inr : null) ??
+    (typeof place.price_range_min === 'number' && place.price_range_min > 0 ? place.price_range_min : null) ??
+    priceLevelToRent(priceLevel);
+
+  // ── Photo URL: build from photo_refs JSONB array ────────────────────────
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
-  const hasPhoto = photoRefs.length > 0;
-  const address = (place.address as string) || "Nearby";
-  const extra =
-    typeof place.extra === "object" && place.extra !== null
-      ? (place.extra as Record<string, unknown>)
-      : null;
-  const reviews =
-    extra && Array.isArray(extra.reviews)
-      ? (extra.reviews as Array<Record<string, unknown>>)
-      : [];
-  const firstReview = reviews.length > 0 ? reviews[0] : null;
-  const reviewSnippet =
-    firstReview && typeof firstReview.text === "string" ? firstReview.text : "";
-  const dist = (place.distance_from_campus as string) || "";
-  const fullAddress = (place.address as string) || null;
+  const firstRef = photoRefs[0];
+  const photoRefStr =
+    typeof firstRef === 'object' && firstRef !== null
+      ? (firstRef as Record<string, string>).ref
+      : typeof firstRef === 'string'
+        ? firstRef
+        : null;
 
   const idStr = (place.id as string) || "a";
   const fallbackIndex = idStr.charCodeAt(0) % ACCOMMODATION_FALLBACK_IMAGES.length;
 
-  // B3 fix: prefer sub_type over type for accommodation classification
+  const image = photoRefStr
+    ? `${API_BASE}/api/places/photo?ref=${encodeURIComponent(photoRefStr)}&maxwidth=800`
+    : ACCOMMODATION_FALLBACK_IMAGES[fallbackIndex];
+
+  // ── Other fields ────────────────────────────────────────────────────────
   const subType = (place.sub_type as string) || (place.type as string) || "hostel";
+  const fullAddress = (place.address as string) || null;
 
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
     type: formatSubType(subType),
-    // B5 fix: prefer actual price_inr from DB
-    price: typeof place.price_inr === "number"
-      ? place.price_inr
-      : priceLevelToRent(typeof place.price_level === "number" ? place.price_level : 1),
+    price,
     display_price_label: (place.display_price_label as string) || undefined,
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
-    distance: dist,
+    distance: (place.distance_from_campus as string) || "Nearby campus",
     address: fullAddress,
     amenities: Array.isArray(place.amenities) ? (place.amenities as string[]) : ["wifi"],
-    image: hasPhoto
-      ? `${API_BASE}/api/places/${place.id}/photo/0`
-      : ACCOMMODATION_FALLBACK_IMAGES[fallbackIndex],
-    comment: (reviewSnippet || (place.short_description as string) || shortAddress(fullAddress)).trim(),
+    image,
+    comment: ((place.description as string) || shortAddress(fullAddress) || "").trim(),
     lat: typeof place.lat === "number" ? place.lat : undefined,
     lng: typeof place.lng === "number" ? place.lng : undefined,
   };
@@ -110,7 +116,7 @@ async function fetchAccommodations(): Promise<Accommodation[]> {
   const json = await res.json();
   const places = json.data;
   if (!places || places.length === 0) return [];
-  return places.map(placeToAccommodation);
+  return places.map(placeToAccommodation).filter(Boolean) as Accommodation[];
 }
 
 export function useAccommodations() {
