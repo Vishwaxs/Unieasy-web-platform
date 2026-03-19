@@ -32,7 +32,7 @@ async function auditLog(actorId, actorRole, action, targetType, targetId, detail
 
 /**
  * GET /api/admin/ads/pending
- * Returns all ads with status='pending', newest first.
+ * Returns all ads with status='pending', newest first, with merchant info.
  */
 router.get(
   "/ads/pending",
@@ -41,7 +41,7 @@ router.get(
     try {
       const { data, error } = await supabaseAdmin
         .from("ads")
-        .select("*")
+        .select("*, app_users!ads_clerk_user_id_fkey(full_name, email)")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
@@ -52,6 +52,45 @@ router.get(
       return res.json(data);
     } catch (err) {
       logger.error({ err }, "GET /ads/pending unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * GET /api/admin/ads
+ * Returns all ads with optional status filter, paginated.
+ * Query params: ?status=active|rejected|expired|paused&page=1&limit=20
+ */
+router.get(
+  "/ads",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const status = req.query.status || null;
+    const offset = (page - 1) * limit;
+
+    try {
+      let query = supabaseAdmin
+        .from("ads")
+        .select("*, app_users!ads_clerk_user_id_fkey(full_name, email)", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (status && status !== "all") {
+        query = query.eq("status", status);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        logger.error({ err: error }, "GET /ads");
+        return res.status(500).json({ error: error.message });
+      }
+      return res.json({ data, total: count, page, limit });
+    } catch (err) {
+      logger.error({ err }, "GET /ads unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -138,29 +177,106 @@ router.post(
   }
 );
 
+/**
+ * POST /api/admin/ads/:id/pause
+ * Sets ad status to 'paused'.
+ */
+router.post(
+  "/ads/:id/pause",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const adId = req.params.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("ads")
+        .update({ status: "paused" })
+        .eq("id", adId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error, adId }, "POST /ads/:id/pause");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "pause_ad", "ad", adId, {
+        new_status: "paused",
+      });
+
+      return res.json({ message: "Ad paused", ad: data });
+    } catch (err) {
+      logger.error({ err }, "POST /ads/:id/pause unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * DELETE /api/admin/ads/:id
+ * Hard-delete an ad.
+ */
+router.delete(
+  "/ads/:id",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const adId = req.params.id;
+    try {
+      const { error } = await supabaseAdmin
+        .from("ads")
+        .delete()
+        .eq("id", adId);
+
+      if (error) {
+        logger.error({ err: error, adId }, "DELETE /ads/:id");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "delete_ad", "ad", adId, {});
+
+      return res.json({ message: "Ad deleted" });
+    } catch (err) {
+      logger.error({ err }, "DELETE /ads/:id unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 // ═══════════════════════════════════════════════════════════════════════════════
-// USER ROLE MANAGEMENT (superadmin only)
+// USER ROLE MANAGEMENT (admin + superadmin)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * GET /api/admin/users
- * Returns all users (for the superadmin dashboard).
+ * Returns all users with pagination and search.
+ * Query params: ?page=1&limit=20&search=john
  */
 router.get(
   "/users",
-  verifyClerkToken(["superadmin"]),
+  verifyClerkToken(["admin", "superadmin"]),
   async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const search = req.query.search || null;
+    const offset = (page - 1) * limit;
+
     try {
-      const { data, error } = await supabaseAdmin
+      let query = supabaseAdmin
         .from("app_users")
-        .select("id, clerk_user_id, email, full_name, role, created_at, role_updated_at")
-        .order("created_at", { ascending: false });
+        .select("id, clerk_user_id, email, full_name, role, created_at, role_updated_at, last_active_at, is_suspended", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (search) {
+        query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+
+      const { data, error, count } = await query;
 
       if (error) {
         logger.error({ err: error }, "GET /users");
         return res.status(500).json({ error: error.message });
       }
-      return res.json(data);
+      return res.json({ data, total: count, page, limit });
     } catch (err) {
       logger.error({ err }, "GET /users unexpected");
       return res.status(500).json({ error: "Internal server error" });
@@ -169,27 +285,89 @@ router.get(
 );
 
 /**
- * POST /api/admin/users/role
- * Change a user's role.
- * Body: { clerkUserId: string, newRole: string }
- * Only superadmin can call this.
+ * POST /api/admin/users/:clerkUserId/suspend
+ * Suspend a user.
  */
 router.post(
-  "/users/role",
-  verifyClerkToken(["superadmin"]),
+  "/users/:clerkUserId/suspend",
+  verifyClerkToken(["admin", "superadmin"]),
   async (req, res) => {
-    const { clerkUserId, newRole } = req.body || {};
+    const targetUserId = req.params.clerkUserId;
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("app_users")
+        .update({ is_suspended: true })
+        .eq("clerk_user_id", targetUserId)
+        .select("clerk_user_id, is_suspended")
+        .single();
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      await auditLog(req.clerkUserId, req.userRole, "suspend_user", "user", targetUserId, {});
+
+      return res.json({ message: "User suspended", user: data });
+    } catch (err) {
+      logger.error({ err }, "POST /users/:clerkUserId/suspend");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/users/:clerkUserId/unsuspend
+ * Unsuspend a user.
+ */
+router.post(
+  "/users/:clerkUserId/unsuspend",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const targetUserId = req.params.clerkUserId;
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("app_users")
+        .update({ is_suspended: false })
+        .eq("clerk_user_id", targetUserId)
+        .select("clerk_user_id, is_suspended")
+        .single();
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      await auditLog(req.clerkUserId, req.userRole, "unsuspend_user", "user", targetUserId, {});
+
+      return res.json({ message: "User unsuspended", user: data });
+    } catch (err) {
+      logger.error({ err }, "POST /users/:clerkUserId/unsuspend");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/users/:clerkUserId/role
+ * Change a user's role.
+ * Body: { role: string }
+ */
+router.post(
+  "/users/:clerkUserId/role",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const clerkUserId = req.params.clerkUserId;
+    const newRole = req.body?.role;
 
     // Input validation
-    if (!clerkUserId || typeof clerkUserId !== "string") {
-      return res.status(400).json({ error: "Missing or invalid clerkUserId" });
-    }
     if (!VALID_ROLES.includes(newRole)) {
       return res.status(400).json({ error: `Invalid role. Must be one of: ${VALID_ROLES.join(", ")}` });
     }
 
-    // Prevent superadmin from demoting themselves
-    if (clerkUserId === req.clerkUserId && newRole !== "superadmin") {
+    // Only superadmin can promote to admin/superadmin
+    if ((newRole === "admin" || newRole === "superadmin") && req.userRole !== "superadmin") {
+      return res.status(403).json({ error: "Only superadmin can promote to admin roles" });
+    }
+
+    // Prevent changing own role
+    if (clerkUserId === req.clerkUserId) {
       return res.status(400).json({ error: "Cannot change your own role" });
     }
 
@@ -209,13 +387,13 @@ router.post(
 
       const { data, error } = await supabaseAdmin
         .from("app_users")
-        .update({ role: newRole })
+        .update({ role: newRole, role_updated_at: new Date().toISOString() })
         .eq("clerk_user_id", clerkUserId)
         .select()
         .single();
 
       if (error) {
-        logger.error({ err: error }, "POST /users/role");
+        logger.error({ err: error }, "POST /users/:clerkUserId/role");
         return res.status(500).json({ error: error.message });
       }
 
@@ -226,7 +404,7 @@ router.post(
 
       return res.json({ message: `Role changed to ${newRole}`, user: data });
     } catch (err) {
-      logger.error({ err }, "POST /users/role unexpected");
+      logger.error({ err }, "POST /users/:clerkUserId/role unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -383,6 +561,33 @@ router.post(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
+ * GET /api/admin/reviews/flagged
+ * List flagged reviews for moderation.
+ */
+router.get(
+  "/reviews/flagged",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("reviews")
+        .select("*, places!reviews_place_id_fkey(name, category), app_users!reviews_clerk_user_id_fkey(full_name, email)")
+        .eq("status", "flagged")
+        .order("updated_at", { ascending: false });
+
+      if (error) {
+        logger.error({ err: error }, "GET /reviews/flagged");
+        return res.status(500).json({ error: error.message });
+      }
+      return res.json(data || []);
+    } catch (err) {
+      logger.error({ err }, "GET /reviews/flagged unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
  * GET /api/admin/reviews
  * List all reviews (paginated). Query params: ?page=1&limit=20&status=active
  */
@@ -487,6 +692,78 @@ router.patch(
       return res.json({ message: "Review flagged", review: data });
     } catch (err) {
       logger.error({ err }, "PATCH /reviews/:id/flag unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/reviews/:id/approve
+ * Approve a flagged review (set status back to 'active').
+ */
+router.post(
+  "/reviews/:id/approve",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const reviewId = req.params.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("reviews")
+        .update({ status: "active" })
+        .eq("id", reviewId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error, reviewId }, "POST /reviews/:id/approve");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "approve_review", "review", reviewId, {
+        new_status: "active",
+      });
+
+      return res.json({ message: "Review approved", review: data });
+    } catch (err) {
+      logger.error({ err }, "POST /reviews/:id/approve unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
+ * POST /api/admin/reviews/:id/delete
+ * Soft-delete a review (sets status to 'deleted_by_admin').
+ */
+router.post(
+  "/reviews/:id/delete",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const reviewId = req.params.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("reviews")
+        .update({
+          status: "deleted_by_admin",
+          deleted_at: new Date().toISOString(),
+          deleted_by: req.clerkUserId,
+        })
+        .eq("id", reviewId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error, reviewId }, "POST /reviews/:id/delete");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "delete_review", "review", reviewId, {
+        new_status: "deleted_by_admin",
+      });
+
+      return res.json({ message: "Review deleted", review: data });
+    } catch (err) {
+      logger.error({ err }, "POST /reviews/:id/delete unexpected");
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -816,7 +1093,7 @@ router.get(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SUPERADMIN: AUDIT LOG
+// AUDIT LOG (admin + superadmin)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -826,7 +1103,7 @@ router.get(
  */
 router.get(
   "/audit-logs",
-  verifyClerkToken(["superadmin"]),
+  verifyClerkToken(["admin", "superadmin"]),
   async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
