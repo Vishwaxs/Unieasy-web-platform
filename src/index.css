@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+/* Google Fonts loaded via <link> in index.html for faster paint */
 
 @tailwind base;
 @tailwind components;
@@ -344,15 +344,25 @@
   }
 }
 
-/* ── Reduced motion: disable glass animations ──────────────────────────────── */
+/* ── Reduced motion: disable ALL animations to prevent CLS ─────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .glass-card,
   .glass-hover,
   .glass-panel,
   .card-hover,
-  .card-3d {
+  .card-3d,
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-float,
+  .animate-pulse-soft,
+  .animate-shimmer {
     transition: none !important;
     transform: none !important;
+    animation: none !important;
+    opacity: 1 !important;
   }
 }
 
@@ -729,12 +739,10 @@
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

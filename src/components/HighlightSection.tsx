@@ -19,9 +19,8 @@ type AdSlide = {
   title: string | null;
   description: string | null;
   image_url: string | null;
-  link_url: string | null;
-  button_text: string | null;
-  merchant_name: string | null;
+  target_location: string | null;
+  clerk_user_id: string | null;
   impression_count?: number | null;
 };
 
@@ -69,7 +68,7 @@ const HighlightSection = () => {
       const { data, error } = await supabase
         .from("ads")
         .select(
-          "id, title, description, image_url, link_url, button_text, merchant_name, impression_count, created_at",
+          "id, title, description, image_url, target_location, clerk_user_id, impression_count, created_at",
         )
         .eq("status", "active")
         .order("created_at", { ascending: false })
@@ -215,15 +214,15 @@ const HighlightSection = () => {
                       variant="default"
                       className="bg-white text-foreground hover:bg-white/90"
                       onClick={() => {
-                        if (!currentSlide.link_url) return;
-                        window.open(currentSlide.link_url, "_blank", "noopener,noreferrer");
+                        if (!currentSlide.target_location) return;
+                        window.open(currentSlide.target_location, "_blank", "noopener,noreferrer");
                       }}
                     >
-                      {currentSlide.button_text || "Learn More"}
+                      {"Learn More"}
                     </Button>
-                    {currentSlide.merchant_name ? (
+                    {currentSlide.clerk_user_id ? (
                       <span className="text-xs text-white/70">
-                        {currentSlide.merchant_name}
+                        Sponsored
                       </span>
                     ) : null}
                   </div>

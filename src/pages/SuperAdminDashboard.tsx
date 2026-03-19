@@ -176,7 +176,7 @@ const OverviewTab = ({ getToken }: { getToken: GetTokenFn }) => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold text-foreground">{stat.value.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-foreground">{(stat.value ?? 0).toLocaleString()}</p>
                 </div>
                 <stat.icon className={`w-8 h-8 ${stat.color} opacity-80`} />
               </div>
@@ -488,8 +488,8 @@ const SystemTab = ({ getToken }: { getToken: GetTokenFn }) => {
     setLoading(true);
     try {
       let params = `?page=${page}&limit=${limit}`;
-      if (roleFilter) params += `&role=${roleFilter}`;
-      if (actionFilter) params += `&action=${actionFilter}`;
+      if (roleFilter && roleFilter !== "__all__") params += `&role=${roleFilter}`;
+      if (actionFilter && actionFilter !== "__all__") params += `&action=${actionFilter}`;
       const result = await superadminFetch(getToken, `/audit-logs${params}`);
       setLogs(result.data || []);
       setTotal(result.total || 0);
@@ -531,9 +531,9 @@ const SystemTab = ({ getToken }: { getToken: GetTokenFn }) => {
     toast.success("CSV exported");
   };
 
-  const roles = ["", "superadmin", "admin", "merchant", "student"];
+  const roles = ["__all__", "superadmin", "admin", "merchant", "student"];
   const actions = [
-    "",
+    "__all__",
     "approve_ad",
     "reject_ad",
     "pause_ad",
@@ -591,8 +591,8 @@ const SystemTab = ({ getToken }: { getToken: GetTokenFn }) => {
           </SelectTrigger>
           <SelectContent>
             {roles.map((role) => (
-              <SelectItem key={role || "all"} value={role}>
-                {role || "All roles"}
+              <SelectItem key={role} value={role}>
+                {role === "__all__" ? "All roles" : role}
               </SelectItem>
             ))}
           </SelectContent>
@@ -604,8 +604,8 @@ const SystemTab = ({ getToken }: { getToken: GetTokenFn }) => {
           </SelectTrigger>
           <SelectContent>
             {actions.map((action) => (
-              <SelectItem key={action || "all"} value={action}>
-                {action ? action.replace(/_/g, " ") : "All actions"}
+              <SelectItem key={action} value={action}>
+                {action === "__all__" ? "All actions" : action.replace(/_/g, " ")}
               </SelectItem>
             ))}
           </SelectContent>

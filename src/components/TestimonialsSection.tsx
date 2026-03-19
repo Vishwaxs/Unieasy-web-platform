@@ -182,7 +182,13 @@ const TestimonialsSection = () => {
     );
 
     // Don't render section if no reviews at all (after loading)
-    if (!loading && testimonials.length === 0) return null;
+    if (!loading && testimonials.length === 0) {
+      return (
+        <section className="py-16 md:py-20 bg-secondary/30" aria-hidden="true">
+          <div className="container mx-auto px-4 md:px-6 min-h-[200px]" />
+        </section>
+      );
+    }
 
     return (
         <section
@@ -193,9 +199,10 @@ const TestimonialsSection = () => {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,hsl(var(--primary)/0.05),transparent_50%)]" />
 
             <div
-                className={`container mx-auto px-4 md:px-6 relative z-10 transition-all duration-1000 ${isVisible
-                        ? "opacity-100 translate-y-0"
-                        : "opacity-0 translate-y-12"
+                className={`container mx-auto px-4 md:px-6 relative z-10 transition-all duration-1000 ${
+                    isVisible
+                        ? "opacity-100"
+                        : "opacity-0"
                     }`}
             >
                 <div className="text-center mb-12">

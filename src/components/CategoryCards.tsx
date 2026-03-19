@@ -136,7 +136,7 @@ const CategoryCard = ({
       <div
         ref={cardRef}
         className={`group relative flex-shrink-0 w-72 sm:w-80 cursor-pointer snap-start transition-all duration-700 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+          isVisible ? "opacity-100" : "opacity-0"
         }`}
         style={{ transitionDelay: `${index * 100}ms` }}
         onMouseEnter={() => setIsHovered(true)}
@@ -283,7 +283,7 @@ const CategoryCards = () => {
     el.scrollBy({ left: amount, behavior: "smooth" });
   };
 
-  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+  const handleWheel = (e: WheelEvent) => {
     const el = scrollRef.current;
     if (!el) return;
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
@@ -291,6 +291,13 @@ const CategoryCards = () => {
       el.scrollLeft += e.deltaY;
     }
   };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
 
   return (
     <section
@@ -321,7 +328,6 @@ const CategoryCards = () => {
         {/* Horizontal scrollable container */}
         <div
           ref={scrollRef}
-          onWheel={handleWheel}
           className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 overscroll-x-contain"
         >
           {categories.map((category, index) => (

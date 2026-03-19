@@ -985,7 +985,7 @@ const AuditLogsTab = ({ getToken }: { getToken: GetTokenFn }) => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [actionFilter, setActionFilter] = useState("");
+  const [actionFilter, setActionFilter] = useState("__all__");
   const [hasMore, setHasMore] = useState(true);
   const limit = 20;
 
@@ -994,7 +994,7 @@ const AuditLogsTab = ({ getToken }: { getToken: GetTokenFn }) => {
     try {
       const currentPage = reset ? 1 : page;
       let params = `?page=${currentPage}&limit=${limit}`;
-      if (actionFilter) params += `&action=${encodeURIComponent(actionFilter)}`;
+      if (actionFilter && actionFilter !== "__all__") params += `&action=${encodeURIComponent(actionFilter)}`;
       const result = await adminFetch(getToken, `/audit-logs${params}`);
 
       if (reset) {
@@ -1024,7 +1024,7 @@ const AuditLogsTab = ({ getToken }: { getToken: GetTokenFn }) => {
   }, [page]);
 
   const actionTypes = [
-    "",
+    "__all__",
     "approve_ad",
     "reject_ad",
     "pause_ad",
@@ -1068,7 +1068,7 @@ const AuditLogsTab = ({ getToken }: { getToken: GetTokenFn }) => {
           <SelectContent>
             {actionTypes.map((action) => (
               <SelectItem key={action || "all"} value={action}>
-                {action ? action.replace(/_/g, " ") : "All actions"}
+                {action === "__all__" ? "All actions" : action.replace(/_/g, " ")}
               </SelectItem>
             ))}
           </SelectContent>
