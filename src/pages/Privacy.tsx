@@ -90,7 +90,7 @@ const sections = [
     icon: Mail,
     title: "Contact Information",
     content:
-      "If you have questions, privacy requests, or concerns about data handling on UniEasy, contact us at unieasy.app@gmail.com.",
+      "If you have questions, privacy requests, or concerns about data handling on UniEasy, contact us at send2vav@gmail.com.",
   },
 ];
 

@@ -11,7 +11,7 @@ const contactInfo = [
   {
     icon: Mail,
     title: "Email Us",
-    value: "unieasy.app@gmail.com",
+    value: "send2vav@gmail.com",
     description: "We'll respond within 24 hours",
   },
   {

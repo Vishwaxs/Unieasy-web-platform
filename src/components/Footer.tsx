@@ -95,10 +95,10 @@ const Footer = () => {
               <li className="flex items-center gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <Mail className="w-5 h-5 text-primary flex-shrink-0" />
                 <a
-                  href="mailto:unieasy.app@gmail.com"
+                  href="mailto:send2vav@gmail.com"
                   className="break-all hover:text-primary transition-colors"
                 >
-                  unieasy.app@gmail.com
+                  send2vav@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">

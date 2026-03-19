@@ -87,7 +87,7 @@ const sections = [
     icon: Mail,
     title: "Contact Information",
     content:
-      "Questions about these Terms, moderation actions, or merchant compliance can be sent to unieasy.app@gmail.com.",
+      "Questions about these Terms, moderation actions, or merchant compliance can be sent to send2vav@gmail.com.",
   },
 ];
 
