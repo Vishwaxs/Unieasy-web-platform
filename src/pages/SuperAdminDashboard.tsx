@@ -49,7 +49,7 @@ import {
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
-import { superadminFetch } from "@/lib/adminApi";
+import { superadminFetch, adminFetch } from "@/lib/adminApi";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -134,8 +134,8 @@ const OverviewTab = ({ getToken }: { getToken: GetTokenFn }) => {
         superadminFetch(getToken, "/stats"),
         superadminFetch(getToken, "/growth?days=30"),
       ]);
-      setStats(statsData);
-      setGrowth(growthData);
+      setStats(statsData as Stats);
+      setGrowth(growthData as GrowthData[]);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
       toast.error("Failed to load stats: " + message);
@@ -285,63 +285,67 @@ const OverviewTab = ({ getToken }: { getToken: GetTokenFn }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Tab 2 — Admin Management
+// Tab 2 — User Management (All Users with Role Changing)
 // ═══════════════════════════════════════════════════════════════════════════════
+interface AllUser {
+  id: string;
+  clerk_user_id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  created_at: string;
+  role_updated_at: string | null;
+  last_active_at: string | null;
+  is_suspended: boolean;
+}
+
+const ROLES = ["student", "merchant", "admin", "superadmin"] as const;
+
 const AdminManagementTab = ({ getToken }: { getToken: GetTokenFn }) => {
-  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [users, setUsers] = useState<AllUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [searchEmail, setSearchEmail] = useState("");
-  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 20;
 
-  const fetchAdmins = useCallback(async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await superadminFetch(getToken, "/admins");
-      setAdmins(data);
+      let params = `?page=${page}&limit=${limit}`;
+      if (search) params += `&search=${encodeURIComponent(search)}`;
+      const result = await adminFetch(getToken, `/users${params}`) as { data: AllUser[]; total: number };
+      setUsers(result.data || []);
+      setTotal(result.total || 0);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      toast.error("Failed to load admins: " + message);
+      toast.error("Failed to load users: " + message);
     } finally {
       setLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, page, search]);
 
-  useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchEmail.length < 3) {
-      toast.error("Enter at least 3 characters");
-      return;
-    }
-    setSearching(true);
-    try {
-      const results = await superadminFetch(getToken, "/search-users", {
-        method: "POST",
-        body: JSON.stringify({ email: searchEmail }),
-      });
-      setSearchResults(results);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      toast.error("Search failed: " + message);
-    } finally {
-      setSearching(false);
-    }
+    setSearch(searchInput);
+    setPage(1);
   };
 
-  const handlePromote = async (clerkUserId: string) => {
+  const handleRoleChange = async (clerkUserId: string, newRole: string) => {
     setActionLoading(clerkUserId);
     try {
-      await superadminFetch(getToken, "/set-admin", {
+      await adminFetch(getToken, `/users/${clerkUserId}/role`, {
         method: "POST",
-        body: JSON.stringify({ clerkUserId }),
+        body: JSON.stringify({ role: newRole }),
       });
-      toast.success("User promoted to admin");
-      setSearchResults([]);
-      setSearchEmail("");
-      fetchAdmins();
+      toast.success(`Role changed to ${newRole}`);
+      setUsers((prev) =>
+        prev.map((u) => u.clerk_user_id === clerkUserId ? { ...u, role: newRole } : u)
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
       toast.error("Failed: " + message);
@@ -350,146 +354,171 @@ const AdminManagementTab = ({ getToken }: { getToken: GetTokenFn }) => {
     }
   };
 
-  const handleDemote = async (clerkUserId: string) => {
-    if (!confirm("Are you sure you want to demote this admin to student?")) return;
-    setActionLoading(clerkUserId);
+  const handleSuspendToggle = async (user: AllUser) => {
+    setActionLoading(user.clerk_user_id);
+    const action = user.is_suspended ? "unsuspend" : "suspend";
     try {
-      await superadminFetch(getToken, "/demote-admin", {
+      await adminFetch(getToken, `/users/${user.clerk_user_id}/${action}`, {
         method: "POST",
-        body: JSON.stringify({ clerkUserId }),
       });
-      toast.success("Admin demoted to student");
-      fetchAdmins();
+      toast.success(`User ${action}ed`);
+      setUsers((prev) =>
+        prev.map((u) => u.clerk_user_id === user.clerk_user_id ? { ...u, is_suspended: !u.is_suspended } : u)
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
       toast.error("Failed: " + message);
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const totalPages = Math.ceil(total / limit);
+
+  const getRoleBadgeStyle = (role: string) => {
+    const styles: Record<string, string> = {
+      student: "bg-blue-500/10 text-blue-500 border-blue-500/30",
+      merchant: "bg-purple-500/10 text-purple-500 border-purple-500/30",
+      admin: "bg-amber-500/10 text-amber-500 border-amber-500/30",
+      superadmin: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30",
+    };
+    return styles[role] || "";
   };
 
   return (
     <div className="space-y-6">
-      {/* Search & Promote Section */}
+      {/* Search */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <UserPlus className="w-5 h-5" />
-            Promote User to Admin
+            <Users className="w-5 h-5" />
+            All Users ({total})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+          <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                value={searchEmail}
-                onChange={(e) => setSearchEmail(e.target.value)}
-                placeholder="Search by email..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search by name or email..."
                 className="pl-9"
               />
             </div>
-            <Button type="submit" disabled={searching}>
-              {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
+            <Button type="submit" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
 
-          {searchResults.length > 0 && (
-            <div className="border border-border rounded-lg divide-y divide-border">
-              {searchResults.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-3">
-                  <div>
-                    <p className="font-medium text-foreground">{user.full_name || "No name"}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{user.role}</Badge>
-                    {user.role !== "admin" && user.role !== "superadmin" && (
+      {/* Users Table */}
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      ) : users.length === 0 ? (
+        <Card>
+          <CardContent className="py-16 text-center">
+            <p className="text-muted-foreground">No users found.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="overflow-x-auto border border-border rounded-lg">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Email</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Current Role</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Change Role</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Joined</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="border-b border-border/50 hover:bg-muted/30">
+                    <td className="py-3 px-4 font-medium text-foreground">{user.full_name || "-"}</td>
+                    <td className="py-3 px-4 text-muted-foreground">{user.email}</td>
+                    <td className="py-3 px-4">
+                      <Badge variant="outline" className={getRoleBadgeStyle(user.role)}>
+                        {user.role}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4">
+                      <Select
+                        value={user.role}
+                        onValueChange={(newRole) => handleRoleChange(user.clerk_user_id, newRole)}
+                        disabled={actionLoading === user.clerk_user_id}
+                      >
+                        <SelectTrigger className="w-[140px] h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROLES.map((r) => (
+                            <SelectItem key={r} value={r}>
+                              {r.charAt(0).toUpperCase() + r.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="py-3 px-4 text-muted-foreground">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      {user.is_suspended ? (
+                        <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/30">
+                          Suspended
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
+                          Active
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right">
                       <Button
                         size="sm"
-                        onClick={() => handlePromote(user.clerk_user_id)}
+                        variant="outline"
+                        onClick={() => handleSuspendToggle(user)}
                         disabled={actionLoading === user.clerk_user_id}
+                        className={user.is_suspended
+                          ? "text-green-500 hover:bg-green-500/10"
+                          : "text-red-500 hover:bg-red-500/10"}
                       >
                         {actionLoading === user.clerk_user_id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : user.is_suspended ? (
+                          <><UserPlus className="w-4 h-4 mr-1" /> Unsuspend</>
                         ) : (
-                          <><Shield className="w-4 h-4 mr-1" /> Make Admin</>
+                          <><UserMinus className="w-4 h-4 mr-1" /> Suspend</>
                         )}
                       </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Current Admins Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5" />
-            Current Admins
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : admins.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No admins found.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Email</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Admin Since</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Last Active</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Actions Count</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {admins.map((admin) => (
-                    <tr key={admin.id} className="border-b border-border/50 hover:bg-muted/30">
-                      <td className="py-3 px-4 font-medium text-foreground">{admin.full_name || "-"}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{admin.email}</td>
-                      <td className="py-3 px-4 text-muted-foreground">
-                        {admin.role_updated_at ? new Date(admin.role_updated_at).toLocaleDateString() : "-"}
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground">
-                        {admin.last_active_at ? new Date(admin.last_active_at).toLocaleDateString() : "-"}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge variant="outline">{admin.actions_count}</Badge>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDemote(admin.clerk_user_id)}
-                          disabled={actionLoading === admin.clerk_user_id}
-                          className="text-destructive hover:bg-destructive/10"
-                        >
-                          {actionLoading === admin.clerk_user_id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <><UserMinus className="w-4 h-4 mr-1" /> Demote</>
-                          )}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </>
+      )}
     </div>
   );
 };
@@ -512,7 +541,7 @@ const SystemTab = ({ getToken }: { getToken: GetTokenFn }) => {
       let params = `?page=${page}&limit=${limit}`;
       if (roleFilter && roleFilter !== "__all__") params += `&role=${roleFilter}`;
       if (actionFilter && actionFilter !== "__all__") params += `&action=${actionFilter}`;
-      const result = await superadminFetch(getToken, `/audit-logs${params}`);
+      const result = await superadminFetch(getToken, `/audit-logs${params}`) as { data: AuditLog[]; total: number };
       setLogs(result.data || []);
       setTotal(result.total || 0);
     } catch (err: unknown) {
@@ -734,7 +763,7 @@ const PlacesManagementTab = ({ getToken }: { getToken: GetTokenFn }) => {
     try {
       let params = `?page=${page}&limit=${limit}`;
       if (search) params += `&search=${encodeURIComponent(search)}`;
-      const result = await superadminFetch(getToken, `/places${params}`);
+      const result = await superadminFetch(getToken, `/places${params}`) as { data: Place[]; total: number };
       setPlaces(result.data || []);
       setTotal(result.total || 0);
     } catch (err: unknown) {
@@ -799,7 +828,7 @@ const PlacesManagementTab = ({ getToken }: { getToken: GetTokenFn }) => {
   const refreshFromGoogle = async (placeId: string) => {
     setActionLoading(placeId);
     try {
-      const result = await superadminFetch(getToken, `/places/${placeId}/refresh`, { method: "POST" });
+      const result = await superadminFetch(getToken, `/places/${placeId}/refresh`, { method: "POST" }) as { place?: Place };
       toast.success("Place refreshed from Google");
       // Update the place in the list
       if (result.place) {
