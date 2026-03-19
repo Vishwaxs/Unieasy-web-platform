@@ -6,6 +6,7 @@ import { Router } from "express";
 import multer from "multer";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import { verifyClerkToken } from "./middleware/verifyClerkToken.js";
+import { notifyAdminEmails, insertAdminNotifications } from "./lib/emailService.js";
 import logger from "./lib/logger.js";
 
 const router = Router();
@@ -258,6 +259,25 @@ router.post(
       }
 
       logger.info({ adId: data.id, clerkUserId: req.clerkUserId }, "Ad created (pending)");
+
+      // ── Notify admins about new ad submission ─────────────────────────
+      try {
+        const { data: merchant } = await supabaseAdmin
+          .from("app_users")
+          .select("email, full_name")
+          .eq("clerk_user_id", req.clerkUserId)
+          .single();
+        const merchantName = merchant?.full_name || "Unknown";
+        const merchantEmail = merchant?.email || "";
+        notifyAdminEmails("new_ad_submitted", {
+          merchantName, merchantEmail, adTitle: title.trim(),
+        });
+        insertAdminNotifications("new_ad_submitted",
+          `New ad from ${merchantName}`,
+          `"${title.trim()}" is awaiting review.`,
+          "/admin", { adId: data.id });
+      } catch (_) { /* non-blocking */ }
+
       return res.status(201).json(data);
     } catch (err) {
       logger.error({ err }, "POST /merchant/ads unexpected");

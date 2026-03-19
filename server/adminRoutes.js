@@ -6,6 +6,7 @@ import { Router } from "express";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import { verifyClerkToken } from "./middleware/verifyClerkToken.js";
 import { notifyAdmins } from "./lib/notifyAdmins.js";
+import { sendEmail, insertNotification } from "./lib/emailService.js";
 import logger from "./lib/logger.js";
 
 const router = Router();
@@ -126,6 +127,27 @@ router.post(
         new_status: "active",
       });
 
+      // ── Email + in-app notification to merchant ───────────────────────
+      try {
+        const { data: merchant } = await supabaseAdmin
+          .from("app_users")
+          .select("email, full_name, clerk_user_id")
+          .eq("clerk_user_id", data.clerk_user_id)
+          .single();
+        if (merchant) {
+          const expiresAt = data.approved_at && data.duration_days
+            ? new Date(new Date(data.approved_at).getTime() + data.duration_days * 86400000).toLocaleDateString()
+            : "the configured end date";
+          sendEmail("ad_approved", merchant.email, merchant.full_name, {
+            adTitle: data.title, merchantName: merchant.full_name, expiresAt,
+          });
+          insertNotification(merchant.clerk_user_id, "ad_approved",
+            `Your ad "${data.title}" is now live!`,
+            "Your ad has been approved and is showing to students.",
+            "/merchant", { adId });
+        }
+      } catch (_) { /* non-blocking */ }
+
       return res.json({ message: "Ad approved", ad: data });
     } catch (err) {
       logger.error({ err }, "POST /ads/:id/approve unexpected");
@@ -168,6 +190,24 @@ router.post(
         new_status: "rejected",
         reason,
       });
+
+      // ── Email + in-app notification to merchant ───────────────────────
+      try {
+        const { data: merchant } = await supabaseAdmin
+          .from("app_users")
+          .select("email, full_name, clerk_user_id")
+          .eq("clerk_user_id", data.clerk_user_id)
+          .single();
+        if (merchant) {
+          sendEmail("ad_rejected", merchant.email, merchant.full_name, {
+            adTitle: data.title, merchantName: merchant.full_name, reason,
+          });
+          insertNotification(merchant.clerk_user_id, "ad_rejected",
+            `Your ad "${data.title}" needs changes`,
+            reason || "Your ad was not approved. Please revise and resubmit.",
+            "/merchant", { adId });
+        }
+      } catch (_) { /* non-blocking */ }
 
       return res.json({ message: "Ad rejected", ad: data });
     } catch (err) {
@@ -495,6 +535,29 @@ router.post(
         target_user: request.clerk_user_id,
       });
 
+      // ── Email + in-app notification to user ───────────────────────────
+      try {
+        const { data: reqDetail } = await supabaseAdmin
+          .from("merchant_upgrade_requests")
+          .select("business_name")
+          .eq("id", requestId)
+          .single();
+        const { data: user } = await supabaseAdmin
+          .from("app_users")
+          .select("email, full_name")
+          .eq("clerk_user_id", request.clerk_user_id)
+          .single();
+        if (user) {
+          sendEmail("merchant_upgrade_approved", user.email, user.full_name, {
+            userName: user.full_name, businessName: reqDetail?.business_name || "your business",
+          });
+          insertNotification(request.clerk_user_id, "merchant_upgrade_approved",
+            "You're now a Merchant!",
+            `Your merchant account for ${reqDetail?.business_name || "your business"} has been approved.`,
+            "/merchant", { requestId });
+        }
+      } catch (_) { /* non-blocking */ }
+
       return res.json({ message: "Merchant request approved" });
     } catch (err) {
       logger.error({ err }, "POST /merchant-requests/:id/approve unexpected");
@@ -547,6 +610,29 @@ router.post(
         target_user: request.clerk_user_id,
         reason,
       });
+
+      // ── Email + in-app notification to user ───────────────────────────
+      try {
+        const { data: reqDetail } = await supabaseAdmin
+          .from("merchant_upgrade_requests")
+          .select("business_name")
+          .eq("id", requestId)
+          .single();
+        const { data: user } = await supabaseAdmin
+          .from("app_users")
+          .select("email, full_name")
+          .eq("clerk_user_id", request.clerk_user_id)
+          .single();
+        if (user) {
+          sendEmail("merchant_upgrade_rejected", user.email, user.full_name, {
+            userName: user.full_name, businessName: reqDetail?.business_name || "your business", reason,
+          });
+          insertNotification(request.clerk_user_id, "merchant_upgrade_rejected",
+            "Merchant Application Update",
+            reason || "Your merchant application was not approved at this time.",
+            "/profile", { requestId });
+        }
+      } catch (_) { /* non-blocking */ }
 
       return res.json({ message: "Merchant request rejected" });
     } catch (err) {

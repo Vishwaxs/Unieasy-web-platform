@@ -1,10 +1,174 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Menu, X, Home, Mail, FileText, Shield, LogIn } from "lucide-react";
+import { ArrowLeft, User, Menu, X, Home, Mail, FileText, Shield, LogIn, Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SignedIn, SignedOut, SignInButton, useUser } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, SignInButton, useUser, useAuth } from "@clerk/clerk-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/adminApi";
+
+// ── Notification type ─────────────────────────────────────────────────────────
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+// ── Relative time helper ──────────────────────────────────────────────────────
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+// ── Notification Bell Dropdown ────────────────────────────────────────────────
+function NotificationBell() {
+  const { getToken } = useAuth();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const res = await fetchNotifications(() => getToken(), 5, false);
+      setNotifications(res.data || []);
+      setUnreadCount(res.unread || 0);
+    } catch {
+      // silent fail — user may not be fully authed yet
+    }
+  }, [getToken]);
+
+  // Poll every 30 seconds + initial load
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [loadNotifications]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const handleNotificationClick = async (notif: Notification) => {
+    if (!notif.is_read) {
+      try {
+        await markNotificationRead(() => getToken(), notif.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n))
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } catch { /* silent */ }
+    }
+    setOpen(false);
+    if (notif.link) navigate(notif.link);
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead(() => getToken());
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch { /* silent */ }
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <Button
+        variant="outline"
+        size="icon"
+        className="relative rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300"
+        onClick={() => setOpen(!open)}
+        aria-label="Notifications"
+        id="notification-bell"
+      >
+        <Bell className="w-5 h-5 text-foreground" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white tabular-nums">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </Button>
+
+      {open && (
+        <div className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+            <span className="text-sm font-semibold text-foreground">Notifications</span>
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+              >
+                <Check className="w-3 h-3" /> Mark all read
+              </button>
+            )}
+          </div>
+
+          {/* Notification list */}
+          <div className="max-h-80 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                No notifications yet
+              </div>
+            ) : (
+              notifications.map((notif) => (
+                <button
+                  key={notif.id}
+                  onClick={() => handleNotificationClick(notif)}
+                  className={`w-full text-left px-4 py-3 flex gap-3 items-start hover:bg-accent/10 transition-colors border-b border-border/20 last:border-b-0 ${
+                    !notif.is_read ? "bg-primary/5" : ""
+                  }`}
+                >
+                  {/* Unread indicator */}
+                  <div className="pt-1.5 shrink-0">
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        !notif.is_read ? "bg-primary" : "bg-transparent"
+                      }`}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm leading-tight ${!notif.is_read ? "font-semibold" : "font-medium"} text-foreground truncate`}>
+                      {notif.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                      {notif.body}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">
+                      {timeAgo(notif.created_at)}
+                    </p>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEADER COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -62,6 +226,7 @@ const Header = () => {
             <ThemeToggle />
             
             <SignedIn>
+              <NotificationBell />
               <Button
                 variant="outline"
                 size="icon"
@@ -99,6 +264,10 @@ const Header = () => {
           <div className="flex md:hidden items-center gap-2">
             <ThemeToggle />
             
+            <SignedIn>
+              <NotificationBell />
+            </SignedIn>
+
             <Button
               variant="ghost"
               size="icon"

@@ -172,3 +172,20 @@ export function rejectAd(getToken: GetToken, adId: string, reason = "") {
     body: JSON.stringify({ reason }),
   });
 }
+
+// ─── Named helpers — Notifications ──────────────────────────────────────────
+
+/** Fetch current user's notifications. Returns { data, total, unread }. */
+export function fetchNotifications(getToken: GetToken, limit = 20, unreadOnly = false) {
+  return apiFetch(getToken, `/notifications?limit=${limit}&unread_only=${unreadOnly}`);
+}
+
+/** Mark a single notification as read. */
+export function markNotificationRead(getToken: GetToken, notifId: string) {
+  return apiFetch(getToken, `/notifications/${notifId}/read`, { method: "PATCH" });
+}
+
+/** Mark all notifications as read. */
+export function markAllNotificationsRead(getToken: GetToken) {
+  return apiFetch(getToken, `/notifications/read-all`, { method: "PATCH" });
+}

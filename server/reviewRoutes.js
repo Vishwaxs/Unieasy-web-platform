@@ -6,6 +6,7 @@ import { Router } from "express";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import { verifyClerkToken } from "./middleware/verifyClerkToken.js";
 import { isStudentEmail } from "./middleware/verifyStudent.js";
+import { notifyAdminEmails, insertAdminNotifications } from "./lib/emailService.js";
 import logger from "./lib/logger.js";
 import { z } from "zod";
 
@@ -159,6 +160,23 @@ router.post("/reviews/:placeId", verifyClerkToken(), async (req, res) => {
 
     // 6. Update aggregate counts on places
     await updatePlaceReviewAggregates(placeId);
+
+    // 7. Notify admins about new review
+    try {
+      const { data: placeInfo } = await supabaseAdmin
+        .from("places")
+        .select("name")
+        .eq("id", placeId)
+        .single();
+      const placeName = placeInfo?.name || "Unknown Place";
+      notifyAdminEmails("new_review", {
+        placeName, rating, body,
+      });
+      insertAdminNotifications("new_review",
+        `New review for ${placeName}`,
+        `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)} — ${body.slice(0, 80)}`,
+        `/place/${placeId}`, { reviewId: review.id, placeId });
+    } catch (_) { /* non-blocking */ }
 
     logger.info({ placeId, clerkUserId }, "Review created");
     return res.status(201).json(review);

@@ -38,6 +38,7 @@ import reactionRoutes from "./reactionRoutes.js";
 import sentimentRoutes from "./sentimentRoutes.js";
 import adsPublicRoutes from "./adsPublicRoutes.js";
 import communityRoutes from "./communityRoutes.js";
+import notificationRoutes from "./notificationRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -156,6 +157,9 @@ app.use("/api", sentimentRoutes);
 
 // ── Community routes (/api/community/*) ─────────────────────────────────────
 app.use("/api", communityRoutes);
+
+// ── Notification routes (/api/notifications/*) ─────────────────────────────
+app.use("/api", notificationRoutes);
 
 // ── Sentry error handler (must be after routes, before custom error handler) ─
 if (process.env.SENTRY_DSN) {
