@@ -68,7 +68,12 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
     is_veg: typeof place.is_veg === "boolean" ? place.is_veg : null,
     cuisine_tags: Array.isArray(place.cuisine_tags) ? (place.cuisine_tags as string[]) : undefined,
     image: getPhotoUrl(place, FOOD_FALLBACK_IMAGES[fallbackIndex]),
-    comment: ((place.description as string) || (place.address as string) || "").trim(),
+    comment: ((place.description as string)
+      || (place.cuisine_tags && (place.cuisine_tags as string[]).length > 0
+          ? `${(place.cuisine_tags as string[]).slice(0, 2).join(" & ")} cuisine`
+          : null)
+      || (place.timing as string)
+      || "Popular dining spot near campus").trim(),
     lat: typeof place.lat === "number" ? place.lat : undefined,
     lng: typeof place.lng === "number" ? place.lng : undefined,
   };

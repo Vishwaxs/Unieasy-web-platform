@@ -56,7 +56,8 @@ function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
     distance: (place.distance_from_campus as string) || "Nearby campus",
     image: getPhotoUrl(place, ESSENTIALS_FALLBACK_IMAGES[fallbackIndex]),
-    comment: ((place.description as string) || (place.address as string) || "").trim(),
+    comment: ((place.description as string)
+      || `${(place.type as string) || "Essential service"} near campus`).trim(),
   };
 }
 

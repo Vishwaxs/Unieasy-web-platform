@@ -67,7 +67,9 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
     noise: formatNoise(place.noise_level as string | null),
     has_wifi: typeof place.has_wifi === "boolean" ? place.has_wifi : true,
     image: getPhotoUrl(place, STUDY_FALLBACK_IMAGES[fallbackIndex]),
-    comment: ((place.description as string) || (place.address as string) || "").trim(),
+    comment: ((place.description as string)
+      || (place.has_wifi ? "WiFi available" : null)
+      || "Study friendly space").trim(),
   };
 }
 

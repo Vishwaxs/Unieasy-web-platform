@@ -98,7 +98,8 @@ function placeToAccommodation(place: Record<string, unknown>): Accommodation | n
     address: fullAddress,
     amenities: Array.isArray(place.amenities) ? (place.amenities as string[]) : ["wifi"],
     image,
-    comment: ((place.description as string) || shortAddress(fullAddress) || "").trim(),
+    comment: ((place.description as string)
+      || `${subType} • ${(place.distance_from_campus as string) || "Near campus"}`).trim(),
     lat: typeof place.lat === "number" ? place.lat : undefined,
     lng: typeof place.lng === "number" ? place.lng : undefined,
   };
