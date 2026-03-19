@@ -2,135 +2,164 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface CounterProps {
-    end: number;
-    duration?: number;
-    suffix?: string;
-    prefix?: string;
+  end: number;
+  duration?: number;
+  suffix?: string;
+  prefix?: string;
 }
 
 const AnimatedCounter = ({
-    end,
-    duration = 2000,
-    suffix = "",
-    prefix = "",
+  end,
+  duration = 2000,
+  suffix = "",
+  prefix = "",
 }: CounterProps) => {
-    const [count, setCount] = useState(0);
-    const [isVisible, setIsVisible] = useState(false);
-    const ref = useRef<HTMLSpanElement>(null);
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
 
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting && !isVisible) {
-                    setIsVisible(true);
-                }
-            },
-            { threshold: 0.3 }
-        );
-
-        if (ref.current) observer.observe(ref.current);
-        return () => observer.disconnect();
-    }, [isVisible]);
-
-    useEffect(() => {
-        if (!isVisible) return;
-
-        let startTime: number;
-        let animationFrame: number;
-
-        const animate = (timestamp: number) => {
-            if (!startTime) startTime = timestamp;
-            const progress = Math.min((timestamp - startTime) / duration, 1);
-
-            const eased = 1 - Math.pow(1 - progress, 3);
-            setCount(Math.floor(eased * end));
-
-            if (progress < 1) {
-                animationFrame = requestAnimationFrame(animate);
-            }
-        };
-
-        animationFrame = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(animationFrame);
-    }, [isVisible, end, duration]);
-
-    return (
-        <span ref={ref} className="tabular-nums">
-            {prefix}
-            {count.toLocaleString()}
-            {suffix}
-        </span>
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isVisible) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.3 },
     );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    let startTime: number;
+    let animationFrame: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * end));
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [isVisible, end, duration]);
+
+  return (
+    <span ref={ref} className="tabular-nums">
+      {prefix}
+      {count.toLocaleString()}
+      {suffix}
+    </span>
+  );
 };
 
 const STAT_META = [
-    { key: "users", label: "Active Students", suffix: "+", color: "from-blue-500 to-cyan-500" },
-    { key: "places", label: "Verified Listings", suffix: "+", color: "from-emerald-500 to-teal-500" },
-    { key: "reviews", label: "Reviews Posted", suffix: "+", color: "from-orange-500 to-amber-500" },
-    { key: "campuses", label: "Campuses", suffix: "", color: "from-violet-500 to-purple-500" },
+  {
+    key: "users",
+    label: "Active Students",
+    suffix: "+",
+    color: "from-blue-500 to-cyan-500",
+  },
+  {
+    key: "places",
+    label: "Verified Listings",
+    suffix: "+",
+    color: "from-emerald-500 to-teal-500",
+  },
+  {
+    key: "reviews",
+    label: "Reviews Posted",
+    suffix: "+",
+    color: "from-orange-500 to-amber-500",
+  },
+  {
+    key: "campuses",
+    label: "Campuses",
+    suffix: "",
+    color: "from-violet-500 to-purple-500",
+  },
 ];
 
 const StatsSection = () => {
-    const [counts, setCounts] = useState({ users: 0, places: 0, reviews: 0, campuses: 1 });
+  const [counts, setCounts] = useState({
+    users: 0,
+    places: 0,
+    reviews: 0,
+    campuses: 1,
+  });
 
-    useEffect(() => {
-        const fetchCounts = async () => {
-            const [usersRes, placesRes, reviewsRes] = await Promise.all([
-                supabase.from("app_users").select("id", { count: "exact", head: true }),
-                supabase.from("places").select("id", { count: "exact", head: true }),
-                supabase.from("reviews").select("id", { count: "exact", head: true }).eq("status", "active"),
-            ]);
-            setCounts({
-                users: usersRes.count ?? 0,
-                places: placesRes.count ?? 0,
-                reviews: reviewsRes.count ?? 0,
-                campuses: 1,
-            });
-        };
-        fetchCounts();
-    }, []);
+  useEffect(() => {
+    const fetchCounts = async () => {
+      const [usersRes, placesRes, reviewsRes] = await Promise.all([
+        supabase.from("app_users").select("id", { count: "exact", head: true }),
+        supabase.from("places").select("id", { count: "exact", head: true }),
+        supabase
+          .from("reviews")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active"),
+      ]);
+      setCounts({
+        users: usersRes.count ?? 0,
+        places: placesRes.count ?? 0,
+        reviews: reviewsRes.count ?? 0,
+        campuses: 1,
+      });
+    };
+    fetchCounts();
+  }, []);
 
-    return (
-        <section className="py-16 md:py-20 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/[0.03] to-background" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.08),transparent_50%)]" />
+  return (
+    <section className="py-16 md:py-20 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/[0.03] to-background" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.08),transparent_50%)]" />
 
-            <div className="container mx-auto px-4 md:px-6 relative z-10">
-                <div className="text-center mb-12">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
-                        Trusted by <span className="text-primary">Students</span>
-                    </h2>
-                    <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
-                        Growing every day with real students from Christ University – Central Campus
-                    </p>
-                </div>
+      <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
+            Trusted by <span className="text-primary">Students</span>
+          </h2>
+          <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
+            Growing every day with real students from CHRIST University –
+            Central Campus
+          </p>
+        </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto">
-                    {STAT_META.map((stat, i) => (
-                        <div
-                            key={stat.key}
-                            className="group relative bg-card rounded-2xl p-5 md:p-6 border border-border hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl text-center overflow-hidden"
-                        >
-                            <div
-                                className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
-                            />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto">
+          {STAT_META.map((stat, i) => (
+            <div
+              key={stat.key}
+              className="group relative bg-card rounded-2xl p-5 md:p-6 border border-border hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl text-center overflow-hidden"
+            >
+              <div
+                className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+              />
 
-                            <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-2">
-                                <AnimatedCounter
-                                    end={counts[stat.key as keyof typeof counts]}
-                                    suffix={stat.suffix}
-                                    duration={2200 + i * 200}
-                                />
-                            </div>
-                            <p className="text-muted-foreground text-xs sm:text-sm font-medium">
-                                {stat.label}
-                            </p>
-                        </div>
-                    ))}
-                </div>
+              <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-2">
+                <AnimatedCounter
+                  end={counts[stat.key as keyof typeof counts]}
+                  suffix={stat.suffix}
+                  duration={2200 + i * 200}
+                />
+              </div>
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">
+                {stat.label}
+              </p>
             </div>
-        </section>
-    );
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 };
 
 export default StatsSection;

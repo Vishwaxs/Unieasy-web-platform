@@ -22,13 +22,13 @@ const Footer = () => {
             </div>
             <p className="text-[hsl(var(--footer-muted))] mb-6 text-sm md:text-base">
               A student-focused companion for discovering food, stays, study
-              zones and places around Christ University – Central Campus.
+              zones and places around CHRIST University – Central Campus.
             </p>
 
             <div className="flex items-center gap-3 rounded-xl border border-[hsl(var(--footer-border))] bg-[hsl(var(--footer-bg))] px-4 py-3 mb-6">
               <img
                 src={christLogoHref}
-                alt="Christ University"
+                alt="CHRIST University"
                 className="h-8 w-auto"
                 loading="lazy"
                 decoding="async"
@@ -36,7 +36,7 @@ const Footer = () => {
               <div className="text-xs leading-snug">
                 <div className="text-[hsl(var(--footer-text))] font-medium">
                   {" "}
-                  For Christ University
+                  For CHRIST University
                 </div>
                 <div className="text-[hsl(var(--footer-muted))] opacity-90">
                   Central Campus{" "}
@@ -108,7 +108,7 @@ const Footer = () => {
               <li className="flex items-start gap-3 text-[hsl(var(--footer-muted))] text-sm md:text-base">
                 <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <span>
-                  Christ University – Central Campus, Hosur Road, Bengaluru,
+                  CHRIST University – Central Campus, Hosur Road, Bengaluru,
                   Karnataka
                 </span>
               </li>

@@ -87,7 +87,7 @@ const Index = () => {
             </div>
 
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 animate-fade-up landing-hero-title">
-              Discover Christ University – Central Campus
+              Discover CHRIST University – Central Campus
             </h1>
             <p className="text-base md:text-lg text-foreground/80 dark:text-foreground/85 mb-10 animate-fade-up stagger-1 leading-relaxed landing-hero-subtitle">
               Food spots, accommodation, study zones, and places nearby –
@@ -146,14 +146,14 @@ const Index = () => {
         </main>
       </div>
 
-      {/* Institutional affiliation (Christ University – Central Campus) */}
+      {/* Institutional affiliation (CHRIST University – Central Campus) */}
       <section className="relative z-10 bg-muted/30 dark:bg-background border-y border-border/60">
         <div className="container mx-auto px-4 md:px-6 py-10 md:py-12">
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10">
             <div className="flex items-center justify-center rounded-2xl bg-card border border-border/60 px-6 py-4 shadow-sm">
               <img
                 src={christLogoHref}
-                alt="Christ University"
+                alt="CHRIST University"
                 className="h-12 md:h-14 w-auto"
                 loading="lazy"
                 decoding="async"
@@ -161,10 +161,10 @@ const Index = () => {
             </div>
             <div className="text-center md:text-left">
               <h2 className="text-xl md:text-2xl font-semibold text-foreground">
-                For Christ University – Central Campus
+                For CHRIST University – Central Campus
               </h2>
               <p className="mt-2 text-sm md:text-base text-muted-foreground">
-                UniEasy is an independent student-focused platform. The Christ
+                UniEasy is an independent student-focused platform. The CHRIST
                 University logo is used here only to indicate campus
                 affiliation.
               </p>

@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Clock, Users, Plus, Pencil, Trash2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Star,
+  MapPin,
+  Clock,
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -82,8 +91,18 @@ interface PlaceFormDialogProps {
   saving: boolean;
 }
 
-function PlaceFormDialog({ open, onClose, onSave, initial, title, saving }: PlaceFormDialogProps) {
-  const [form, setForm] = useState<CampusPlacePayload>({ ...EMPTY_FORM, ...initial });
+function PlaceFormDialog({
+  open,
+  onClose,
+  onSave,
+  initial,
+  title,
+  saving,
+}: PlaceFormDialogProps) {
+  const [form, setForm] = useState<CampusPlacePayload>({
+    ...EMPTY_FORM,
+    ...initial,
+  });
 
   useEffect(() => {
     setForm({ ...EMPTY_FORM, ...initial });
@@ -101,15 +120,25 @@ function PlaceFormDialog({ open, onClose, onSave, initial, title, saving }: Plac
 
         <div className="space-y-3 py-2">
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Name *</label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Mingos Cafe" />
+            <label className="text-xs text-muted-foreground mb-1 block">
+              Name *
+            </label>
+            <Input
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="e.g. Mingos Cafe"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Type</label>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Type
+              </label>
               <Select value={form.type} onValueChange={(v) => set("type", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Food">Food</SelectItem>
                   <SelectItem value="Shop">Shop</SelectItem>
@@ -119,25 +148,50 @@ function PlaceFormDialog({ open, onClose, onSave, initial, title, saving }: Plac
               </Select>
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Sub-type</label>
-              <Input value={form.sub_type ?? ""} onChange={(e) => set("sub_type", e.target.value)} placeholder="e.g. cafe, snacks" />
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Sub-type
+              </label>
+              <Input
+                value={form.sub_type ?? ""}
+                onChange={(e) => set("sub_type", e.target.value)}
+                placeholder="e.g. cafe, snacks"
+              />
             </div>
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Address</label>
-            <Input value={form.address ?? ""} onChange={(e) => set("address", e.target.value)} placeholder="Block / Floor / Location" />
+            <label className="text-xs text-muted-foreground mb-1 block">
+              Address
+            </label>
+            <Input
+              value={form.address ?? ""}
+              onChange={(e) => set("address", e.target.value)}
+              placeholder="Block / Floor / Location"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Timing</label>
-              <Input value={form.timing ?? ""} onChange={(e) => set("timing", e.target.value)} placeholder="e.g. 8:00 AM – 9:00 PM" />
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Timing
+              </label>
+              <Input
+                value={form.timing ?? ""}
+                onChange={(e) => set("timing", e.target.value)}
+                placeholder="e.g. 8:00 AM – 9:00 PM"
+              />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Crowd Level</label>
-              <Select value={form.crowd_level ?? "low"} onValueChange={(v) => set("crowd_level", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Crowd Level
+              </label>
+              <Select
+                value={form.crowd_level ?? "low"}
+                onValueChange={(v) => set("crowd_level", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="moderate">Medium</SelectItem>
@@ -149,23 +203,47 @@ function PlaceFormDialog({ open, onClose, onSave, initial, title, saving }: Plac
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Distance from campus</label>
-              <Input value={form.distance_from_campus ?? ""} onChange={(e) => set("distance_from_campus", e.target.value)} placeholder="e.g. On campus" />
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Distance from campus
+              </label>
+              <Input
+                value={form.distance_from_campus ?? ""}
+                onChange={(e) => set("distance_from_campus", e.target.value)}
+                placeholder="e.g. On campus"
+              />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Price label</label>
-              <Input value={form.display_price_label ?? ""} onChange={(e) => set("display_price_label", e.target.value)} placeholder="e.g. ₹50–₹200" />
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Price label
+              </label>
+              <Input
+                value={form.display_price_label ?? ""}
+                onChange={(e) => set("display_price_label", e.target.value)}
+                placeholder="e.g. ₹50–₹200"
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Phone</label>
-              <Input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} placeholder="+91..." />
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Phone
+              </label>
+              <Input
+                value={form.phone ?? ""}
+                onChange={(e) => set("phone", e.target.value)}
+                placeholder="+91..."
+              />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Website</label>
-              <Input value={form.website ?? ""} onChange={(e) => set("website", e.target.value)} placeholder="https://..." />
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Website
+              </label>
+              <Input
+                value={form.website ?? ""}
+                onChange={(e) => set("website", e.target.value)}
+                placeholder="https://..."
+              />
             </div>
           </div>
         </div>
@@ -174,7 +252,10 @@ function PlaceFormDialog({ open, onClose, onSave, initial, title, saving }: Plac
           <Button variant="outline" onClick={onClose} disabled={saving}>
             <X className="w-4 h-4 mr-1" /> Cancel
           </Button>
-          <Button onClick={() => onSave(form)} disabled={saving || !form.name.trim()}>
+          <Button
+            onClick={() => onSave(form)}
+            disabled={saving || !form.name.trim()}
+          >
             {saving ? "Saving…" : "Save"}
           </Button>
         </DialogFooter>
@@ -193,50 +274,29 @@ interface CampusCardProps {
   onDelete: (item: CampusPlace) => void;
 }
 
-const CampusCard = ({ item, index, isAdmin, onEdit, onDelete }: CampusCardProps) => {
+const CampusCard = ({
+  item,
+  index,
+  isAdmin,
+  onEdit,
+  onDelete,
+}: CampusCardProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
-      { threshold: 0.1 }
+      ([entry]) => {
+        if (entry.isIntersecting) setIsVisible(true);
+      },
+      { threshold: 0.1 },
     );
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
   }, []);
 
-  const getCrowdColor = (crowd: string) => {
-    switch (crowd) {
-      case "Low": return "bg-green-500";
-      case "Medium": return "bg-yellow-500";
-      case "High": return "bg-red-500";
-      default: return "bg-gray-500";
-    }
-  };
-
   return (
     <div className="relative group/card">
-      {/* Admin controls overlay */}
-      {isAdmin && (
-        <div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); onEdit(item); }}
-            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-background/90 border border-border text-foreground hover:bg-primary hover:text-primary-foreground transition-colors shadow"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); onDelete(item); }}
-            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-background/90 border border-border text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors shadow"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       <Link to={`/campus/${item.id}`} className="block h-full">
         <div
           ref={cardRef}
@@ -253,7 +313,9 @@ const CampusCard = ({ item, index, isAdmin, onEdit, onDelete }: CampusCardProps)
               referrerPolicy="no-referrer-when-downgrade"
               loading="lazy"
             />
-            <Badge className="absolute top-3 left-3 bg-primary capitalize">{item.subType || item.type}</Badge>
+            <Badge className="absolute top-3 left-3 bg-primary capitalize">
+              {item.subType || item.type}
+            </Badge>
             {item.rating > 0 && (
               <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -262,27 +324,51 @@ const CampusCard = ({ item, index, isAdmin, onEdit, onDelete }: CampusCardProps)
             )}
           </div>
           <div className="p-4 flex flex-1 flex-col">
-            <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover/card:text-primary transition-colors capitalize">
-              {item.name}
-            </h3>
+            <div className="flex items-start justify-between gap-2 min-h-[3.5rem] mb-2">
+              <h3 className="line-clamp-2 font-bold text-lg text-foreground group-hover/card:text-primary transition-colors capitalize flex-1">
+                {item.name}
+              </h3>
+              {isAdmin && (
+                <div className="flex gap-1 shrink-0 mt-0.5">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onEdit(item);
+                    }}
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onDelete(item);
+                    }}
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <MapPin className="w-3 h-3 shrink-0" />
-                <span className="line-clamp-1">{shortAddress(item.address)}</span>
+                <span className="line-clamp-1">
+                  {shortAddress(item.address)}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Clock className="w-3 h-3 shrink-0" />
                 <span className="line-clamp-1">{item.timing}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="w-3 h-3 text-muted-foreground" />
-                <Badge className={`${getCrowdColor(item.crowdLevel)} text-white text-xs`}>
-                  {item.crowdLevel} Crowd
-                </Badge>
-              </div>
             </div>
             <div className="mt-auto min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
-              <p className="line-clamp-3">{item.address || "Address unavailable"}</p>
+              <p className="line-clamp-3">
+                {item.address || "Address unavailable"}
+              </p>
             </div>
           </div>
         </div>
@@ -311,10 +397,14 @@ function DeleteConfirmDialog({
           <DialogTitle>Delete place?</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          This will permanently delete <span className="font-medium text-foreground">{item?.name}</span>. This cannot be undone.
+          This will permanently delete{" "}
+          <span className="font-medium text-foreground">{item?.name}</span>.
+          This cannot be undone.
         </p>
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onCancel} disabled={deleting}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={deleting}>
+            Cancel
+          </Button>
           <Button variant="destructive" onClick={onConfirm} disabled={deleting}>
             {deleting ? "Deleting…" : "Delete"}
           </Button>
@@ -394,7 +484,7 @@ const OnCampusDetails = () => {
     let result = places.filter((item) => {
       const typeVal = filters.type as string;
       if (typeVal !== "all" && item.type !== typeVal) return false;
-return true;
+      return true;
     });
     result = [...result].sort((a, b) => {
       if (sort === "rating") return b.rating - a.rating;
@@ -413,10 +503,13 @@ return true;
         address: editTarget.address,
         timing: editTarget.timing,
         crowd_level:
-          editTarget.crowdLevel === "Low" ? "low"
-          : editTarget.crowdLevel === "Medium" ? "moderate"
-          : editTarget.crowdLevel === "High" ? "high"
-          : "low",
+          editTarget.crowdLevel === "Low"
+            ? "low"
+            : editTarget.crowdLevel === "Medium"
+              ? "moderate"
+              : editTarget.crowdLevel === "High"
+                ? "high"
+                : "low",
       } satisfies Partial<CampusPlacePayload>)
     : undefined;
 
@@ -437,7 +530,7 @@ return true;
               <div className="flex items-end justify-between">
                 <div>
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
-                    On Christ Central Campus
+                    On CHRIST Central Campus
                   </h1>
                   <p className="text-white/90 mt-2">
                     Find on-campus shops, cafes, and services
@@ -478,7 +571,10 @@ return true;
           </div>
 
           {loading ? (
-            <SkeletonGrid count={6} gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SkeletonGrid
+              count={6}
+              gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
               <CampusCardSkeleton />
             </SkeletonGrid>
           ) : (
@@ -509,7 +605,10 @@ return true;
       {/* Create / Edit dialog */}
       <PlaceFormDialog
         open={formOpen}
-        onClose={() => { setFormOpen(false); setEditTarget(null); }}
+        onClose={() => {
+          setFormOpen(false);
+          setEditTarget(null);
+        }}
         onSave={handleSave}
         initial={editInitial}
         title={editTarget ? `Edit — ${editTarget.name}` : "Add campus place"}

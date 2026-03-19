@@ -20,10 +20,20 @@ import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionButtons from "@/components/ReactionButtons";
 import RatingBadge from "@/components/RatingBadge";
-import { usePlaceDetail, placePhotoUrl, getMapsUrl } from "@/hooks/usePlaceDetail";
+import {
+  usePlaceDetail,
+  placePhotoUrl,
+  getMapsUrl,
+} from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getCampusImage, getCampusMenu, getCampusTiming, isCampusFoodPlace, type MenuSection } from "@/lib/campusData";
+import {
+  getCampusImage,
+  getCampusMenu,
+  getCampusTiming,
+  isCampusFoodPlace,
+  type MenuSection,
+} from "@/lib/campusData";
 
 const PlaceItemDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,7 +66,9 @@ const PlaceItemDetails = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Place not found.</p>
-        <Button variant="outline" onClick={() => window.history.back()}>Go Back</Button>
+        <Button variant="outline" onClick={() => window.history.back()}>
+          Go Back
+        </Button>
       </div>
     );
   }
@@ -68,12 +80,23 @@ const PlaceItemDetails = () => {
   // Using location.pathname is more reliable than place.category since the DB category
   // (e.g. "food", "hangout") often doesn't match the frontend section name.
   const section = location.pathname.split("/")[1];
-  const VALID_SECTIONS = new Set(["explore", "study", "essentials", "campus", "food", "accommodation"]);
+  const VALID_SECTIONS = new Set([
+    "explore",
+    "study",
+    "essentials",
+    "campus",
+    "food",
+    "accommodation",
+  ]);
   const backPath = VALID_SECTIONS.has(section) ? `/${section}` : "/home";
 
+  // Campus detail mode: when route is /campus/:id, we switch to campus-aware
+  // content rules (fallback image/timing, optional static menu, no community widgets).
   const isCampus = section === "campus";
+  // Menu is shown only for campus food counters/cafes.
   const showMenu = isCampus && isCampusFoodPlace(place.type, place.sub_type);
   const campusMenu = showMenu ? getCampusMenu(place.name) : null;
+  // Campus places use curated timing overrides when available.
   const displayTiming = isCampus
     ? (getCampusTiming(place.name, place.timing) ?? "Check on-site")
     : place.timing;
@@ -98,10 +121,18 @@ const PlaceItemDetails = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{place.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">
+              {place.name}
+            </h1>
             <div className="flex flex-wrap items-center gap-3 mt-2">
-              {place.sub_type && <Badge className="bg-white/20 text-white border-0 capitalize">{place.sub_type}</Badge>}
-              <Badge className="bg-primary/80 text-white border-0 capitalize">{place.category}</Badge>
+              {place.sub_type && (
+                <Badge className="bg-white/20 text-white border-0 capitalize">
+                  {place.sub_type}
+                </Badge>
+              )}
+              <Badge className="bg-primary/80 text-white border-0 capitalize">
+                {place.category}
+              </Badge>
               <RatingBadge
                 rating={place.rating}
                 ratingCount={place.rating_count}
@@ -127,12 +158,18 @@ const PlaceItemDetails = () => {
             </a>
             {place.phone && (
               <a href={`tel:${place.phone}`}>
-                <Button variant="outline" size="sm" className="gap-2"><Phone className="w-4 h-4" />Call</Button>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Phone className="w-4 h-4" />
+                  Call
+                </Button>
               </a>
             )}
             {place.website && (
               <a href={place.website} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm" className="gap-2"><Globe className="w-4 h-4" />Website</Button>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Globe className="w-4 h-4" />
+                  Website
+                </Button>
               </a>
             )}
           </div>
@@ -142,37 +179,57 @@ const PlaceItemDetails = () => {
             {place.address && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">{place.address}</span>
+                <span className="text-sm text-muted-foreground">
+                  {place.address}
+                </span>
               </div>
             )}
             {displayTiming && (
               <div className="flex items-start gap-2">
                 <Clock3 className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">{displayTiming}</span>
+                <span className="text-sm text-muted-foreground">
+                  {displayTiming}
+                </span>
               </div>
             )}
             {place.noise_level && (
               <div className="flex items-center gap-2">
-                {place.noise_level === "Silent" ? <VolumeX className="w-4 h-4 text-green-500" /> : <Volume2 className="w-4 h-4 text-amber-500" />}
-                <span className="text-sm text-muted-foreground">{place.noise_level} noise</span>
+                {place.noise_level === "Silent" ? (
+                  <VolumeX className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-amber-500" />
+                )}
+                <span className="text-sm text-muted-foreground">
+                  {place.noise_level} noise
+                </span>
               </div>
             )}
             {place.crowd_level && (
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{place.crowd_level} crowd</span>
+                <span className="text-sm text-muted-foreground">
+                  {place.crowd_level} crowd
+                </span>
               </div>
             )}
             {place.has_wifi && (
               <div className="flex items-center gap-2">
                 <Wifi className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">WiFi available</span>
+                <span className="text-sm text-muted-foreground">
+                  WiFi available
+                </span>
               </div>
             )}
             {place.price_inr && (
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-primary">₹{place.price_inr}</span>
-                {place.display_price_label && <span className="text-xs text-muted-foreground">{place.display_price_label}</span>}
+                <span className="text-lg font-bold text-primary">
+                  ₹{place.price_inr}
+                </span>
+                {place.display_price_label && (
+                  <span className="text-xs text-muted-foreground">
+                    {place.display_price_label}
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -180,10 +237,14 @@ const PlaceItemDetails = () => {
           {/* Amenities */}
           {amenities.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Amenities</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-3">
+                Amenities
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {amenities.map((a: string, i: number) => (
-                  <Badge key={i} variant="secondary">{a}</Badge>
+                  <Badge key={i} variant="secondary">
+                    {a}
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -192,10 +253,14 @@ const PlaceItemDetails = () => {
           {/* Opening Hours */}
           {openingHours.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Opening Hours</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-3">
+                Opening Hours
+              </h2>
               <div className="space-y-1">
                 {openingHours.map((line: string, i: number) => (
-                  <p key={i} className="text-sm text-muted-foreground">{line}</p>
+                  <p key={i} className="text-sm text-muted-foreground">
+                    {line}
+                  </p>
                 ))}
               </div>
             </div>
@@ -204,7 +269,9 @@ const PlaceItemDetails = () => {
           {/* Photo Gallery */}
           {photos.length > 1 && (
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Photos</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-3">
+                Photos
+              </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {photos.slice(0, 6).map((_: string, i: number) => (
                   <img
@@ -223,7 +290,9 @@ const PlaceItemDetails = () => {
           {/* Google Maps */}
           {place.lat && place.lng && (
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Location</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-3">
+                Location
+              </h2>
               <div className="rounded-xl overflow-hidden border border-border">
                 <iframe
                   title="Map"
@@ -237,10 +306,12 @@ const PlaceItemDetails = () => {
             </div>
           )}
 
-          {/* Campus food menu */}
+          {/* Campus-only detail section: static menu cards for food counters */}
           {showMenu && (
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-4">Menu</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Menu
+              </h2>
               {campusMenu ? (
                 <div className="space-y-5">
                   {campusMenu.map((sec: MenuSection) => (
@@ -256,7 +327,9 @@ const PlaceItemDetails = () => {
                           >
                             <span className="text-foreground">{item.name}</span>
                             {item.price && (
-                              <span className="text-muted-foreground font-medium">{item.price}</span>
+                              <span className="text-muted-foreground font-medium">
+                                {item.price}
+                              </span>
                             )}
                           </div>
                         ))}
@@ -264,16 +337,19 @@ const PlaceItemDetails = () => {
                     </div>
                   ))}
                   <p className="text-xs text-muted-foreground">
-                    * Prices are approximate and may vary. Check on-site for current menu.
+                    * Prices are approximate and may vary. Check on-site for
+                    current menu.
                   </p>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Menu not available yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  Menu not available yet.
+                </p>
               )}
             </div>
           )}
 
-          {/* Community — hidden for campus places */}
+          {/* Campus detail pages intentionally hide sentiment/reactions/reviews */}
           {!isCampus && (
             <>
               <SentimentPoll

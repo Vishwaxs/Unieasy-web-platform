@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, Loader2, MessageCircle, ShieldAlert, Trash2 } from "lucide-react";
+import {
+  Send,
+  Loader2,
+  MessageCircle,
+  ShieldAlert,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
@@ -20,7 +26,7 @@ interface ChatMessage {
 async function apiFetchChat(
   getToken: () => Promise<string | null>,
   path: string,
-  options?: RequestInit
+  options?: RequestInit,
 ) {
   const token = await getToken();
   const res = await fetch(`${API_BASE}/api${path}`, {
@@ -119,9 +125,12 @@ const CommunityChat = () => {
         <main className="pt-20 pb-10 container mx-auto px-4">
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <ShieldAlert className="w-16 h-16 text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Sign In Required</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Sign In Required
+            </h2>
             <p className="text-muted-foreground max-w-md">
-              You must be signed in with your Christ University email to access the community chat.
+              You must be signed in with your CHRIST University email to access
+              the community chat.
             </p>
           </div>
         </main>
@@ -139,7 +148,7 @@ const CommunityChat = () => {
           <MessageCircle className="w-6 h-6 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Community Chat</h1>
           <Badge variant="secondary" className="text-xs">
-            Christ University Students
+            CHRIST University Students
           </Badge>
         </div>
 

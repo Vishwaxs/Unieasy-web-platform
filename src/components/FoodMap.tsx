@@ -5,12 +5,17 @@ import { useEffect, useMemo } from "react";
 import mapLogoUrl from "@/assets/Map-Logo.png";
 import { type FoodItem } from "@/hooks/useFoodItems";
 
-const iconDefaultPrototype = L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown };
+const iconDefaultPrototype = L.Icon.Default.prototype as L.Icon.Default & {
+  _getIconUrl?: unknown;
+};
 delete iconDefaultPrototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
 const CAMPUS_POSITION: [number, number] = [12.9358, 77.6058];
@@ -24,13 +29,17 @@ const campusIcon = L.icon({
 });
 
 const orangePointerIcon = L.icon({
-  iconUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z' fill='%23d97706'/%3E%3Ccircle cx='12' cy='9' r='2.5' fill='white'/%3E%3C/svg%3E",
+  iconUrl:
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z' fill='%23d97706'/%3E%3Ccircle cx='12' cy='9' r='2.5' fill='white'/%3E%3C/svg%3E",
   iconSize: [28, 28],
   iconAnchor: [14, 28],
   popupAnchor: [0, -28],
 });
 
-if (typeof document !== "undefined" && !document.querySelector(".campus-marker-style-food")) {
+if (
+  typeof document !== "undefined" &&
+  !document.querySelector(".campus-marker-style-food")
+) {
   const style = document.createElement("style");
   style.className = "campus-marker-style-food";
   style.textContent = `
@@ -55,7 +64,9 @@ interface MarkerFood {
 }
 
 function fallbackPosition(seed: string): [number, number] {
-  const hash = seed.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hash = seed
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const angle = ((hash * 67) % 360) * (Math.PI / 180);
   const latOffset = Math.cos(angle) * (0.004 + (hash % 3) * 0.001);
   const lngOffset = Math.sin(angle) * (0.005 + (hash % 2) * 0.001);
@@ -117,7 +128,7 @@ export function FoodMap({ items }: FoodMapProps) {
         <Marker position={CAMPUS_POSITION} icon={campusIcon}>
           <Popup>
             <div className="space-y-1">
-              <p className="font-bold text-sm">Christ University</p>
+              <p className="font-bold text-sm">CHRIST University</p>
               <p className="text-xs text-muted-foreground">Central Campus</p>
               <p className="text-xs">Hosur Main Road, Bangalore</p>
             </div>
@@ -125,14 +136,32 @@ export function FoodMap({ items }: FoodMapProps) {
         </Marker>
 
         {markers.map((marker) => (
-          <Marker key={marker.id} position={marker.position} icon={orangePointerIcon}>
+          <Marker
+            key={marker.id}
+            position={marker.position}
+            icon={orangePointerIcon}
+          >
             <Popup>
               <div className="space-y-1">
                 <p className="font-semibold text-sm">{marker.name}</p>
-                <p className="text-xs text-muted-foreground">{marker.restaurant}</p>
+                <p className="text-xs text-muted-foreground">
+                  {marker.restaurant}
+                </p>
                 <p className="text-xs">
-                  <span className={marker.is_veg === true ? "text-green-600" : marker.is_veg === false ? "text-red-600" : "text-amber-600"}>
-                    {marker.is_veg === true ? "Veg" : marker.is_veg === false ? "Non-Veg" : "Mixed"}
+                  <span
+                    className={
+                      marker.is_veg === true
+                        ? "text-green-600"
+                        : marker.is_veg === false
+                          ? "text-red-600"
+                          : "text-amber-600"
+                    }
+                  >
+                    {marker.is_veg === true
+                      ? "Veg"
+                      : marker.is_veg === false
+                        ? "Non-Veg"
+                        : "Mixed"}
                   </span>
                   {" · "}
                   <span className="font-medium">₹{marker.price}</span>
