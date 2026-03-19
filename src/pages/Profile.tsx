@@ -499,7 +499,7 @@ const Profile = () => {
                           >
                             {place.photo_refs?.length ? (
                               <img
-                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/places/${place.id}/photo/0`}
+                                src={`${import.meta.env.VITE_API_BASE_URL || ""}/api/places/${place.id}/photo/0`}
                                 alt={place.name}
                                 className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                                 onError={(e) => {

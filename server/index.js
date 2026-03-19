@@ -1,7 +1,7 @@
 // server/index.js
 // Express server for UniEasy admin API.
 // Reads env from server/.env.local via dotenv.
-import "./loadEnv.js"
+import "./loadEnv.js";
 
 // ── Item 6: Env var startup validation ──────────────────────────────────────
 const REQUIRED_ENV = [
@@ -10,10 +10,14 @@ const REQUIRED_ENV = [
   "GOOGLE_PLACES_API_KEY",
   "PORT",
 ];
-const missingEnv = REQUIRED_ENV.filter(k => !process.env[k]);
+const missingEnv = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (missingEnv.length > 0) {
-  console.error(`[FATAL] Missing required environment variables: ${missingEnv.join(", ")}`);
-  console.error("Server will not start. Set the missing variables in server/.env.local");
+  console.error(
+    `[FATAL] Missing required environment variables: ${missingEnv.join(", ")}`,
+  );
+  console.error(
+    "Server will not start. Set the missing variables in server/.env.local",
+  );
   process.exit(1);
 }
 
@@ -22,6 +26,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { existsSync } from "fs";
 import logger from "./lib/logger.js";
 import "./lib/sentry.js";
 import { Sentry } from "./lib/sentry.js";
@@ -43,41 +48,70 @@ import contactRoutes from "./contactRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const WEB_DIST_DIR = join(__dirname, "..", "dist");
+const HAS_WEB_BUILD = existsSync(join(WEB_DIST_DIR, "index.html"));
+
+// Production deployments are commonly behind reverse proxies/CDNs.
+// This ensures req.ip and rate-limit keys map to real client IPs.
+const trustProxySetting =
+  process.env.TRUST_PROXY ||
+  (process.env.NODE_ENV === "production" ? "1" : "0");
+app.set("trust proxy", trustProxySetting === "0" ? false : trustProxySetting);
 
 // ── Security headers ────────────────────────────────────────────────────────
 // Helmet defaults are strict — loosen only what the app actually needs.
 // The backend serves a JSON API; these headers mainly affect the root page and /favicon.ico.
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false, // CSP is managed by the frontend (Vite injects its own)
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false, // CSP is managed by the frontend (Vite injects its own)
+  }),
+);
 
 // ── Item 1: CORS — env-driven origin ────────────────────────────────────────
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "http://localhost:5173";
-const allowedOrigins = ALLOWED_ORIGIN.split(",").map((o) => o.trim());
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "";
+const allowedOrigins = [ALLOWED_ORIGIN, CLIENT_ORIGIN]
+  .join(",")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
 
-app.use(cors({
+const apiCors = cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
+    // Allow requests with no origin (mobile apps, curl, same-origin nav requests)
+    if (!origin) return callback(null, true);
+
+    // In single-service mode, frontend and API share one host; keep requests flowing.
+    if (HAS_WEB_BUILD) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
+    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
-}));
+});
+
+// Apply CORS only to API routes so static frontend assets are never blocked.
+app.use("/api", apiCors);
 app.use(express.json({ limit: "1mb" }));
 
 // ── Favicon — serve UniEasy logo for browser tab ────────────────────────────
 app.get("/favicon.ico", (_req, res) => {
   res.sendFile(join(__dirname, "favicon.png"), {
-    headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=604800" },
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=604800",
+    },
   });
 });
 
 // ── Item 19: Root route — JSON status (no HTML) ─────────────────────────────
 app.get("/", (_req, res) => {
+  if (HAS_WEB_BUILD) {
+    return res.sendFile(join(WEB_DIST_DIR, "index.html"));
+  }
   res.json({
     service: "Unieasy Explorer Hub API",
     version: "1.0.0",
@@ -102,10 +136,14 @@ app.get("/healthz", async (_req, res) => {
   try {
     const { error } = await supabaseAdmin.from("places").select("id").limit(1);
     if (error) throw error;
-    res.status(200).json({ status: "ok", db: "connected", ts: new Date().toISOString() });
+    res
+      .status(200)
+      .json({ status: "ok", db: "connected", ts: new Date().toISOString() });
   } catch (err) {
     logger.error({ err }, "Health check DB probe failed");
-    res.status(503).json({ status: "error", db: "unreachable", message: err.message });
+    res
+      .status(503)
+      .json({ status: "error", db: "unreachable", message: err.message });
   }
 });
 
@@ -163,6 +201,16 @@ app.use("/api", communityRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api", contactRoutes);
 
+// ── Serve frontend build (single-service deploy mode) ───────────────────────
+if (HAS_WEB_BUILD) {
+  app.use(express.static(WEB_DIST_DIR, { maxAge: "7d" }));
+
+  // SPA fallback for non-API browser routes
+  app.get(/^(?!\/api(?:\/|$)|\/healthz$|\/readyz$).*/, (_req, res) => {
+    res.sendFile(join(WEB_DIST_DIR, "index.html"));
+  });
+}
+
 // ── Sentry error handler (must be after routes, before custom error handler) ─
 if (process.env.SENTRY_DSN) {
   Sentry.setupExpressErrorHandler(app);
@@ -172,7 +220,10 @@ if (process.env.SENTRY_DSN) {
 app.use((err, _req, res, _next) => {
   // Multer file upload errors — return user-friendly message
   if (err.name === "MulterError") {
-    const msg = err.code === "LIMIT_FILE_SIZE" ? "File too large (max 5 MB)" : err.message;
+    const msg =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "File too large (max 5 MB)"
+        : err.message;
     return res.status(400).json({ error: msg });
   }
   // Multer custom errors (e.g., "Only image files are allowed")

@@ -13,7 +13,7 @@ export interface EssentialItem {
   comment: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 function getPhotoUrl(place: Record<string, unknown>, fallback: string): string {
   const refs = Array.isArray(place.photo_refs) ? place.photo_refs : [];

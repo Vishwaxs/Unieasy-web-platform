@@ -1,0 +1,11 @@
+node_modules
+server/node_modules
+dist
+.git
+.gitignore
+.vscode
+.env
+.env.*
+server/.env.local
+*.log
+coverage

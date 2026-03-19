@@ -26,16 +26,21 @@ interface SearchResult {
   is_on_campus: boolean;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 function resultLink(item: SearchResult): string {
-  if (item.is_on_campus || item.category === "campus" || item.category === "oncampus") {
+  if (
+    item.is_on_campus ||
+    item.category === "campus" ||
+    item.category === "oncampus"
+  ) {
     return `/campus/${item.id}`;
   }
   if (item.category === "food") return `/food/${item.id}`;
   if (item.category === "accommodation") return `/accommodation/${item.id}`;
   if (item.category === "study") return `/study/${item.id}`;
-  if (item.category === "explore" || item.category === "hangout") return `/explore/${item.id}`;
+  if (item.category === "explore" || item.category === "hangout")
+    return `/explore/${item.id}`;
   return `/essentials/${item.id}`;
 }
 
@@ -99,7 +104,18 @@ const TYPE_IMAGE_RULES: Array<{ keywords: string[]; images: string[] }> = [
     ],
   },
   {
-    keywords: ["gym", "fitness", "workout", "sports complex", "badminton", "cricket", "basketball", "football", "tennis", "volleyball"],
+    keywords: [
+      "gym",
+      "fitness",
+      "workout",
+      "sports complex",
+      "badminton",
+      "cricket",
+      "basketball",
+      "football",
+      "tennis",
+      "volleyball",
+    ],
     images: [
       "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
       "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400",
@@ -107,7 +123,15 @@ const TYPE_IMAGE_RULES: Array<{ keywords: string[]; images: string[] }> = [
     ],
   },
   {
-    keywords: ["medical", "health", "clinic", "hospital", "pharmacy", "dispensary", "infirmary"],
+    keywords: [
+      "medical",
+      "health",
+      "clinic",
+      "hospital",
+      "pharmacy",
+      "dispensary",
+      "infirmary",
+    ],
     images: [
       "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400",
       "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400",
@@ -138,7 +162,14 @@ const TYPE_IMAGE_RULES: Array<{ keywords: string[]; images: string[] }> = [
     ],
   },
   {
-    keywords: ["auditorium", "hall", "seminar", "conference", "theatre", "theater"],
+    keywords: [
+      "auditorium",
+      "hall",
+      "seminar",
+      "conference",
+      "theatre",
+      "theater",
+    ],
     images: [
       "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400",
       "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400",
@@ -146,7 +177,16 @@ const TYPE_IMAGE_RULES: Array<{ keywords: string[]; images: string[] }> = [
     ],
   },
   {
-    keywords: ["stationery", "bookshop", "bookstore", "shop", "store", "xerox", "photocopy", "print"],
+    keywords: [
+      "stationery",
+      "bookshop",
+      "bookstore",
+      "shop",
+      "store",
+      "xerox",
+      "photocopy",
+      "print",
+    ],
     images: [
       "https://images.unsplash.com/photo-1568667256549-094345857637?w=400",
       "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400",
@@ -183,14 +223,20 @@ function resultImage(item: SearchResult): string {
 
   // Fall back to category pool
   const catKey =
-    item.is_on_campus || item.category === "oncampus" ? "campus" : item.category;
+    item.is_on_campus || item.category === "oncampus"
+      ? "campus"
+      : item.category;
   const pool = FALLBACKS[catKey] ?? FALLBACKS.default;
   const idx = (item.id?.charCodeAt(0) ?? 0) % pool.length;
   return pool[idx];
 }
 
 function categoryBadgeLabel(item: SearchResult): string {
-  if (item.is_on_campus || item.category === "campus" || item.category === "oncampus") {
+  if (
+    item.is_on_campus ||
+    item.category === "campus" ||
+    item.category === "oncampus"
+  ) {
     return "On Campus";
   }
   const labels: Record<string, string> = {
@@ -205,7 +251,10 @@ function categoryBadgeLabel(item: SearchResult): string {
     essentials: "Essentials",
     transport: "Essentials",
   };
-  return labels[item.category] || item.category.charAt(0).toUpperCase() + item.category.slice(1);
+  return (
+    labels[item.category] ||
+    item.category.charAt(0).toUpperCase() + item.category.slice(1)
+  );
 }
 
 type CategorySection =
@@ -220,8 +269,10 @@ function sectionForResult(item: SearchResult): CategorySection {
   if (item.category === "food") return "Food & Dining";
   if (item.category === "accommodation") return "Accommodation";
   if (item.category === "study") return "Study Spots";
-  if (item.category === "explore" || item.category === "hangout") return "Explore Nearby";
-  if (item.category === "health" || item.category === "fitness") return "Health & Fitness";
+  if (item.category === "explore" || item.category === "hangout")
+    return "Explore Nearby";
+  if (item.category === "health" || item.category === "fitness")
+    return "Health & Fitness";
   return "Essentials";
 }
 
@@ -238,7 +289,10 @@ const ResultCard = ({ item }: { item: SearchResult }) => (
         referrerPolicy="no-referrer-when-downgrade"
         loading="lazy"
         onError={(e) => {
-          const catKey = item.is_on_campus || item.category === "oncampus" ? "campus" : item.category;
+          const catKey =
+            item.is_on_campus || item.category === "oncampus"
+              ? "campus"
+              : item.category;
           const pool = FALLBACKS[catKey] ?? FALLBACKS.default;
           (e.target as HTMLImageElement).src = pool[0];
         }}
@@ -253,7 +307,12 @@ const ResultCard = ({ item }: { item: SearchResult }) => (
         {item.name}
       </h3>
       <div className="flex items-center justify-between gap-3 mb-2">
-        <RatingBadge rating={item.rating} ratingCount={item.rating_count} size="sm" source="google" />
+        <RatingBadge
+          rating={item.rating}
+          ratingCount={item.rating_count}
+          size="sm"
+          source="google"
+        />
         {item.price_display ? (
           <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <Wallet className="h-3.5 w-3.5" />
@@ -307,8 +366,10 @@ const SearchResults = () => {
       ]);
 
       const merged = new Map<string, SearchResult>();
-      for (const row of (ftsRes.data ?? []) as SearchResult[]) merged.set(row.id, row);
-      for (const row of (ilikeRes.data ?? []) as SearchResult[]) merged.set(row.id, row);
+      for (const row of (ftsRes.data ?? []) as SearchResult[])
+        merged.set(row.id, row);
+      for (const row of (ilikeRes.data ?? []) as SearchResult[])
+        merged.set(row.id, row);
 
       return Array.from(merged.values());
     },
@@ -334,7 +395,7 @@ const SearchResults = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="pt-20 pb-10">
+      <main className="pt-24 md:pt-28 pb-10">
         <section className="container mx-auto px-4 md:px-6">
           <div className="bg-card/80 border border-border rounded-2xl p-4 md:p-6 shadow-sm">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
@@ -368,7 +429,8 @@ const SearchResults = () => {
             </form>
             {hasQuery && !isLoading && (
               <p className="mt-3 text-sm text-muted-foreground">
-                {totalResults} result{totalResults === 1 ? "" : "s"} for "{paramQuery}"
+                {totalResults} result{totalResults === 1 ? "" : "s"} for "
+                {paramQuery}"
               </p>
             )}
           </div>
@@ -377,7 +439,8 @@ const SearchResults = () => {
         <section className="container mx-auto px-4 md:px-6 mt-8 space-y-10">
           {!hasQuery && (
             <div className="text-muted-foreground">
-              Enter a search term to find results across Food, Accommodation, Explore, Study, and Essentials.
+              Enter a search term to find results across Food, Accommodation,
+              Explore, Study, and Essentials.
             </div>
           )}
 
@@ -424,7 +487,9 @@ const SearchResults = () => {
             .filter((section) => (grouped[section]?.length ?? 0) > 0)
             .map((section) => (
               <div key={section}>
-                <h2 className="text-xl font-semibold text-foreground mb-4">{section}</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">
+                  {section}
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                   {(grouped[section] ?? []).map((item) => (
                     <ResultCard key={item.id} item={item} />

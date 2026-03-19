@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"StudySpot\\\\|study.*filter\\\\|noise.*level\\\\|wifi\" /e/GitHub/Unieasy-web-platform/src --include=*.tsx --include=*.ts -l)",
+      "Bash(xargs grep:*)",
+      "Bash(find E:GitHubUnieasy-web-platform -type f -name *.sql)",
+      "Bash(grep -r CAMPUS E:/GitHub/Unieasy-web-platform/src --include=*.ts --include=*.tsx -l)"
+    ]
+  }
+}

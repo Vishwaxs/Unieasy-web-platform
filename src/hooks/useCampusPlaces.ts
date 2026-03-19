@@ -14,7 +14,7 @@ export interface CampusPlace {
   crowdLevel: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 function placeToCampusPlace(place: Record<string, unknown>): CampusPlace {
   const photoRefs = Array.isArray(place.photo_refs) ? place.photo_refs : [];

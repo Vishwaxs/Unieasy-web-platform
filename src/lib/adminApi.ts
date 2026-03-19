@@ -5,15 +5,15 @@
 
 type GetToken = () => Promise<string | null>;
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 // ─── Low-level helpers ──────────────────────────────────────────────────────
 
 async function authenticatedFetch(
   getToken: GetToken,
   url: string,
-  options: RequestInit = {}
-): Promise<any> {
+  options: RequestInit = {},
+): Promise<unknown> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
 
@@ -39,8 +39,8 @@ async function authenticatedFetch(
 export async function adminFetch(
   getToken: GetToken,
   path: string,
-  options: RequestInit = {}
-): Promise<any> {
+  options: RequestInit = {},
+): Promise<unknown> {
   return authenticatedFetch(getToken, `${API_BASE}/api/admin${path}`, {
     ...options,
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -53,8 +53,8 @@ export async function adminFetch(
 export async function superadminFetch(
   getToken: GetToken,
   path: string,
-  options: RequestInit = {}
-): Promise<any> {
+  options: RequestInit = {},
+): Promise<unknown> {
   return authenticatedFetch(getToken, `${API_BASE}/api/superadmin${path}`, {
     ...options,
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -67,8 +67,8 @@ export async function superadminFetch(
 export async function apiFetch(
   getToken: GetToken,
   path: string,
-  options: RequestInit = {}
-): Promise<any> {
+  options: RequestInit = {},
+): Promise<unknown> {
   return authenticatedFetch(getToken, `${API_BASE}/api${path}`, {
     ...options,
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -85,7 +85,7 @@ export function requestMerchant(getToken: GetToken) {
 /** Upload an ad image (multipart). Returns `{ imageUrl }`. */
 export async function uploadAdImage(
   getToken: GetToken,
-  file: File
+  file: File,
 ): Promise<{ imageUrl: string }> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
@@ -118,7 +118,7 @@ export function createAd(
     buttonText?: string;
     categoryTarget?: string;
     durationDays: number;
-  }
+  },
 ) {
   return apiFetch(getToken, "/merchant/ads", {
     method: "POST",
@@ -205,7 +205,10 @@ export function fetchAdminCampusPlaces(getToken: GetToken) {
 }
 
 /** Create a new campus place. */
-export function createCampusPlace(getToken: GetToken, payload: CampusPlacePayload) {
+export function createCampusPlace(
+  getToken: GetToken,
+  payload: CampusPlacePayload,
+) {
   return adminFetch(getToken, "/campus", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -213,7 +216,11 @@ export function createCampusPlace(getToken: GetToken, payload: CampusPlacePayloa
 }
 
 /** Update an existing campus place (partial). */
-export function updateCampusPlace(getToken: GetToken, id: string, payload: Partial<CampusPlacePayload>) {
+export function updateCampusPlace(
+  getToken: GetToken,
+  id: string,
+  payload: Partial<CampusPlacePayload>,
+) {
   return adminFetch(getToken, `/campus/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
@@ -228,13 +235,22 @@ export function deleteCampusPlace(getToken: GetToken, id: string) {
 // ─── Named helpers — Notifications ──────────────────────────────────────────
 
 /** Fetch current user's notifications. Returns { data, total, unread }. */
-export function fetchNotifications(getToken: GetToken, limit = 20, unreadOnly = false) {
-  return apiFetch(getToken, `/notifications?limit=${limit}&unread_only=${unreadOnly}`);
+export function fetchNotifications(
+  getToken: GetToken,
+  limit = 20,
+  unreadOnly = false,
+) {
+  return apiFetch(
+    getToken,
+    `/notifications?limit=${limit}&unread_only=${unreadOnly}`,
+  );
 }
 
 /** Mark a single notification as read. */
 export function markNotificationRead(getToken: GetToken, notifId: string) {
-  return apiFetch(getToken, `/notifications/${notifId}/read`, { method: "PATCH" });
+  return apiFetch(getToken, `/notifications/${notifId}/read`, {
+    method: "PATCH",
+  });
 }
 
 /** Mark all notifications as read. */

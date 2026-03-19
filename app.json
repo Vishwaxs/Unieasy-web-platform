@@ -1,0 +1,55 @@
+{
+  "name": "Unieasy",
+  "description": "Student housing and campus exploration platform",
+  "repository": "https://github.com/your-repo-here",
+  "keywords": ["node", "express", "react", "vite"],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "stack": "heroku-22",
+  "engines": {
+    "node": ">=18"
+  },
+  "env": {
+    "SUPABASE_URL": {
+      "description": "Supabase project URL",
+      "required": true
+    },
+    "SUPABASE_SERVICE_ROLE_KEY": {
+      "description": "Supabase service role key (secret)",
+      "required": true,
+      "sensitive": true
+    },
+    "GOOGLE_PLACES_API_KEY": {
+      "description": "Google Places API key",
+      "required": true,
+      "sensitive": true
+    },
+    "CLERK_SECRET_KEY": {
+      "description": "Clerk authentication secret key",
+      "required": false,
+      "sensitive": true
+    },
+    "PORT": {
+      "description": "Server port",
+      "value": "8080",
+      "required": false
+    },
+    "ALLOWED_ORIGIN": {
+      "description": "Allowed CORS origin for API requests",
+      "value": "https://${HEROKU_APP_NAME}.herokuapp.com",
+      "required": false
+    },
+    "CLIENT_ORIGIN": {
+      "description": "Client origin (if different from ALLOWED_ORIGIN)",
+      "required": false
+    },
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production",
+      "required": false
+    }
+  }
+}

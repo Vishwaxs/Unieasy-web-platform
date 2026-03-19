@@ -24,10 +24,17 @@ export default defineConfig(() => ({
     rollupOptions: {
       output: {
         manualChunks: (id: string) => {
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/react-router-dom")) {
+          if (
+            id.includes("node_modules/react") ||
+            id.includes("node_modules/react-dom") ||
+            id.includes("node_modules/react-router-dom")
+          ) {
             return "vendor-react";
           }
-          if (id.includes("node_modules/@radix-ui") || id.includes("node_modules/shadcn")) {
+          if (
+            id.includes("node_modules/@radix-ui") ||
+            id.includes("node_modules/shadcn")
+          ) {
             return "vendor-ui";
           }
           if (id.includes("node_modules/@tanstack")) {

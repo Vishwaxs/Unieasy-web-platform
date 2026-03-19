@@ -17,7 +17,7 @@ export interface ExplorePlace {
   lng?: number;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 // Type-aware fallback pools — keyed by keyword match
 const EXPLORE_TYPE_IMAGES: Array<{ keywords: string[]; images: string[] }> = [
@@ -31,7 +31,15 @@ const EXPLORE_TYPE_IMAGES: Array<{ keywords: string[]; images: string[] }> = [
     ],
   },
   {
-    keywords: ["cinema", "movie", "theatre", "theater", "multiplex", "pvr", "inox"],
+    keywords: [
+      "cinema",
+      "movie",
+      "theatre",
+      "theater",
+      "multiplex",
+      "pvr",
+      "inox",
+    ],
     images: [
       "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400",
       "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=400",
@@ -47,7 +55,15 @@ const EXPLORE_TYPE_IMAGES: Array<{ keywords: string[]; images: string[] }> = [
     ],
   },
   {
-    keywords: ["museum", "gallery", "art", "heritage", "palace", "fort", "monument"],
+    keywords: [
+      "museum",
+      "gallery",
+      "art",
+      "heritage",
+      "palace",
+      "fort",
+      "monument",
+    ],
     images: [
       "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=400",
       "https://images.unsplash.com/photo-1574182245530-967d9b3831af?w=400",
@@ -82,7 +98,8 @@ function getExplorePhotoUrl(place: Record<string, unknown>): string {
   const placeId = typeof place.id === "string" ? place.id : null;
 
   // API proxy — use when photo_refs are populated
-  if (placeId && refs.length > 0) return `${API_BASE}/api/places/${placeId}/photo/0`;
+  if (placeId && refs.length > 0)
+    return `${API_BASE}/api/places/${placeId}/photo/0`;
 
   // primary_photo_url from DB
   if (typeof place.primary_photo_url === "string" && place.primary_photo_url)
@@ -140,9 +157,7 @@ function placeToExplorePlace(place: Record<string, unknown>): ExplorePlace {
       : "Closed Now";
   } else {
     timing =
-      (place.timing as string) ||
-      weekdayDescs[0] ||
-      "Check Google for hours";
+      (place.timing as string) || weekdayDescs[0] || "Check Google for hours";
   }
 
   // ── Crowd level ─────────────────────────────────────────────────────────
@@ -152,7 +167,7 @@ function placeToExplorePlace(place: Record<string, unknown>): ExplorePlace {
     high: "High",
   };
   const crowd = (place.crowd_level as string)
-    ? crowdLabels[(place.crowd_level as string)] || "Varies"
+    ? crowdLabels[place.crowd_level as string] || "Varies"
     : "Varies";
 
   return {

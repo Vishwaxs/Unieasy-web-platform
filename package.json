@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "heroku-postbuild": "npm --prefix server install --omit=dev && npm run build",
+    "start": "npm --prefix server start"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.1",
