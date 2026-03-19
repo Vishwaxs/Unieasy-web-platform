@@ -120,7 +120,7 @@ function NotificationBell() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[70]" ref={dropdownRef}>
       <Button
         variant="outline"
         size="icon"
@@ -138,7 +138,7 @@ function NotificationBell() {
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 top-12 z-[80] w-80 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
             <span className="text-sm font-semibold text-foreground">

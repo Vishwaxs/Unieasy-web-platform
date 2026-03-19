@@ -59,6 +59,23 @@ type SavedReactionRow = {
   places: SavedPlace[] | null;
 };
 
+type ReviewPlace = {
+  id: string;
+  name: string;
+  category: string;
+  sub_type: string | null;
+};
+
+type UserReviewRow = {
+  id: string;
+  place_id: string;
+  rating: number;
+  body: string;
+  status: string;
+  created_at: string;
+  places: ReviewPlace[] | null;
+};
+
 const Profile = () => {
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -71,6 +88,9 @@ const Profile = () => {
   const [savedOpen, setSavedOpen] = useState(false);
   const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
   const [savedLoading, setSavedLoading] = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [userReviews, setUserReviews] = useState<UserReviewRow[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   const loadSavedPlaces = async () => {
     if (!user?.id) return;
@@ -92,6 +112,23 @@ const Profile = () => {
   const toggleSaved = () => {
     if (!savedOpen) loadSavedPlaces();
     setSavedOpen((v) => !v);
+  };
+
+  const loadMyReviews = async () => {
+    if (!user?.id) return;
+    setReviewsLoading(true);
+    const { data } = await supabase
+      .from("reviews")
+      .select("id, place_id, rating, body, status, created_at, places(id, name, category, sub_type)")
+      .eq("clerk_user_id", user.id)
+      .order("created_at", { ascending: false });
+    setUserReviews((data as UserReviewRow[] | null) ?? []);
+    setReviewsLoading(false);
+  };
+
+  const toggleMyReviews = () => {
+    if (!reviewsOpen) loadMyReviews();
+    setReviewsOpen((v) => !v);
   };
 
   useEffect(() => {
@@ -273,7 +310,7 @@ const Profile = () => {
     {
       icon: Bell,
       label: "My Reviews",
-      action: () => window.location.assign("/home"),
+      action: toggleMyReviews,
     },
     {
       icon: Shield,
@@ -498,6 +535,78 @@ const Profile = () => {
                                 </p>
                               )}
                             </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* My Reviews Panel */}
+              {reviewsOpen && (
+                <div className="bg-card rounded-2xl shadow-sm p-5 sm:p-6 animate-fade-up">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                      <Star className="w-4 h-4 text-primary" /> My Reviews
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => setReviewsOpen(false)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {reviewsLoading ? (
+                    <div className="grid grid-cols-1 gap-3">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-24 bg-muted/40 rounded-xl animate-pulse" />
+                      ))}
+                    </div>
+                  ) : userReviews.length === 0 ? (
+                    <div className="text-center py-10">
+                      <Star className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">You have not posted any reviews yet.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3">
+                      {userReviews.map((review) => {
+                        const place = review.places?.[0] ?? null;
+                        const section = place?.category === "accommodation" ? "accommodation"
+                          : place?.category === "campus" ? "campus"
+                          : place?.category === "study" ? "study"
+                          : place?.category === "essentials" ? "essentials"
+                          : place?.category === "explore" ? "explore"
+                          : "food";
+                        const destination = place ? `/${section}/${place.id}` : "/home";
+
+                        return (
+                          <Link
+                            key={review.id}
+                            to={destination}
+                            className="block p-3 rounded-xl border border-border bg-muted/20 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-foreground truncate">
+                                  {place?.name ?? "Reviewed place"}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {new Date(review.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                {[1, 2, 3, 4, 5].map((n) => (
+                                  <Star
+                                    key={n}
+                                    className={`w-3.5 h-3.5 ${n <= Math.round(review.rating) ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/30"}`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{review.body}</p>
                           </Link>
                         );
                       })}

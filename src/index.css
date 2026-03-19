@@ -657,7 +657,7 @@
 
   .mirror-header-shell {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     background: hsl(var(--background) / 0.42);
     border-bottom: 1px solid hsl(0 0% 100% / 0.24);
     box-shadow:
