@@ -107,6 +107,8 @@ const AccommodationItemDetails = () => {
 
   const amenities = place.amenities || [];
   const subType = place.sub_type || "Accommodation";
+  const primaryType = place.type?.trim() || "Accommodation";
+  const secondaryType = place.sub_type?.trim() || null;
   const priceLabel =
     place.display_price_label ||
     (place.price_inr ? `Rs. ${place.price_inr.toLocaleString()}/month` : null);
@@ -310,8 +312,15 @@ const AccommodationItemDetails = () => {
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-primary" />
-                  Type: {subType}
+                  Type: {primaryType}
                 </li>
+                {secondaryType &&
+                  secondaryType.toLowerCase() !== primaryType.toLowerCase() && (
+                    <li className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-primary" />
+                      Sub-type: {secondaryType}
+                    </li>
+                  )}
                 {place.distance_from_campus && (
                   <li className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-primary" />
