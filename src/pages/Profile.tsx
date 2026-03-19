@@ -44,6 +44,21 @@ interface ProfileData {
   avatar_url: string;
 }
 
+type SavedPlace = {
+  id: string;
+  name: string;
+  category: string;
+  sub_type: string | null;
+  address: string | null;
+  rating: number | null;
+  rating_count: number | null;
+  photo_refs: string[] | null;
+};
+
+type SavedReactionRow = {
+  places: SavedPlace[] | null;
+};
+
 const Profile = () => {
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -54,10 +69,7 @@ const Profile = () => {
 
   // Saved places panel
   const [savedOpen, setSavedOpen] = useState(false);
-  const [savedPlaces, setSavedPlaces] = useState<Array<{
-    id: string; name: string; category: string; sub_type: string | null;
-    address: string | null; rating: number | null; rating_count: number | null; photo_refs: string[] | null;
-  }>>([]);
+  const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
   const [savedLoading, setSavedLoading] = useState(false);
 
   const loadSavedPlaces = async () => {
@@ -69,7 +81,9 @@ const Profile = () => {
       .eq("clerk_user_id", user.id)
       .eq("reaction", "bookmark")
       .order("created_at", { ascending: false });
-    setSavedPlaces((data ?? []).map((r: any) => r.places).filter(Boolean));
+    const rows = (data as SavedReactionRow[] | null) ?? [];
+    const places = rows.flatMap((row) => row.places ?? []);
+    setSavedPlaces(places);
     setSavedLoading(false);
   };
 
