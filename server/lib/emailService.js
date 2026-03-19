@@ -1,19 +1,38 @@
 // server/lib/emailService.js
-// Email + in-app notification service powered by Resend (resend.com).
-// Gracefully no-ops when RESEND_API_KEY is not set.
+// Email + in-app notification service powered by Nodemailer + Gmail SMTP.
+// Gracefully no-ops when GMAIL_USER / GMAIL_APP_PASSWORD are not set.
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { supabaseAdmin } from "./supabaseAdmin.js";
 import logger from "./logger.js";
 
-// ── Resend client (lazy — only created when API key is present) ─────────────
-let resend = null;
-if (process.env.RESEND_API_KEY) {
-  resend = new Resend(process.env.RESEND_API_KEY);
+// ── Gmail SMTP transporter ──────────────────────────────────────────────────
+let transporter = null;
+const GMAIL_USER = process.env.GMAIL_USER;
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
+
+if (GMAIL_USER && GMAIL_APP_PASSWORD) {
+  transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: GMAIL_USER,
+      pass: GMAIL_APP_PASSWORD,
+    },
+  });
+  // Verify the connection on startup
+  transporter.verify((err) => {
+    if (err) {
+      logger.error({ err }, "[emailService] ❌ Gmail SMTP connection failed — check GMAIL_USER and GMAIL_APP_PASSWORD");
+    } else {
+      logger.info({ from: GMAIL_USER }, "[emailService] ✅ Gmail SMTP connected and ready to send");
+    }
+  });
+} else {
+  logger.warn("[emailService] ⚠️ GMAIL_USER or GMAIL_APP_PASSWORD not set — emails will NOT be sent");
 }
 
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || process.env.ALLOWED_ORIGIN || "http://localhost:5173";
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "noreply@unieasy.in";
+const FROM_NAME = "UniEasy";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EMAIL TEMPLATES
@@ -98,7 +117,7 @@ const templates = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Send an email using a predefined template.
+ * Send an email using a predefined template via Gmail SMTP.
  * @param {string} templateId - Key from the `templates` map.
  * @param {string} toEmail    - Recipient email address.
  * @param {string} toName     - Recipient display name.
@@ -106,8 +125,13 @@ const templates = {
  * @returns {Promise<boolean>} true if sent successfully, false otherwise.
  */
 export async function sendEmail(templateId, toEmail, toName, data) {
-  if (!resend) {
-    logger.info({ templateId, toEmail }, "[emailService] No RESEND_API_KEY set. Email not sent.");
+  if (!transporter) {
+    logger.warn({ templateId, toEmail }, "[emailService] Gmail not configured. Email skipped.");
+    return false;
+  }
+
+  if (!toEmail) {
+    logger.warn({ templateId }, "[emailService] No recipient email. Skipped.");
     return false;
   }
 
@@ -120,16 +144,19 @@ export async function sendEmail(templateId, toEmail, toName, data) {
   const { subject, html } = template(data);
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [toEmail],
+    logger.info({ templateId, toEmail, subject }, "[emailService] Sending email...");
+
+    const info = await transporter.sendMail({
+      from: `${FROM_NAME} <${GMAIL_USER}>`,
+      to: toName ? `${toName} <${toEmail}>` : toEmail,
       subject,
       html,
     });
-    logger.info({ templateId, toEmail }, `[emailService] Sent`);
+
+    logger.info({ templateId, toEmail, messageId: info.messageId }, "[emailService] ✅ Email sent successfully");
     return true;
   } catch (err) {
-    logger.error({ err, templateId, toEmail }, "[emailService] Failed to send");
+    logger.error({ err, templateId, toEmail }, "[emailService] ❌ Failed to send email");
     return false;
   }
 }
@@ -154,6 +181,8 @@ export async function notifyAdminEmails(templateId, data) {
       logger.info("[emailService] No admin/superadmin users found for notification");
       return;
     }
+
+    logger.info({ templateId, adminCount: admins.length }, "[emailService] Sending to all admins/superadmins...");
 
     await Promise.all(
       admins.map((a) => sendEmail(templateId, a.email, a.full_name, data))
