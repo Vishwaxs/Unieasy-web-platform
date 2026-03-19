@@ -47,16 +47,15 @@ const Index = () => {
             <div className="flex items-center gap-2 md:gap-3">
               <ThemeToggle />
               <SignedIn>
-                <Link to="/profile">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary w-10 h-10 transition-all duration-300"
-                  >
-                    <User className="w-5 h-5 text-foreground" />
-                  </Button>
-                </Link>
-                <UserButton afterSignOutUrl="/" />
+                <UserButton afterSignOutUrl="/">
+                  <UserButton.MenuItems>
+                    <UserButton.Link
+                      label="My Profile"
+                      labelIcon={<User className="w-4 h-4" />}
+                      href="/profile"
+                    />
+                  </UserButton.MenuItems>
+                </UserButton>
               </SignedIn>
               <SignedOut>
                 <SignInButton mode="modal">

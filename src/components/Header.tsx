@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, User, Menu, X, Home, Mail, FileText, Shield, LogIn, Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SignedIn, SignedOut, SignInButton, useUser, useAuth } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser, useAuth } from "@clerk/clerk-react";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/adminApi";
@@ -227,24 +227,15 @@ const Header = () => {
             
             <SignedIn>
               <NotificationBell />
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full bg-background/60 backdrop-blur-md border-border/60 hover:bg-accent/15 w-10 h-10 transition-all duration-300 overflow-hidden p-0"
-                onClick={() => navigate("/profile")}
-                aria-label="Profile"
-              >
-                {user?.imageUrl ? (
-                  <img
-                    src={user.imageUrl}
-                    alt={user.fullName ?? "Profile"}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer-when-downgrade"
+              <UserButton afterSignOutUrl="/">
+                <UserButton.MenuItems>
+                  <UserButton.Link
+                    label="My Profile"
+                    labelIcon={<User className="w-4 h-4" />}
+                    href="/profile"
                   />
-                ) : (
-                  <User className="w-5 h-5 text-foreground" />
-                )}
-              </Button>
+                </UserButton.MenuItems>
+              </UserButton>
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
