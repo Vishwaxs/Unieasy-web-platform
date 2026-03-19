@@ -97,7 +97,7 @@ const PlaceCard = ({
           referrerPolicy="no-referrer-when-downgrade"
           loading="lazy"
         />
-        <Badge className="absolute top-3 left-3 bg-primary">{item.type}</Badge>
+        <Badge className="absolute top-3 left-3 bg-primary capitalize">{item.type}</Badge>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
           <span className="text-white text-sm">

@@ -104,7 +104,7 @@ const AccommodationCard = ({
           referrerPolicy="no-referrer-when-downgrade"
           loading="lazy"
         />
-        <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
+        <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground capitalize">
           {item.type}
         </Badge>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
