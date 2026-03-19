@@ -73,12 +73,12 @@ const MerchantAuth = () => {
 
     const checkRequest = async () => {
       try {
-        const data = await apiFetch(
+        const data = (await apiFetch(
           getToken,
           "/merchant/upgrade-request/status",
-        );
+        )) as { status?: string; review_note?: string };
         if (data.status) {
-          setRequestStatus(data.status);
+          setRequestStatus(data.status as RequestStatus);
           if (data.review_note) setReviewNote(data.review_note);
         } else {
           setRequestStatus("none");
@@ -95,9 +95,27 @@ const MerchantAuth = () => {
     return null;
   }
 
+  // Validation helpers
+  const nameValid = businessName.trim().length >= 2;
+  const typeValid = businessType.length > 0;
+  const phoneClean = contactNumber.replace(/[\s\-]/g, "");
+  const phoneValid = /^\+?\d{10,15}$/.test(phoneClean);
+  const descValid = description.trim().length >= 10;
+  const allValid = nameValid && typeValid && phoneValid && descValid;
+
+  // Track which fields the user has touched
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const markTouched = (field: string) =>
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
   const handleSubmitRequest = async () => {
-    if (!businessName.trim() || !businessType) {
-      toast.error("Please fill in business name and type");
+    // Mark all as touched to show errors
+    setTouched({ name: true, type: true, phone: true, desc: true });
+    if (!allValid) {
+      if (!nameValid) toast.error("Business name must be at least 2 characters");
+      else if (!typeValid) toast.error("Please select a business type");
+      else if (!phoneValid) toast.error("Enter a valid contact number (10-15 digits)");
+      else if (!descValid) toast.error("Description must be at least 10 characters");
       return;
     }
     setSubmitting(true);
@@ -193,6 +211,22 @@ const MerchantAuth = () => {
                   Submit New Request
                 </Button>
               </div>
+            ) : requestStatus === "approved" ? (
+              /* Approved Banner */
+              <div className="text-center space-y-6">
+                <div className="p-6 bg-green-500/10 border border-green-500/30 rounded-2xl">
+                  <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-3" />
+                  <h2 className="text-lg font-semibold text-foreground mb-2">
+                    You're a Merchant!
+                  </h2>
+                  <p className="text-muted-foreground text-sm">
+                    Your account has been approved. Head to your dashboard to start managing ads.
+                  </p>
+                </div>
+                <Button size="lg" className="w-full" onClick={() => navigate("/merchant/dashboard")}>
+                  Go to Dashboard
+                </Button>
+              </div>
             ) : role !== "merchant" ? (
               /* Upgrade Request Form */
               <div className="space-y-6">
@@ -205,7 +239,18 @@ const MerchantAuth = () => {
                   for review.
                 </p>
 
+                {/* Role-specific info banner */}
+                {(role === "admin" || role === "superadmin") && (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-center gap-2">
+                    <span className="text-amber-500 text-sm flex-shrink-0">ℹ️</span>
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      You're currently a <strong>{role}</strong>. You can still apply for a merchant account — an admin will review it.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-4">
+                  {/* Business Name */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">
                       Business Name *
@@ -213,19 +258,25 @@ const MerchantAuth = () => {
                     <Input
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
+                      onBlur={() => markTouched("name")}
                       placeholder="Your business name"
+                      className={touched.name && !nameValid ? "border-red-500 focus:ring-red-500/20" : ""}
                     />
+                    {touched.name && !nameValid && (
+                      <p className="text-xs text-red-500 mt-1">Min 2 characters required</p>
+                    )}
                   </div>
 
+                  {/* Business Type */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">
                       Business Type *
                     </label>
                     <Select
                       value={businessType}
-                      onValueChange={setBusinessType}
+                      onValueChange={(v) => { setBusinessType(v); markTouched("type"); }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={touched.type && !typeValid ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select business type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -236,28 +287,53 @@ const MerchantAuth = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    {touched.type && !typeValid && (
+                      <p className="text-xs text-red-500 mt-1">Please select a business type</p>
+                    )}
                   </div>
 
+                  {/* Contact Number */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">
-                      Contact Number
+                      Contact Number *
                     </label>
                     <Input
                       value={contactNumber}
                       onChange={(e) => setContactNumber(e.target.value)}
-                      placeholder="10-digit phone number"
+                      onBlur={() => markTouched("phone")}
+                      placeholder="+91 XXXXXXXXXX"
+                      className={touched.phone && !phoneValid ? "border-red-500 focus:ring-red-500/20" : ""}
                     />
+                    {touched.phone && !phoneValid && (
+                      <p className="text-xs text-red-500 mt-1">Enter a valid phone number (10-15 digits)</p>
+                    )}
                   </div>
 
+                  {/* Description */}
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
-                      Brief Description
-                    </label>
-                    <Input
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-sm font-medium text-foreground">
+                        Brief Description *
+                      </label>
+                      <span className="text-xs text-muted-foreground">
+                        {description.length}/400
+                      </span>
+                    </div>
+                    <textarea
                       value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Tell us about your business"
+                      onChange={(e) => setDescription(e.target.value.slice(0, 400))}
+                      onBlur={() => markTouched("desc")}
+                      placeholder="Tell us about your business (min 10 characters)..."
+                      className={[
+                        "w-full min-h-20 px-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary resize-none text-sm",
+                        touched.desc && !descValid
+                          ? "border-red-500 focus:ring-red-500/20"
+                          : "border-input focus:ring-primary/20",
+                      ].join(" ")}
                     />
+                    {touched.desc && !descValid && (
+                      <p className="text-xs text-red-500 mt-1">Min 10 characters required</p>
+                    )}
                   </div>
                 </div>
 
@@ -265,7 +341,7 @@ const MerchantAuth = () => {
                   size="lg"
                   className="w-full"
                   onClick={handleSubmitRequest}
-                  disabled={submitting || !businessName.trim() || !businessType}
+                  disabled={submitting}
                 >
                   {submitting ? (
                     <>

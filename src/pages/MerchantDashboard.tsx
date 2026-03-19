@@ -143,7 +143,7 @@ const MerchantDashboard = () => {
     const loadAnalytics = async () => {
       try {
         const data = await apiFetch(getToken, "/merchant/analytics");
-        setAnalytics(data);
+        setAnalytics(data as MerchantAnalytics);
       } catch {
         // Non-critical
       }
@@ -151,9 +151,9 @@ const MerchantDashboard = () => {
     loadAnalytics();
   }, [user, getToken, role]);
 
-  // Fetch merchant upgrade request status (students)
+  // Fetch merchant upgrade request status (all non-merchant users)
   useEffect(() => {
-    if (!user || role !== "student") {
+    if (!user || role === "merchant") {
       setUpgradeStatus(null);
       return;
     }
@@ -320,18 +320,41 @@ const MerchantDashboard = () => {
 
   const submitUpgradeRequest = async () => {
     if (!user) return;
-    if (!businessName.trim() || !businessType || !contactNumber.trim() || !businessDescription.trim()) {
-      toast.error("Please fill all required fields");
+    // Input validations
+    const name = businessName.trim();
+    const type = businessType;
+    const contact = contactNumber.trim();
+    const desc = businessDescription.trim();
+    const web = businessWebsite.trim();
+
+    if (!name || name.length < 2) {
+      toast.error("Business name must be at least 2 characters");
+      return;
+    }
+    if (!type) {
+      toast.error("Please select a business type");
+      return;
+    }
+    if (!contact || !/^\+?\d{10,15}$/.test(contact.replace(/[\s-]/g, ""))) {
+      toast.error("Enter a valid contact number (10-15 digits)");
+      return;
+    }
+    if (!desc || desc.length < 10) {
+      toast.error("Description must be at least 10 characters");
+      return;
+    }
+    if (web && !/^https?:\/\/.+/.test(web)) {
+      toast.error("Website must start with http:// or https://");
       return;
     }
     setUpgradeSubmitting(true);
     try {
       await requestMerchantUpgrade(getToken, {
-        business_name: businessName.trim(),
-        business_type: businessType,
-        contact_number: contactNumber.trim(),
-        description: businessDescription.trim(),
-        website: businessWebsite.trim() || undefined,
+        business_name: name,
+        business_type: type,
+        contact_number: contact,
+        description: desc,
+        website: web || undefined,
       });
       toast.success("Request submitted! You'll receive an email once reviewed.");
       setUpgradeStatus({ status: "pending" });
@@ -768,7 +791,19 @@ const MerchantDashboard = () => {
 
             {/* Account */}
             <TabsContent value="account" className="mt-6 space-y-6">
-              {role === "student" ? (
+              {role === "merchant" ? (
+                <div className="bg-card rounded-2xl border border-green-500/30 bg-green-500/5 p-6 md:p-8">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">You're already a Merchant!</h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        You can submit and manage advertisements from the other tabs.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
                 <div className="bg-card rounded-2xl border border-border p-6 md:p-8">
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
@@ -787,6 +822,16 @@ const MerchantDashboard = () => {
                     ) : null}
                   </div>
 
+                  {/* Role-specific info banner */}
+                  {(role === "admin" || role === "superadmin") && (
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 mb-4 flex items-center gap-2">
+                      <span className="text-amber-500 text-sm">ℹ️</span>
+                      <p className="text-sm text-amber-600 dark:text-amber-400">
+                        You're currently a <strong>{role}</strong>. You can still apply for a merchant account — an admin will review it.
+                      </p>
+                    </div>
+                  )}
+
                   {upgradeLoading ? (
                     <div className="flex justify-center py-6">
                       <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -795,14 +840,94 @@ const MerchantDashboard = () => {
                     <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm text-foreground">
                       Request submitted! You'll receive an email once reviewed.
                     </div>
+                  ) : upgradeStatus?.status === "rejected" ? (
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-foreground">
+                        <p className="font-medium text-red-500 mb-1">Your previous request was not approved.</p>
+                        {upgradeStatus.review_note && (
+                          <p className="text-muted-foreground">Reason: {upgradeStatus.review_note}</p>
+                        )}
+                        <p className="text-muted-foreground mt-2">You can submit a new request below.</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-foreground">Business Name *</label>
+                          <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Your business name" />
+                          {businessName.length > 0 && businessName.trim().length < 2 && (
+                            <p className="text-xs text-red-500">Min 2 characters</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-foreground">Business Type *</label>
+                          <select
+                            className="w-full px-4 py-3 bg-background border border-input rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            value={businessType}
+                            onChange={(e) => setBusinessType(e.target.value)}
+                          >
+                            <option value="">Select type</option>
+                            <option value="Restaurant">Restaurant</option>
+                            <option value="Cafe">Cafe</option>
+                            <option value="Accommodation">Accommodation</option>
+                            <option value="Services">Services</option>
+                            <option value="Retail">Retail</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-foreground">Contact Number *</label>
+                          <Input value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} placeholder="+91 XXXXXXXXXX" />
+                          {contactNumber.length > 0 && !/^\+?\d{10,15}$/.test(contactNumber.replace(/[\s-]/g, "")) && (
+                            <p className="text-xs text-red-500">Enter 10-15 digits</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-foreground">Website</label>
+                            <span className="text-xs text-muted-foreground">
+                              {businessWebsite.length}/{websiteLimit}
+                            </span>
+                          </div>
+                          <Input
+                            value={businessWebsite}
+                            onChange={(e) => setBusinessWebsite(e.target.value.slice(0, websiteLimit))}
+                            placeholder="https://..."
+                          />
+                        </div>
+                        <div className="md:col-span-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-foreground">Description *</label>
+                            <span className="text-xs text-muted-foreground">
+                              {businessDescription.length}/{businessDescLimit}
+                            </span>
+                          </div>
+                          <textarea
+                            value={businessDescription}
+                            onChange={(e) => setBusinessDescription(e.target.value.slice(0, businessDescLimit))}
+                            className="w-full min-h-24 px-4 py-3 bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                            placeholder="Tell us about your business (min 10 chars)..."
+                          />
+                          {businessDescription.length > 0 && businessDescription.trim().length < 10 && (
+                            <p className="text-xs text-red-500">Min 10 characters</p>
+                          )}
+                        </div>
+                        <div className="md:col-span-2">
+                          <Button onClick={submitUpgradeRequest} disabled={upgradeSubmitting} className="w-full">
+                            {upgradeSubmitting ? "Submitting..." : "Submit Request"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Business Name</label>
-                        <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+                        <label className="text-sm font-medium text-foreground">Business Name *</label>
+                        <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Your business name" />
+                        {businessName.length > 0 && businessName.trim().length < 2 && (
+                          <p className="text-xs text-red-500">Min 2 characters</p>
+                        )}
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Business Type</label>
+                        <label className="text-sm font-medium text-foreground">Business Type *</label>
                         <select
                           className="w-full px-4 py-3 bg-background border border-input rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                           value={businessType}
@@ -818,12 +943,11 @@ const MerchantDashboard = () => {
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Contact Number</label>
-                        <Input
-                          value={contactNumber}
-                          onChange={(e) => setContactNumber(e.target.value)}
-                          placeholder="+91..."
-                        />
+                        <label className="text-sm font-medium text-foreground">Contact Number *</label>
+                        <Input value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} placeholder="+91 XXXXXXXXXX" />
+                        {contactNumber.length > 0 && !/^\+?\d{10,15}$/.test(contactNumber.replace(/[\s-]/g, "")) && (
+                          <p className="text-xs text-red-500">Enter 10-15 digits</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -840,7 +964,7 @@ const MerchantDashboard = () => {
                       </div>
                       <div className="md:col-span-2 space-y-2">
                         <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium text-foreground">Description</label>
+                          <label className="text-sm font-medium text-foreground">Description *</label>
                           <span className="text-xs text-muted-foreground">
                             {businessDescription.length}/{businessDescLimit}
                           </span>
@@ -849,8 +973,11 @@ const MerchantDashboard = () => {
                           value={businessDescription}
                           onChange={(e) => setBusinessDescription(e.target.value.slice(0, businessDescLimit))}
                           className="w-full min-h-24 px-4 py-3 bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                          placeholder="Tell us about your business..."
+                          placeholder="Tell us about your business (min 10 chars)..."
                         />
+                        {businessDescription.length > 0 && businessDescription.trim().length < 10 && (
+                          <p className="text-xs text-red-500">Min 10 characters</p>
+                        )}
                       </div>
                       <div className="md:col-span-2">
                         <Button onClick={submitUpgradeRequest} disabled={upgradeSubmitting} className="w-full">
@@ -860,7 +987,7 @@ const MerchantDashboard = () => {
                     </div>
                   )}
                 </div>
-              ) : null}
+              )}
 
               {analytics && role === "merchant" ? (
                 <div className="animate-fade-up">

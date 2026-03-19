@@ -51,12 +51,9 @@ async function handleRequestUpgrade(req, res) {
     return res.status(400).json({ error: "business_type is required" });
   }
 
-  // Only students can request merchant upgrade
-  if (req.userRole !== "student") {
-    if (req.userRole === "merchant") {
-      return res.status(400).json({ error: "You are already a merchant" });
-    }
-    return res.status(403).json({ error: "Only students can request a merchant upgrade" });
+  // Already a merchant — no need to re-apply
+  if (req.userRole === "merchant") {
+    return res.status(400).json({ error: "You are already a merchant" });
   }
 
   try {
@@ -80,7 +77,6 @@ async function handleRequestUpgrade(req, res) {
         business_type: businessType.trim(),
         contact_number: contactNumber?.trim() || null,
         description: description?.trim() || null,
-        website: website?.trim() || null,
         status: "pending",
       })
       .select()
