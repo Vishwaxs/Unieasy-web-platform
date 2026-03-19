@@ -60,12 +60,12 @@ const MerchantAuth = () => {
   const [contactNumber, setContactNumber] = useState("");
   const [description, setDescription] = useState("");
 
-  // If user is already a merchant, redirect to dashboard
+  // If user is already a merchant or just got approved, redirect to dashboard
   useEffect(() => {
-    if (isSignedIn && role === "merchant") {
+    if (isSignedIn && (role === "merchant" || requestStatus === "approved")) {
       navigate("/merchant/dashboard", { replace: true });
     }
-  }, [isSignedIn, role, navigate]);
+  }, [isSignedIn, role, requestStatus, navigate]);
 
   // Check existing request status
   useEffect(() => {
