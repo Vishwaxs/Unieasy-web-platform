@@ -6,7 +6,7 @@ import christLogoHref from "@/assets/Christ-logo.png";
 
 const developers = [
   { name: "Vishwas Vashishtha", role: "Backend Developer" },
-  { name: "Nirupama Vincent", role: "Developer" },
+  { name: "Nirupama Vincent", role: "" },
   { name: "Angel Blessy", role: "Frontend Developer" },
 ];
 

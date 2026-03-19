@@ -8,7 +8,7 @@ import {
   ArrowLeft,
   Store,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { modulesEnabled, modulesDisabledHint } from "@/lib/featureFlags";
 import { supabase } from "@/lib/supabase";
@@ -291,16 +291,22 @@ const CategoryCards = () => {
     el.scrollBy({ left: -amount, behavior: "smooth" });
   };
 
-  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     const el = scrollRef.current;
     if (!el) return;
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       e.preventDefault();
       el.scrollLeft += e.deltaY;
     }
-  };
+  }, []);
 
-  // Attach wheel handler directly in JSX, no need for useEffect
+  // Attach native wheel listener with { passive: false } so preventDefault() works
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
   return (
     <section
@@ -340,7 +346,6 @@ const CategoryCards = () => {
         {/* Horizontal scrollable container */}
         <div
           ref={scrollRef}
-          onWheel={handleWheel}
           className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 overscroll-x-contain"
         >
           {categories.map((category, index) => (
