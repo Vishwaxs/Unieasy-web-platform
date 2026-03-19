@@ -19,10 +19,9 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 function getPhotoUrl(place: Record<string, unknown>, fallback: string): string {
   const refs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
-  const first = refs[0];
-  const ref = first && typeof first === 'object' ? (first as Record<string, string>).ref : null;
-  if (!ref) return fallback;
-  return `${API_BASE}/api/places/photo?ref=${encodeURIComponent(ref)}&maxwidth=800`;
+  const placeId = typeof place.id === "string" ? place.id : null;
+  if (!placeId || refs.length === 0) return fallback;
+  return `${API_BASE}/api/places/${placeId}/photo/0`;
 }
 
 // Per-card fallback images (B4 fix)

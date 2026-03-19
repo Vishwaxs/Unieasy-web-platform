@@ -20,10 +20,13 @@ interface SearchResult {
   rating: number;
   rating_count: number;
   primary_photo_url: string | null;
+  photo_refs: unknown[] | null;
   distance_from_campus: string | null;
   price_display: string | null;
   is_on_campus: boolean;
 }
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 function resultLink(item: SearchResult): string {
   if (item.is_on_campus || item.category === "campus" || item.category === "oncampus") {
@@ -37,6 +40,9 @@ function resultLink(item: SearchResult): string {
 }
 
 function resultImage(item: SearchResult): string {
+  if (Array.isArray(item.photo_refs) && item.photo_refs.length > 0) {
+    return `${API_BASE}/api/places/${item.id}/photo/0`;
+  }
   if (item.primary_photo_url) return item.primary_photo_url;
   return "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400";
 }
@@ -138,7 +144,7 @@ const SearchResults = () => {
       if (!q) return [];
 
       const selectCols =
-        "id, name, category, type, sub_type, address, rating, rating_count, primary_photo_url, distance_from_campus, price_display, is_on_campus";
+        "id, name, category, type, sub_type, address, rating, rating_count, primary_photo_url, photo_refs, distance_from_campus, price_display, is_on_campus";
 
       const [ftsRes, ilikeRes] = await Promise.all([
         supabase

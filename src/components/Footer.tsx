@@ -5,9 +5,9 @@ import Logo from "@/components/Logo";
 import christLogoHref from "@/assets/Christ-logo.png";
 
 const developers = [
-  { name: "Vishwas Vashishtha", role: "Full Stack Developer" },
-  { name: "Nirupama Vincent", role: "Frontend Developer" },
-  { name: "Angel Blessy", role: "Backend Developer" },
+  { name: "Vishwas Vashishtha", role: "Backend Developer" },
+  { name: "Nirupama Vincent", role: "Developer" },
+  { name: "Angel Blessy", role: "Frontend Developer" },
 ];
 
 const Footer = () => {
