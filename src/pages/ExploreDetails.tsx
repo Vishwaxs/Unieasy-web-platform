@@ -117,11 +117,23 @@ const PlaceCard = ({
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <MapPin className="w-3 h-3 shrink-0" />
-            <span className="line-clamp-1">{item.distance}</span>
+            <span className="line-clamp-1">
+              {item.distance === "Nearby" ? "Nearby campus" : `${item.distance} from campus`}
+            </span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Clock className="w-3 h-3 shrink-0" />
-            <span className="line-clamp-1">{item.timing}</span>
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="w-3 h-3 shrink-0 text-muted-foreground" />
+            <span
+              className={`line-clamp-1 ${
+                item.openNow === true
+                  ? "text-green-500 font-medium"
+                  : item.openNow === false
+                    ? "text-red-400 font-medium"
+                    : "text-muted-foreground"
+              }`}
+            >
+              {item.timing}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Users className="w-3 h-3 text-muted-foreground" />
