@@ -42,7 +42,7 @@ router.get(
     try {
       const { data, error } = await supabaseAdmin
         .from("ads")
-        .select("*, app_users!ads_clerk_user_id_fkey(full_name, email)")
+        .select("*")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
@@ -75,7 +75,7 @@ router.get(
     try {
       let query = supabaseAdmin
         .from("ads")
-        .select("*, app_users!ads_clerk_user_id_fkey(full_name, email)", { count: "exact" })
+        .select("*", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 

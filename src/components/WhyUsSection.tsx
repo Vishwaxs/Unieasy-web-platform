@@ -68,7 +68,7 @@ const FeatureCard = ({ feature, index }: { feature: typeof features[0]; index: n
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={`group relative bg-card rounded-2xl p-5 md:p-6 shadow-sm border border-border overflow-hidden transition-all duration-700 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        isVisible ? "opacity-100" : "opacity-0"
       } ${isHovered ? "shadow-xl -translate-y-2 border-primary/30" : ""}`}
       style={{ transitionDelay: `${index * 100}ms` }}
     >
@@ -123,7 +123,7 @@ const WhyUsSection = () => {
   return (
     <section ref={sectionRef} className="py-16 md:py-20 bg-secondary/50">
       <div className="container mx-auto px-4 md:px-6">
-        <div className={`text-center mb-10 md:mb-12 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+        <div className={`text-center mb-10 md:mb-12 transition-all duration-700 ${isVisible ? "opacity-100" : "opacity-0"}`}>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
             Why Choose <span className="text-primary">UniEasy</span>?
           </h2>

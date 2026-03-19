@@ -137,7 +137,7 @@ const CategoryCard = ({
       <div
         ref={cardRef}
         className={`group relative flex-shrink-0 w-72 sm:w-80 cursor-pointer snap-start transition-all duration-700 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+          isVisible ? "opacity-100" : "opacity-0"
         }`}
         style={{ transitionDelay: `${index * 100}ms` }}
         onMouseEnter={() => setIsHovered(true)}
@@ -299,6 +299,8 @@ const CategoryCards = () => {
       el.scrollLeft += e.deltaY;
     }
   };
+
+  // Attach wheel handler directly in JSX, no need for useEffect
 
   return (
     <section

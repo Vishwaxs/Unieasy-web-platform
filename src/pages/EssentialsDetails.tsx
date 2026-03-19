@@ -67,7 +67,7 @@ const ItemCard = ({
       <div
         ref={cardRef}
         className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          isVisible ? "opacity-100" : "opacity-0"
         }`}
         style={{ transitionDelay: `${index * 50}ms` }}
       >
