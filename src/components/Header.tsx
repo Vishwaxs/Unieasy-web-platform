@@ -243,7 +243,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
+    <header className="fixed top-0 left-0 right-0 z-[90]">
       {/* Mirror glass navbar */}
       <div className="mirror-header-shell">
         <div className="pointer-events-none absolute inset-0">
