@@ -106,7 +106,10 @@ function NotificationBell() {
       }
     }
     setOpen(false);
-    if (notif.link) navigate(notif.link);
+    if (notif.link) {
+      const link = notif.link.startsWith("/place/") ? "/admin" : notif.link;
+      navigate(link);
+    }
   };
 
   const handleMarkAllRead = async () => {
@@ -120,7 +123,7 @@ function NotificationBell() {
   };
 
   return (
-    <div className="relative z-[70]" ref={dropdownRef}>
+    <div className="relative z-[140]" ref={dropdownRef}>
       <Button
         variant="outline"
         size="icon"
@@ -138,7 +141,7 @@ function NotificationBell() {
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-[80] w-80 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 top-12 z-[160] w-80 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
             <span className="text-sm font-semibold text-foreground">
@@ -243,10 +246,10 @@ const Header = () => {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[90]">
-      {/* Mirror glass navbar */}
+    <header className="fixed top-0 left-0 right-0 z-[120]">
+      {/* Mirror glass header */}
       <div className="mirror-header-shell">
-        <div className="pointer-events-none absolute inset-0">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="mirror-header-overlay" />
           <div className="mirror-header-sheen" />
         </div>
@@ -319,48 +322,50 @@ const Header = () => {
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu Dropdown */}
-      <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          isMobileMenuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="px-4 py-4 space-y-2 bg-background/90 backdrop-blur-xl border-t border-border/60">
-          <SignedIn>
-            <Link
-              to="/profile"
-              className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <User className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground">Profile</span>
-            </Link>
-          </SignedIn>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button
-                className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors w-full text-left"
+        {/* Mobile Menu Dropdown */}
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+            isMobileMenuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="px-4 py-4 space-y-2 bg-background/90 backdrop-blur-xl border-t border-border/60">
+            <SignedIn>
+              <Link
+                to="/profile"
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <LogIn className="w-5 h-5 text-primary" />
-                <span className="font-medium text-foreground">Sign in</span>
-              </button>
-            </SignInButton>
-          </SignedOut>
+                <User className="w-5 h-5 text-primary" />
+                <span className="font-medium text-foreground">Profile</span>
+              </Link>
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors w-full text-left"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <LogIn className="w-5 h-5 text-primary" />
+                  <span className="font-medium text-foreground">Sign in</span>
+                </button>
+              </SignInButton>
+            </SignedOut>
 
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <link.icon className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground">{link.label}</span>
-            </Link>
-          ))}
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <link.icon className="w-5 h-5 text-primary" />
+                <span className="font-medium text-foreground">
+                  {link.label}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </header>

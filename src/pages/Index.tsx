@@ -95,38 +95,49 @@ const Index = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up stagger-2 landing-hero-actions">
-              <Button
-                variant="hero"
-                size="xl"
-                onClick={() => {
-                  if (isSignedIn) {
-                    navigate("/home");
-                  } else {
-                    navigate("/signup");
-                  }
-                }}
-              >
-                Get Started
-              </Button>
-              <Button
-                variant="outline"
-                size="xl"
-                className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                onClick={() => navigate("/home")}
-              >
-                {isSignedIn ? "Explore" : "Explore as Guest"}
-              </Button>
+              {isSignedIn ? (
+                <Button
+                  variant="outline"
+                  size="xl"
+                  className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                  onClick={() => navigate("/home")}
+                >
+                  Explore
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="hero"
+                    size="xl"
+                    onClick={() => {
+                      navigate("/signup");
+                    }}
+                  >
+                    Create Free Account
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="xl"
+                    className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                    onClick={() => navigate("/home")}
+                  >
+                    Explore as Guest
+                  </Button>
+                </>
+              )}
             </div>
 
-            <p className="mt-8 text-sm text-muted-foreground animate-fade-up stagger-3 landing-hero-footnote">
-              Already have an account?{" "}
-              <Link
-                to="/signin"
-                className="text-primary font-medium hover:underline"
-              >
-                Sign in
-              </Link>
-            </p>
+            {!isSignedIn && (
+              <p className="mt-8 text-sm text-muted-foreground animate-fade-up stagger-3 landing-hero-footnote">
+                Already have an account?{" "}
+                <Link
+                  to="/signin"
+                  className="text-primary font-medium hover:underline"
+                >
+                  Sign in
+                </Link>
+              </p>
+            )}
 
             {/* Scroll indicator – inside blurred panel */}
             <div className="mt-5 flex justify-center animate-fade-up stagger-4">

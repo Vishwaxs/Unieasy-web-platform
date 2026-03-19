@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-import { Star, ThumbsUp, ThumbsDown, ShieldCheck, Pencil, Trash2 } from "lucide-react";
+import {
+  Star,
+  ThumbsUp,
+  ThumbsDown,
+  ShieldCheck,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
@@ -13,6 +20,7 @@ import { formatCount } from "@/components/RatingBadge";
 interface ReviewSectionProps {
   placeId: string;
   placeName: string;
+  focusReviewId?: string | null;
 }
 
 type ReviewRow = {
@@ -58,7 +66,9 @@ function Stars({ value }: { value: number }) {
           key={s}
           className={[
             "h-4 w-4",
-            s <= safe ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/40",
+            s <= safe
+              ? "text-yellow-400 fill-yellow-400"
+              : "text-muted-foreground/40",
           ].join(" ")}
         />
       ))}
@@ -66,15 +76,24 @@ function Stars({ value }: { value: number }) {
   );
 }
 
-export default function ReviewSection({ placeId, placeName }: ReviewSectionProps) {
+export default function ReviewSection({
+  placeId,
+  placeName,
+  focusReviewId = null,
+}: ReviewSectionProps) {
   const { user, isSignedIn } = useUser();
   const { getToken } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [highlightedReviewId, setHighlightedReviewId] = useState<string | null>(
+    null,
+  );
 
   // { [reviewId]: "helpful" | "not_helpful" } — persisted per user in localStorage
-  const [helpfulVotes, setHelpfulVotes] = useState<Record<string, "helpful" | "not_helpful">>({});
+  const [helpfulVotes, setHelpfulVotes] = useState<
+    Record<string, "helpful" | "not_helpful">
+  >({});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRating, setSelectedRating] = useState<number>(5);
@@ -129,6 +148,28 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [placeId]);
 
+  useEffect(() => {
+    if (!focusReviewId || reviews.length === 0) return;
+    const targetExists = reviews.some((r) => r.id === focusReviewId);
+    if (!targetExists) return;
+
+    const t = setTimeout(() => {
+      const el = document.getElementById(`review-${focusReviewId}`);
+      if (!el) return;
+      setHighlightedReviewId(focusReviewId);
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(
+        () =>
+          setHighlightedReviewId((curr) =>
+            curr === focusReviewId ? null : curr,
+          ),
+        2400,
+      );
+    }, 160);
+
+    return () => clearTimeout(t);
+  }, [focusReviewId, reviews]);
+
   // Load/save helpful votes from localStorage keyed by userId
   useEffect(() => {
     if (!user?.id) return;
@@ -171,8 +212,15 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
       if (myReview) {
         const res = await fetch(`${API_BASE}/api/reviews/${myReview.id}`, {
           method: "PUT",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ rating: selectedRating, body, is_anonymous: isAnonymous }),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            rating: selectedRating,
+            body,
+            is_anonymous: isAnonymous,
+          }),
         });
         if (!res.ok) {
           const d = await res.json().catch(() => ({}));
@@ -182,8 +230,15 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
       } else {
         const res = await fetch(`${API_BASE}/api/reviews/${placeId}`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ rating: selectedRating, body, is_anonymous: isAnonymous }),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            rating: selectedRating,
+            body,
+            is_anonymous: isAnonymous,
+          }),
         });
         if (!res.ok) {
           const d = await res.json().catch(() => ({}));
@@ -198,7 +253,8 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
       setIsAnonymous(false);
       await fetchReviews();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to submit review";
+      const msg =
+        err instanceof Error ? err.message : "Failed to submit review";
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -223,13 +279,18 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
       setIsEditing(false);
       await fetchReviews();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete review");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete review",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const updateHelpful = async (reviewId: string, type: "helpful" | "not_helpful") => {
+  const updateHelpful = async (
+    reviewId: string,
+    type: "helpful" | "not_helpful",
+  ) => {
     if (!user?.id) {
       toast.error("Sign in to mark reviews as helpful");
       return;
@@ -257,7 +318,10 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
     }
 
     const nextHelpful = Math.max(0, (target.helpful_count ?? 0) + helpfulDelta);
-    const nextNotHelpful = Math.max(0, (target.not_helpful_count ?? 0) + notHelpfulDelta);
+    const nextNotHelpful = Math.max(
+      0,
+      (target.not_helpful_count ?? 0) + notHelpfulDelta,
+    );
 
     // Update localStorage
     const nextVotes = { ...helpfulVotes };
@@ -268,14 +332,23 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
     }
     setHelpfulVotes(nextVotes);
     try {
-      localStorage.setItem(`helpful_votes_${user.id}`, JSON.stringify(nextVotes));
-    } catch { /* ignore storage errors */ }
+      localStorage.setItem(
+        `helpful_votes_${user.id}`,
+        JSON.stringify(nextVotes),
+      );
+    } catch {
+      /* ignore storage errors */
+    }
 
     // Optimistic UI
     setReviews((prev) =>
       prev.map((r) =>
         r.id === reviewId
-          ? { ...r, helpful_count: nextHelpful, not_helpful_count: nextNotHelpful }
+          ? {
+              ...r,
+              helpful_count: nextHelpful,
+              not_helpful_count: nextNotHelpful,
+            }
           : r,
       ),
     );
@@ -287,7 +360,10 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
   };
 
   return (
-    <section id="reviews" className="rounded-2xl border border-border bg-card p-6 scroll-mt-24">
+    <section
+      id="reviews"
+      className="rounded-2xl border border-border bg-card p-6 scroll-mt-24"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div>
           <h3 className="text-lg font-semibold text-foreground">Reviews</h3>
@@ -306,22 +382,27 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
           </div>
 
           {myReview && !isEditing ? (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDelete}
-              disabled={isSubmitting}
-              className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="gap-2"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
           ) : null}
         </div>
       </div>
@@ -345,12 +426,19 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
             {[5, 4, 3, 2, 1].map((star) => {
               const count = ratingSummary.buckets[star] || 0;
               const pct =
-                ratingSummary.total > 0 ? Math.round((count / ratingSummary.total) * 100) : 0;
+                ratingSummary.total > 0
+                  ? Math.round((count / ratingSummary.total) * 100)
+                  : 0;
               return (
                 <div key={star} className="flex items-center gap-2">
-                  <span className="w-6 text-xs text-muted-foreground text-right">{star}★</span>
+                  <span className="w-6 text-xs text-muted-foreground text-right">
+                    {star}★
+                  </span>
                   <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-primary/80 transition-all" style={{ width: `${pct}%` }} />
+                    <div
+                      className="h-full bg-primary/80 transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
                   <span className="w-10 text-right text-xs text-muted-foreground">
                     {pct}%
@@ -375,7 +463,9 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
           </div>
 
           <div className="mb-3">
-            <div className="text-sm font-medium text-foreground mb-1">Rating</div>
+            <div className="text-sm font-medium text-foreground mb-1">
+              Rating
+            </div>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -419,14 +509,21 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
               onChange={(e) => setIsAnonymous(e.target.checked)}
               className="rounded border-border"
             />
-            <label htmlFor="review-anon" className="text-sm text-muted-foreground">
+            <label
+              htmlFor="review-anon"
+              className="text-sm text-muted-foreground"
+            >
               Post anonymously
             </label>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : isEditing ? "Save changes" : "Submit review"}
+              {isSubmitting
+                ? "Submitting..."
+                : isEditing
+                  ? "Save changes"
+                  : "Submit review"}
             </Button>
             <Button
               variant="outline"
@@ -446,7 +543,9 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
 
       {/* List */}
       {loading ? (
-        <div className="text-sm text-muted-foreground py-6 text-center">Loading reviews…</div>
+        <div className="text-sm text-muted-foreground py-6 text-center">
+          Loading reviews…
+        </div>
       ) : reviews.length === 0 ? (
         <div className="text-sm text-muted-foreground py-6 text-center">
           Be the first to review!
@@ -455,24 +554,45 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
         <div className="space-y-4">
           {reviews.map((review) => {
             const isAnon = !!review.is_anonymous;
-            const displayName = isAnon ? "Anonymous Student" : review.app_users?.full_name || "Student";
-            const avatarUrl = isAnon ? null : review.app_users?.avatar_url || null;
+            const displayName = isAnon
+              ? "Anonymous Student"
+              : review.app_users?.full_name || "Student";
+            const avatarUrl = isAnon
+              ? null
+              : review.app_users?.avatar_url || null;
             const initial = (displayName || "S").trim().charAt(0).toUpperCase();
-            const verified = !!review.verified_student || !!review.app_users?.verified_student;
+            const verified =
+              !!review.verified_student || !!review.app_users?.verified_student;
             return (
-              <div key={review.id} className="rounded-xl border border-border bg-background/60 p-4">
+              <div
+                id={`review-${review.id}`}
+                key={review.id}
+                className={`rounded-xl border bg-background/60 p-4 transition-all duration-500 ${
+                  highlightedReviewId === review.id
+                    ? "border-primary ring-2 ring-primary/25"
+                    : "border-border"
+                }`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                       {avatarUrl ? (
-                        <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                        <img
+                          src={avatarUrl}
+                          alt={displayName}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
-                        <span className="text-sm font-semibold text-primary">{initial}</span>
+                        <span className="text-sm font-semibold text-primary">
+                          {initial}
+                        </span>
                       )}
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">{displayName}</span>
+                        <span className="text-sm font-medium text-foreground">
+                          {displayName}
+                        </span>
                         {verified ? (
                           <Badge
                             variant="secondary"
@@ -485,7 +605,9 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
                       </div>
                       <div className="mt-1 flex items-center gap-2">
                         <Stars value={review.rating} />
-                        <span className="text-xs text-muted-foreground">{relativeTime(review.created_at)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {relativeTime(review.created_at)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -509,27 +631,33 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
                             myVote === "helpful"
                               ? "text-green-500 font-medium"
                               : myVote === "not_helpful"
-                              ? "opacity-30 cursor-not-allowed"
-                              : "text-muted-foreground hover:text-green-600",
+                                ? "opacity-30 cursor-not-allowed"
+                                : "text-muted-foreground hover:text-green-600",
                           ].join(" ")}
                         >
-                          <ThumbsUp className={`w-3.5 h-3.5 ${myVote === "helpful" ? "fill-green-500" : ""}`} />
+                          <ThumbsUp
+                            className={`w-3.5 h-3.5 ${myVote === "helpful" ? "fill-green-500" : ""}`}
+                          />
                           Helpful ({review.helpful_count ?? 0})
                         </button>
                         <button
                           type="button"
-                          onClick={() => updateHelpful(review.id, "not_helpful")}
+                          onClick={() =>
+                            updateHelpful(review.id, "not_helpful")
+                          }
                           disabled={myVote === "helpful"}
                           className={[
                             "flex items-center gap-1 text-xs transition-colors",
                             myVote === "not_helpful"
                               ? "text-red-500 font-medium"
                               : myVote === "helpful"
-                              ? "opacity-30 cursor-not-allowed"
-                              : "text-muted-foreground hover:text-red-500",
+                                ? "opacity-30 cursor-not-allowed"
+                                : "text-muted-foreground hover:text-red-500",
                           ].join(" ")}
                         >
-                          <ThumbsDown className={`w-3.5 h-3.5 ${myVote === "not_helpful" ? "fill-red-500" : ""}`} />
+                          <ThumbsDown
+                            className={`w-3.5 h-3.5 ${myVote === "not_helpful" ? "fill-red-500" : ""}`}
+                          />
                           Not helpful ({review.not_helpful_count ?? 0})
                         </button>
                       </>
@@ -560,7 +688,9 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
 
       {!isSignedIn ? (
         <div className="mt-5 rounded-xl border border-border bg-muted/30 p-4 text-center">
-          <p className="text-sm font-medium text-foreground mb-1">Have you been here?</p>
+          <p className="text-sm font-medium text-foreground mb-1">
+            Have you been here?
+          </p>
           <p className="text-xs text-muted-foreground mb-3">
             Sign in to share your experience and help fellow students.
           </p>

@@ -36,6 +36,7 @@ const PlaceItemDetails = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const { data: place, isLoading, isError } = usePlaceDetail(id);
+  const focusReviewId = new URLSearchParams(location.search).get("reviewId");
 
   useEffect(() => {
     if (location.hash === "#reviews" && place) {
@@ -356,7 +357,11 @@ const PlaceItemDetails = () => {
                   terrible: place.sentiment_terrible ?? 0,
                 }}
               />
-              <ReviewSection placeId={place.id} placeName={place.name} />
+              <ReviewSection
+                placeId={place.id}
+                placeName={place.name}
+                focusReviewId={focusReviewId}
+              />
             </>
           )}
         </div>

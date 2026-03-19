@@ -6,7 +6,10 @@ import { Router } from "express";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import { verifyClerkToken } from "./middleware/verifyClerkToken.js";
 import { isStudentEmail } from "./middleware/verifyStudent.js";
-import { notifyAdminEmails, insertAdminNotifications } from "./lib/emailService.js";
+import {
+  notifyAdminEmails,
+  insertAdminNotifications,
+} from "./lib/emailService.js";
 import logger from "./lib/logger.js";
 import { z } from "zod";
 
@@ -28,6 +31,22 @@ const reviewUpdateSchema = z.object({
 
 const placeIdSchema = z.string().uuid();
 const reviewIdSchema = z.string().uuid();
+
+function getPlaceDetailPath(place, placeId) {
+  if (
+    place?.is_on_campus ||
+    place?.category === "campus" ||
+    place?.category === "oncampus"
+  ) {
+    return `/campus/${placeId}`;
+  }
+  if (place?.category === "food") return `/food/${placeId}`;
+  if (place?.category === "accommodation") return `/accommodation/${placeId}`;
+  if (place?.category === "study") return `/study/${placeId}`;
+  if (place?.category === "explore" || place?.category === "hangout")
+    return `/explore/${placeId}`;
+  return `/essentials/${placeId}`;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET /api/reviews/:placeId — fetch reviews for a place (paginated)
@@ -152,7 +171,9 @@ router.post("/reviews/:placeId", verifyClerkToken(), async (req, res) => {
 
     if (insertErr) {
       if (insertErr.code === "23505") {
-        return res.status(409).json({ error: "You have already reviewed this place" });
+        return res
+          .status(409)
+          .json({ error: "You have already reviewed this place" });
       }
       logger.error({ err: insertErr }, "POST /reviews insert error");
       return res.status(500).json({ error: insertErr.message });
@@ -165,18 +186,27 @@ router.post("/reviews/:placeId", verifyClerkToken(), async (req, res) => {
     try {
       const { data: placeInfo } = await supabaseAdmin
         .from("places")
-        .select("name")
+        .select("name, category, is_on_campus")
         .eq("id", placeId)
         .single();
       const placeName = placeInfo?.name || "Unknown Place";
+      const detailPath = getPlaceDetailPath(placeInfo, placeId);
+      const reviewLink = `${detailPath}?reviewId=${review.id}#reviews`;
       notifyAdminEmails("new_review", {
-        placeName, rating, body,
+        placeName,
+        rating,
+        body,
       });
-      insertAdminNotifications("new_review",
+      insertAdminNotifications(
+        "new_review",
         `New review for ${placeName}`,
-        `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)} — ${body.slice(0, 80)}`,
-        `/place/${placeId}`, { reviewId: review.id, placeId });
-    } catch (_) { /* non-blocking */ }
+        `${"★".repeat(rating)}${"☆".repeat(5 - rating)} — ${body.slice(0, 80)}`,
+        reviewLink,
+        { reviewId: review.id, placeId },
+      );
+    } catch (_) {
+      /* non-blocking */
+    }
 
     logger.info({ placeId, clerkUserId }, "Review created");
     return res.status(201).json(review);
@@ -221,11 +251,15 @@ router.put("/reviews/:reviewId", verifyClerkToken(), async (req, res) => {
     }
 
     if (existing.clerk_user_id !== clerkUserId) {
-      return res.status(403).json({ error: "You can only edit your own reviews" });
+      return res
+        .status(403)
+        .json({ error: "You can only edit your own reviews" });
     }
 
     if (existing.status !== "active") {
-      return res.status(400).json({ error: "Cannot edit a deleted or flagged review" });
+      return res
+        .status(400)
+        .json({ error: "Cannot edit a deleted or flagged review" });
     }
 
     const { data: updated, error: updateErr } = await supabaseAdmin
@@ -281,7 +315,9 @@ router.delete("/reviews/:reviewId", verifyClerkToken(), async (req, res) => {
     const isSelf = existing.clerk_user_id === clerkUserId;
     const isAdmin = ["admin", "superadmin"].includes(userRole);
     if (!isSelf && !isAdmin) {
-      return res.status(403).json({ error: "You can only delete your own reviews" });
+      return res
+        .status(403)
+        .json({ error: "You can only delete your own reviews" });
     }
 
     const status = isSelf ? "deleted_by_user" : "deleted_by_admin";
@@ -314,13 +350,21 @@ router.delete("/reviews/:reviewId", verifyClerkToken(), async (req, res) => {
 // POST /api/reviews/:reviewId/not-helpful — increment not_helpful_count
 // ═══════════════════════════════════════════════════════════════════════════════
 
-router.post("/reviews/:reviewId/helpful", verifyClerkToken(), async (req, res) => {
-  return handleHelpfulness(req, res, "helpful_count");
-});
+router.post(
+  "/reviews/:reviewId/helpful",
+  verifyClerkToken(),
+  async (req, res) => {
+    return handleHelpfulness(req, res, "helpful_count");
+  },
+);
 
-router.post("/reviews/:reviewId/not-helpful", verifyClerkToken(), async (req, res) => {
-  return handleHelpfulness(req, res, "not_helpful_count");
-});
+router.post(
+  "/reviews/:reviewId/not-helpful",
+  verifyClerkToken(),
+  async (req, res) => {
+    return handleHelpfulness(req, res, "not_helpful_count");
+  },
+);
 
 async function handleHelpfulness(req, res, column) {
   const parsed = reviewIdSchema.safeParse(req.params.reviewId);
@@ -373,9 +417,12 @@ async function updatePlaceReviewAggregates(placeId) {
     if (error || !data) return;
 
     const count = data.length;
-    const avg = count > 0
-      ? parseFloat((data.reduce((sum, r) => sum + r.rating, 0) / count).toFixed(1))
-      : 0;
+    const avg =
+      count > 0
+        ? parseFloat(
+            (data.reduce((sum, r) => sum + r.rating, 0) / count).toFixed(1),
+          )
+        : 0;
 
     await supabaseAdmin
       .from("places")
