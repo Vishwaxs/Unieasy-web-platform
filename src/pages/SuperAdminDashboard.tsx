@@ -148,8 +148,22 @@ const OverviewTab = ({ getToken }: { getToken: GetTokenFn }) => {
 
   if (loading || !stats) {
     return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between animate-pulse">
+                  <div>
+                    <div className="h-3 w-16 bg-muted rounded mb-2" />
+                    <div className="h-7 w-12 bg-muted rounded" />
+                  </div>
+                  <div className="w-8 h-8 bg-muted rounded-lg" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -168,15 +182,23 @@ const OverviewTab = ({ getToken }: { getToken: GetTokenFn }) => {
 
   return (
     <div className="space-y-6">
+      {/* Header with refresh */}
+      <div className="flex items-center justify-end">
+        <Button variant="outline" size="sm" onClick={fetchData} className="gap-1.5">
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </Button>
+      </div>
+
       {/* Stat Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
-        {statCards.map((stat) => (
-          <Card key={stat.label}>
+        {statCards.map((stat, idx) => (
+          <Card key={stat.label} className="transition-all duration-500 ease-out" style={{ animationDelay: `${idx * 60}ms` }}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold text-foreground">{(stat.value ?? 0).toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-foreground tabular-nums transition-all duration-300">{(stat.value ?? 0).toLocaleString()}</p>
                 </div>
                 <stat.icon className={`w-8 h-8 ${stat.color} opacity-80`} />
               </div>

@@ -35,50 +35,38 @@ router.get(
   verifyClerkToken(["superadmin"]),
   async (req, res) => {
     try {
-      // Try to get from the view first
-      const { data, error } = await supabaseAdmin
-        .from("superadmin_stats")
-        .select("*")
-        .single();
+      // Always use direct aggregation for fresh, accurate stats
+      const [usersRes, placesRes, reviewsRes, adsRes] = await Promise.all([
+        supabaseAdmin.from("app_users").select("role, is_suspended, created_at"),
+        supabaseAdmin.from("places").select("id"),
+        supabaseAdmin.from("reviews").select("id, created_at"),
+        supabaseAdmin.from("ads").select("status"),
+      ]);
 
-      if (error) {
-        // Fallback to manual aggregation if view doesn't exist
-        logger.warn({ err: error }, "superadmin_stats view failed, using fallback");
+      const users = usersRes.data || [];
+      const places = placesRes.data || [];
+      const reviews = reviewsRes.data || [];
+      const ads = adsRes.data || [];
 
-        const [usersRes, placesRes, reviewsRes, adsRes] = await Promise.all([
-          supabaseAdmin.from("app_users").select("role, is_suspended, created_at"),
-          supabaseAdmin.from("places").select("id"),
-          supabaseAdmin.from("reviews").select("id, created_at"),
-          supabaseAdmin.from("ads").select("status"),
-        ]);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const users = usersRes.data || [];
-        const places = placesRes.data || [];
-        const reviews = reviewsRes.data || [];
-        const ads = adsRes.data || [];
+      const stats = {
+        total_users: users.length,
+        students: users.filter(u => u.role === "student").length,
+        merchants: users.filter(u => u.role === "merchant").length,
+        admins: users.filter(u => u.role === "admin").length,
+        superadmins: users.filter(u => u.role === "superadmin").length,
+        suspended_users: users.filter(u => u.is_suspended).length,
+        total_places: places.length,
+        total_reviews: reviews.length,
+        pending_ads: ads.filter(a => a.status === "pending").length,
+        active_ads: ads.filter(a => a.status === "active").length,
+        new_users_7d: users.filter(u => new Date(u.created_at) >= sevenDaysAgo).length,
+        new_reviews_7d: reviews.filter(r => new Date(r.created_at) >= sevenDaysAgo).length,
+      };
 
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-        const stats = {
-          total_users: users.length,
-          students: users.filter(u => u.role === "student").length,
-          merchants: users.filter(u => u.role === "merchant").length,
-          admins: users.filter(u => u.role === "admin").length,
-          superadmins: users.filter(u => u.role === "superadmin").length,
-          suspended_users: users.filter(u => u.is_suspended).length,
-          total_places: places.length,
-          total_reviews: reviews.length,
-          pending_ads: ads.filter(a => a.status === "pending").length,
-          active_ads: ads.filter(a => a.status === "active").length,
-          new_users_7d: users.filter(u => new Date(u.created_at) >= sevenDaysAgo).length,
-          new_reviews_7d: reviews.filter(r => new Date(r.created_at) >= sevenDaysAgo).length,
-        };
-
-        return res.json(stats);
-      }
-
-      return res.json(data);
+      return res.json(stats);
     } catch (err) {
       logger.error({ err }, "GET /stats unexpected");
       return res.status(500).json({ error: "Internal server error" });

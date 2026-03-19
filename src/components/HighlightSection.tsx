@@ -90,29 +90,14 @@ const HighlightSection = () => {
   }, []);
 
   const slides: Slide[] = useMemo(() => {
-    const base: Slide[] = staticHighlights.map((s) => ({ kind: "static", ...s }));
     const sponsored: Slide[] = (ads ?? [])
       .filter((a) => a && a.id && a.image_url)
       .map((a) => ({ kind: "ad", ...a }));
 
-    // Mix ads into the highlights (every other slide), keeping all static slides.
-    if (sponsored.length === 0) return base;
+    // Show ONLY real ads when they exist; fall back to static images only when zero ads
+    if (sponsored.length > 0) return sponsored;
 
-    const mixed: Slide[] = [];
-    let adIdx = 0;
-    for (let i = 0; i < base.length; i++) {
-      mixed.push(base[i]);
-      if (adIdx < sponsored.length) {
-        mixed.push(sponsored[adIdx]);
-        adIdx += 1;
-      }
-    }
-    // If we still have ads, append them.
-    while (adIdx < sponsored.length) {
-      mixed.push(sponsored[adIdx]);
-      adIdx += 1;
-    }
-    return mixed;
+    return staticHighlights.map((s) => ({ kind: "static", ...s }));
   }, [ads]);
 
   useEffect(() => {

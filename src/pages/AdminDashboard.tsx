@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Eye,
   Pause,
+  Play,
   Users,
   ShieldAlert,
   ShieldCheck,
@@ -342,6 +343,20 @@ const AllAdsTab = ({ getToken }: { getToken: GetTokenFn }) => {
     }
   };
 
+  const handleResume = async (adId: string) => {
+    setActionLoading(adId);
+    try {
+      await adminFetch(getToken, `/ads/${adId}/resume`, { method: "POST" });
+      toast.success("Ad resumed");
+      setAds((prev) => prev.map((a) => a.id === adId ? { ...a, status: "active" } : a));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Failed: " + message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleDelete = async (adId: string) => {
     if (!confirm("Are you sure you want to delete this ad? This cannot be undone.")) return;
     setActionLoading(adId);
@@ -442,6 +457,18 @@ const AllAdsTab = ({ getToken }: { getToken: GetTokenFn }) => {
                             title="Pause"
                           >
                             <Pause className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {ad.status === "paused" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleResume(ad.id)}
+                            disabled={actionLoading === ad.id}
+                            title="Resume"
+                            className="text-green-500 hover:bg-green-500/10"
+                          >
+                            <Play className="w-4 h-4" />
                           </Button>
                         )}
                         <Button

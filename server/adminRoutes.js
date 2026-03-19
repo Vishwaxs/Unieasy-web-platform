@@ -252,6 +252,41 @@ router.post(
 );
 
 /**
+ * POST /api/admin/ads/:id/resume
+ * Sets a paused ad status back to 'active'.
+ */
+router.post(
+  "/ads/:id/resume",
+  verifyClerkToken(["admin", "superadmin"]),
+  async (req, res) => {
+    const adId = req.params.id;
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("ads")
+        .update({ status: "active" })
+        .eq("id", adId)
+        .eq("status", "paused")
+        .select()
+        .single();
+
+      if (error) {
+        logger.error({ err: error, adId }, "POST /ads/:id/resume");
+        return res.status(500).json({ error: error.message });
+      }
+
+      await auditLog(req.clerkUserId, req.userRole, "resume_ad", "ad", adId, {
+        new_status: "active",
+      });
+
+      return res.json({ message: "Ad resumed", ad: data });
+    } catch (err) {
+      logger.error({ err }, "POST /ads/:id/resume unexpected");
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+/**
  * DELETE /api/admin/ads/:id
  * Hard-delete an ad.
  */
