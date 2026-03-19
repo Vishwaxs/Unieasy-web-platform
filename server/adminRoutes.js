@@ -1335,7 +1335,7 @@ router.post(
       return res.status(400).json({ error: "name is required" });
     }
 
-    const insert = { category: "campus", is_on_campus: true, data_source: "manual" };
+    const insert = { category: "campus", is_on_campus: true, data_source: "manual", lat: 0, lng: 0 };
     for (const field of CAMPUS_WRITABLE_FIELDS) {
       if (body[field] !== undefined) insert[field] = body[field];
     }

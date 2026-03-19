@@ -213,13 +213,20 @@ const Header = () => {
   // Show back on every page except the root landing page
   const showBack = location.pathname !== "/";
 
+  // Category listing pages — back should land on home at the category section
+  const CATEGORY_PATHS = new Set([
+    "/food", "/accommodation", "/explore", "/study", "/essentials", "/campus",
+  ]);
+
   const handleBack = () => {
-    // If there is browser history, go back; otherwise fallback to Home.
+    if (CATEGORY_PATHS.has(location.pathname)) {
+      navigate("/home", { state: { scrollTo: "category-cards" } });
+      return;
+    }
     if (window.history.length > 1) {
       navigate(-1);
       return;
     }
-
     navigate("/home");
   };
 
