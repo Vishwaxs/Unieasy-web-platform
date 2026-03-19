@@ -28,17 +28,6 @@ const EXPLORE_FILTER_GROUPS = [
       { value: "Museum", label: "Museum" },
       { value: "Gallery", label: "Gallery" },
       { value: "Attraction", label: "Attraction" },
-      { value: "Bar", label: "Bar" },
-    ],
-  },
-  {
-    key: "crowd",
-    label: "Crowd Level",
-    options: [
-      { value: "all", label: "Any" },
-      { value: "Low", label: "Low" },
-      { value: "Medium", label: "Medium" },
-      { value: "High", label: "High" },
     ],
   },
 ];
@@ -177,25 +166,23 @@ const PlaceCard = ({
 };
 
 const ExploreDetails = () => {
-  const [filters, setFilters] = useState<FilterState>({ type: "all", crowd: "all" });
+  const [filters, setFilters] = useState<FilterState>({ type: "all" });
   const [sort, setSort] = useState("default");
   const { items: places, loading } = useExplorePlaces();
 
   const filteredItems = useMemo(() => {
     let result = places.filter((item) => {
-      // Client-side type filter (compares against the mapped sub_type → type field)
       const typeVal = filters.type as string;
       if (typeVal !== "all" && item.type.toLowerCase() !== typeVal.toLowerCase()) return false;
-
-      const crowdVal = filters.crowd as string;
-      if (crowdVal !== "all" && item.crowd !== crowdVal) return false;
-
       return true;
     });
 
     result = [...result].sort((a, b) => {
       if (sort === "rating") return b.rating - a.rating;
-      return 0;
+      // Relevance: weighted score of rating × log(reviews+1)
+      const scoreB = b.rating * Math.log(b.reviews + 1);
+      const scoreA = a.rating * Math.log(a.reviews + 1);
+      return scoreB - scoreA;
     });
 
     return result;
@@ -248,7 +235,7 @@ const ExploreDetails = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setFilters({ type: "all", crowd: "all" });
+                  setFilters({ type: "all" });
                   setSort("default");
                 }}
               >

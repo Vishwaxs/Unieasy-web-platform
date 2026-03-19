@@ -6,8 +6,10 @@ export interface FoodItem {
   name: string;
   restaurant: string;
   address: string | null;
-  /** Estimated price for two (INR) — used for sorting and filtering */
+  /** Estimated price for two (INR) — midpoint, used for sorting */
   price: number;
+  /** Lower bound of the estimated price range — used for filter bucketing */
+  price_lo: number;
   /** Human-readable price label, e.g. "₹300–₹500 for two" */
   display_price_label?: string;
   rating: number;
@@ -94,8 +96,9 @@ function estimatePriceForTwo(
   priceLevel: number,
   type: string,
   cuisineTags: string[],
-): { midpoint: number; label: string } {
-  if (priceLevel === 0) return { midpoint: 0, label: "Free" };
+): { midpoint: number; label: string; lo: number } {
+  // price_level 0 means Google has no pricing data — treat as inexpensive
+  const level = priceLevel === 0 ? 1 : priceLevel;
 
   // Base [low, high] for each level
   const BASE: Record<number, [number, number]> = {
@@ -105,7 +108,7 @@ function estimatePriceForTwo(
     4: [1500, 3000],
   };
 
-  let [lo, hi] = BASE[priceLevel] ?? [300, 600];
+  let [lo, hi] = BASE[level] ?? [300, 600];
 
   // ── Type-based shift ───────────────────────────────────────────────────────
   const t = type.toLowerCase();
@@ -144,7 +147,7 @@ function estimatePriceForTwo(
   const midpoint = Math.round((lo + hi) / 2);
   const label = lo === hi ? `₹${lo} for two` : `₹${lo}–₹${hi} for two`;
 
-  return { midpoint, label };
+  return { midpoint, label, lo };
 }
 
 /**
@@ -174,6 +177,7 @@ function placeToFoodItem(place: Record<string, unknown>): FoodItem {
     restaurant: dist ? `${dist} from campus` : locality,
     address: (place.address as string) || null,
     price,
+    price_lo: est.lo,
     display_price_label,
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,

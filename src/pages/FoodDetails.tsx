@@ -187,12 +187,14 @@ const FoodDetails = () => {
         if (item.rating < min) return false;
       }
 
-      // Price filter (price for two)
+      // Price filter: bucket by price_lo (label's lower bound) so a card showing
+      // "₹255–₹510" falls in "Under ₹300", not "₹300–₹600"
       const price = filters.price as string;
-      if (price === "0-300" && item.price > 300) return false;
-      if (price === "300-600" && (item.price < 300 || item.price > 600)) return false;
-      if (price === "600-1200" && (item.price < 600 || item.price > 1200)) return false;
-      if (price === "1200+" && item.price < 1200) return false;
+      const lo = item.price_lo ?? item.price;
+      if (price === "0-300" && lo >= 300) return false;
+      if (price === "300-600" && (lo < 300 || lo >= 600)) return false;
+      if (price === "600-1200" && (lo < 600 || lo >= 1200)) return false;
+      if (price === "1200+" && lo < 1200) return false;
 
       return true;
     });
