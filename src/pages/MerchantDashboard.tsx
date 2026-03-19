@@ -181,7 +181,7 @@ const MerchantDashboard = () => {
       setLoadingNotifications(true);
       const { data } = await supabase
         .from("notifications")
-        .select("*")
+        .select("id, title, body, type, is_read, created_at")
         .eq("clerk_user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(20);

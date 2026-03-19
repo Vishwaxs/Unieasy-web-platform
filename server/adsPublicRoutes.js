@@ -17,6 +17,7 @@ router.get("/ads/active", async (_req, res) => {
       .from("ads")
       .select("id, title, description, image_url, target_location")
       .eq("status", "active")
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
       .order("approved_at", { ascending: false })
       .limit(10);
 

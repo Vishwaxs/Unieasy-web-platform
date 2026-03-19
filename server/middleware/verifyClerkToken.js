@@ -54,13 +54,18 @@ export function verifyClerkToken(allowedRoles = []) {
       // Look up role in Supabase
       const { data: userRow, error: dbError } = await supabaseAdmin
         .from("app_users")
-        .select("role")
+        .select("role, is_suspended")
         .eq("clerk_user_id", clerkUserId)
         .single();
 
       if (dbError || !userRow) {
         logger.error({ err: dbError }, "User not found in app_users");
         return res.status(403).json({ error: "User not found in database" });
+      }
+
+      // Item #13: Suspended user check
+      if (userRow.is_suspended) {
+        return res.status(403).json({ error: "Your account has been suspended. Contact support." });
       }
 
       const role = userRow.role || "student";

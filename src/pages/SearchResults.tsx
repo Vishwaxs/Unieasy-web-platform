@@ -237,6 +237,11 @@ const ResultCard = ({ item }: { item: SearchResult }) => (
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         referrerPolicy="no-referrer-when-downgrade"
         loading="lazy"
+        onError={(e) => {
+          const catKey = item.is_on_campus || item.category === "oncampus" ? "campus" : item.category;
+          const pool = FALLBACKS[catKey] ?? FALLBACKS.default;
+          (e.target as HTMLImageElement).src = pool[0];
+        }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <Badge className="absolute top-3 left-3 bg-primary text-xs">

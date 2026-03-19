@@ -984,7 +984,7 @@ const SuperAdminDashboard = () => {
           </div>
 
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
+            <TabsList className="flex flex-nowrap overflow-x-auto h-auto gap-1 bg-muted/50 p-1">
               <TabsTrigger value="overview" className="flex-1 min-w-[100px]">
                 Overview
               </TabsTrigger>
