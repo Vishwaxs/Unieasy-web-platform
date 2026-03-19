@@ -114,7 +114,7 @@ const Index = () => {
                 className="bg-background/50 backdrop-blur-sm border-border/60 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
                 onClick={() => navigate("/home")}
               >
-                Explore as Guest
+                {isSignedIn ? "Explore" : "Explore as Guest"}
               </Button>
             </div>
 

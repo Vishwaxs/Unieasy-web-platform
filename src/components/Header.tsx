@@ -244,7 +244,7 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      {/* Mirror glass header */}
+      {/* Mirror glass navbar */}
       <div className="mirror-header-shell">
         <div className="pointer-events-none absolute inset-0">
           <div className="mirror-header-overlay" />
@@ -319,50 +319,48 @@ const Header = () => {
             </Button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Menu Dropdown */}
-        <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            isMobileMenuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <div className="px-4 py-4 space-y-2 bg-background/90 backdrop-blur-xl border-t border-border/60">
-            <SignedIn>
-              <Link
-                to="/profile"
-                className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
+      {/* Mobile Menu Dropdown */}
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          isMobileMenuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-4 py-4 space-y-2 bg-background/90 backdrop-blur-xl border-t border-border/60">
+          <SignedIn>
+            <Link
+              to="/profile"
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <User className="w-5 h-5 text-primary" />
+              <span className="font-medium text-foreground">Profile</span>
+            </Link>
+          </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors w-full text-left"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <User className="w-5 h-5 text-primary" />
-                <span className="font-medium text-foreground">Profile</span>
-              </Link>
-            </SignedIn>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors w-full text-left"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <LogIn className="w-5 h-5 text-primary" />
-                  <span className="font-medium text-foreground">Sign in</span>
-                </button>
-              </SignInButton>
-            </SignedOut>
+                <LogIn className="w-5 h-5 text-primary" />
+                <span className="font-medium text-foreground">Sign in</span>
+              </button>
+            </SignInButton>
+          </SignedOut>
 
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <link.icon className="w-5 h-5 text-primary" />
-                <span className="font-medium text-foreground">
-                  {link.label}
-                </span>
-              </Link>
-            ))}
-          </div>
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/15 transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <link.icon className="w-5 h-5 text-primary" />
+              <span className="font-medium text-foreground">{link.label}</span>
+            </Link>
+          ))}
         </div>
       </div>
     </header>
