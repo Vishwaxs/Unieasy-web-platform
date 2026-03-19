@@ -180,6 +180,63 @@ router.get("/places/search", listLimiter, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// GET /api/places/photo?ref=<resource_name>&maxwidth=800
+// Proxies a Google Places photo from the resource name stored in photo_refs[].ref
+// Must be registered BEFORE /places/:id to avoid Express param conflict.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const GOOGLE_PHOTO_CACHE_MAX_AGE = 24 * 60 * 60; // 24 hours
+
+router.get("/places/photo", photoLimiter, async (req, res) => {
+  const { ref, maxwidth = "800" } = req.query;
+
+  if (!ref || typeof ref !== "string") {
+    return res.status(400).json({ error: "ref query param required" });
+  }
+
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({ error: "Google API key not configured" });
+  }
+
+  try {
+    // Google Places Photo (New API):
+    // GET https://places.googleapis.com/v1/{name}/media?maxWidthPx=N&skipHttpRedirect=true&key=KEY
+    const photoUrl = `https://places.googleapis.com/v1/${ref}/media?maxWidthPx=${maxwidth}&skipHttpRedirect=true&key=${apiKey}`;
+
+    const googleRes = await fetch(photoUrl);
+    if (!googleRes.ok) {
+      logger.warn({ ref, status: googleRes.status }, "Google Photo ref proxy error");
+      return res.status(googleRes.status).json({ error: "Photo fetch failed" });
+    }
+
+    const photoData = await googleRes.json();
+    const imageUrl = photoData.photoUri;
+
+    if (!imageUrl) {
+      return res.status(502).json({ error: "No photoUri in Google response" });
+    }
+
+    // Fetch the actual image
+    const imageRes = await fetch(imageUrl);
+    if (!imageRes.ok) {
+      return res.status(502).json({ error: "Failed to stream photo" });
+    }
+
+    const contentType = imageRes.headers.get("content-type") || "image/jpeg";
+    res.set("Content-Type", contentType);
+    res.set("Cache-Control", `public, max-age=${GOOGLE_PHOTO_CACHE_MAX_AGE}`);
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
+
+    const arrayBuffer = await imageRes.arrayBuffer();
+    return res.send(Buffer.from(arrayBuffer));
+  } catch (err) {
+    logger.error({ err, ref }, "GET /places/photo proxy error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // GET /api/places/:id — Single place with optional live Google fetch
 // ═══════════════════════════════════════════════════════════════════════════════
 
