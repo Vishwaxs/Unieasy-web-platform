@@ -65,7 +65,9 @@ function placeToExplorePlace(place: Record<string, unknown>): ExplorePlace {
     timing,
     crowd,
     image,
-    comment: (place.description as string) || (place.address as string) || "",
+    comment: (place.description as string)
+      || (place.timing as string)
+      || "Popular spot near campus",
     lat: typeof place.lat === "number" ? place.lat : undefined,
     lng: typeof place.lng === "number" ? place.lng : undefined,
   };
