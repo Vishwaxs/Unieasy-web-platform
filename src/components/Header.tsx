@@ -204,7 +204,7 @@ const Header = () => {
           <div className="mirror-header-overlay" />
           <div className="mirror-header-sheen" />
         </div>
-        <div className="relative w-full px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+        <div className="relative w-full px-4 md:px-6 flex items-center justify-between pt-5 pb-3 md:pt-6 md:pb-4">
           <div className="flex items-center gap-2">
             {showBack && (
               <Button
@@ -218,7 +218,7 @@ const Header = () => {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             )}
-            <Logo imgClassName="h-[5.25rem] md:h-24 w-auto" />
+            <Logo imgClassName="h-12 md:h-14 w-auto" />
           </div>
           
           {/* Desktop Navigation */}
@@ -322,3 +322,4 @@ const Header = () => {
 };
 
 export default Header;
+

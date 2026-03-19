@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { Star, ThumbsUp, ThumbsDown, ShieldCheck, Pencil } from "lucide-react";
+import { Star, ThumbsUp, ThumbsDown, ShieldCheck, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
@@ -70,6 +70,9 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
 
+  // { [reviewId]: "helpful" | "not_helpful" } — persisted per user in localStorage
+  const [helpfulVotes, setHelpfulVotes] = useState<Record<string, "helpful" | "not_helpful">>({});
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRating, setSelectedRating] = useState<number>(5);
   const [reviewText, setReviewText] = useState("");
@@ -122,6 +125,17 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
     fetchReviews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [placeId]);
+
+  // Load/save helpful votes from localStorage keyed by userId
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const raw = localStorage.getItem(`helpful_votes_${user.id}`);
+      setHelpfulVotes(raw ? JSON.parse(raw) : {});
+    } catch {
+      setHelpfulVotes({});
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (myReview && isEditing) {
@@ -185,14 +199,68 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
     }
   };
 
+  const handleDelete = async () => {
+    if (!myReview) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("reviews")
+        .update({ status: "deleted" })
+        .eq("id", myReview.id);
+      if (error) throw new Error(error.message);
+      toast.success("Review deleted");
+      setIsEditing(false);
+      await fetchReviews();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete review");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const updateHelpful = async (reviewId: string, type: "helpful" | "not_helpful") => {
+    if (!user?.id) {
+      toast.error("Sign in to mark reviews as helpful");
+      return;
+    }
     const target = reviews.find((r) => r.id === reviewId);
     if (!target) return;
 
-    const nextHelpful = (target.helpful_count ?? 0) + (type === "helpful" ? 1 : 0);
-    const nextNotHelpful =
-      (target.not_helpful_count ?? 0) + (type === "not_helpful" ? 1 : 0);
+    const existing = helpfulVotes[reviewId]; // what the user voted before, if anything
 
+    // Compute count deltas
+    let helpfulDelta = 0;
+    let notHelpfulDelta = 0;
+
+    if (existing === type) {
+      // Toggle off — remove vote
+      if (type === "helpful") helpfulDelta = -1;
+      else notHelpfulDelta = -1;
+    } else {
+      // Add new vote
+      if (type === "helpful") helpfulDelta = 1;
+      else notHelpfulDelta = 1;
+      // Also undo the previous opposite vote
+      if (existing === "helpful") helpfulDelta -= 1;
+      if (existing === "not_helpful") notHelpfulDelta -= 1;
+    }
+
+    const nextHelpful = Math.max(0, (target.helpful_count ?? 0) + helpfulDelta);
+    const nextNotHelpful = Math.max(0, (target.not_helpful_count ?? 0) + notHelpfulDelta);
+
+    // Update localStorage
+    const nextVotes = { ...helpfulVotes };
+    if (existing === type) {
+      delete nextVotes[reviewId]; // toggled off
+    } else {
+      nextVotes[reviewId] = type;
+    }
+    setHelpfulVotes(nextVotes);
+    try {
+      localStorage.setItem(`helpful_votes_${user.id}`, JSON.stringify(nextVotes));
+    } catch { /* ignore storage errors */ }
+
+    // Optimistic UI
     setReviews((prev) =>
       prev.map((r) =>
         r.id === reviewId
@@ -203,10 +271,7 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
 
     await supabase
       .from("reviews")
-      .update({
-        helpful_count: nextHelpful,
-        not_helpful_count: nextNotHelpful,
-      })
+      .update({ helpful_count: nextHelpful, not_helpful_count: nextNotHelpful })
       .eq("id", reviewId);
   };
 
@@ -220,41 +285,65 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
           </p>
         </div>
 
-        {myReview && !isEditing ? (
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {/* Total review count */}
+          <div className="text-right">
+            <div className="text-2xl font-bold text-foreground leading-none">
+              {String(ratingSummary.total).padStart(2, "0")}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">Reviews</div>
+          </div>
+
+          {myReview && !isEditing ? (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+              className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Rating summary */}
       <div className="mb-6 rounded-xl border border-border bg-background/60 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+          {/* Left: avg score */}
+          <div className="flex flex-col items-center gap-1 min-w-[80px]">
             <div className="text-4xl font-bold text-foreground leading-none">
               {ratingSummary.total > 0 ? ratingSummary.avg.toFixed(1) : "—"}
             </div>
-            <div className="space-y-1">
-              <Stars value={ratingSummary.avg} />
-              <div className="inline-flex items-center rounded-xl bg-[#1a7340] px-3 py-1 text-white text-xs shadow-md">
-                {formatCount(ratingSummary.total)} reviews
-              </div>
+            <Stars value={ratingSummary.avg} />
+            <div className="inline-flex items-center rounded-xl bg-[#1a7340] px-3 py-1 text-white text-xs shadow-md">
+              {formatCount(ratingSummary.total)} reviews
             </div>
           </div>
 
-          <div className="flex-1 space-y-1 max-w-md">
+          {/* Right: bars */}
+          <div className="flex-1 space-y-1.5">
             {[5, 4, 3, 2, 1].map((star) => {
               const count = ratingSummary.buckets[star] || 0;
               const pct =
                 ratingSummary.total > 0 ? Math.round((count / ratingSummary.total) * 100) : 0;
               return (
                 <div key={star} className="flex items-center gap-2">
-                  <span className="w-10 text-xs text-muted-foreground">{star}★</span>
+                  <span className="w-6 text-xs text-muted-foreground text-right">{star}★</span>
                   <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-primary/80" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-primary/80 transition-all" style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="w-10 text-right text-xs text-muted-foreground">{pct}%</span>
+                  <span className="w-10 text-right text-xs text-muted-foreground">
+                    {pct}%
+                  </span>
                 </div>
               );
             })}
@@ -399,17 +488,27 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
                   <button
                     type="button"
                     onClick={() => updateHelpful(review.id, "helpful")}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-green-600 transition-colors"
+                    className={[
+                      "flex items-center gap-1 text-xs transition-colors",
+                      helpfulVotes[review.id] === "helpful"
+                        ? "text-green-500 font-medium"
+                        : "text-muted-foreground hover:text-green-600",
+                    ].join(" ")}
                   >
-                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <ThumbsUp className={`w-3.5 h-3.5 ${helpfulVotes[review.id] === "helpful" ? "fill-green-500" : ""}`} />
                     Helpful ({review.helpful_count ?? 0})
                   </button>
                   <button
                     type="button"
                     onClick={() => updateHelpful(review.id, "not_helpful")}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500 transition-colors"
+                    className={[
+                      "flex items-center gap-1 text-xs transition-colors",
+                      helpfulVotes[review.id] === "not_helpful"
+                        ? "text-red-500 font-medium"
+                        : "text-muted-foreground hover:text-red-500",
+                    ].join(" ")}
                   >
-                    <ThumbsDown className="w-3.5 h-3.5" />
+                    <ThumbsDown className={`w-3.5 h-3.5 ${helpfulVotes[review.id] === "not_helpful" ? "fill-red-500" : ""}`} />
                     Not helpful ({review.not_helpful_count ?? 0})
                   </button>
                 </div>
@@ -436,9 +535,18 @@ export default function ReviewSection({ placeId, placeName }: ReviewSectionProps
       )}
 
       {!isSignedIn ? (
-        <p className="text-sm text-muted-foreground text-center mt-4">
-          Sign in to write a review.
-        </p>
+        <div className="mt-5 rounded-xl border border-border bg-muted/30 p-4 text-center">
+          <p className="text-sm font-medium text-foreground mb-1">Have you been here?</p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Sign in to share your experience and help fellow students.
+          </p>
+          <a
+            href="/signin"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Sign in to review
+          </a>
+        </div>
       ) : null}
     </section>
   );

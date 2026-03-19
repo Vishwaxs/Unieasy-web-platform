@@ -134,7 +134,6 @@ export default function ReactionButtons({ placeId, initialCounts }: ReactionButt
         className="gap-1.5"
       >
         <ThumbsUp className={`w-4 h-4 ${likeClass}`} />
-        <span>{counts.likes}</span>
       </Button>
 
       <Button
@@ -145,7 +144,6 @@ export default function ReactionButtons({ placeId, initialCounts }: ReactionButt
         className="gap-1.5"
       >
         <ThumbsDown className={`w-4 h-4 ${dislikeClass}`} />
-        <span>{counts.dislikes}</span>
       </Button>
 
       <Button
@@ -156,7 +154,6 @@ export default function ReactionButtons({ placeId, initialCounts }: ReactionButt
         className="gap-1.5"
       >
         <Bookmark className={`w-4 h-4 ${bookmarkClass}`} />
-        <span>{counts.bookmarks}</span>
       </Button>
     </div>
   );

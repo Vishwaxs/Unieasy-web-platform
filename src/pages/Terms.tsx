@@ -1,45 +1,94 @@
-import { Shield, FileText, Users, AlertTriangle, Scale, Mail } from "lucide-react";
+import {
+  Shield,
+  FileText,
+  Users,
+  AlertTriangle,
+  Scale,
+  Mail,
+  Store,
+  Star,
+  Lock,
+} from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const sections = [
   {
     icon: Shield,
-    title: "Acceptance of Terms",
-    content: "By accessing and using UniEasy, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using this platform. These terms apply to all visitors, users, and others who access or use the service."
-  },
-  {
-    icon: FileText,
-    title: "Description of Service",
-    content: "UniEasy is a comprehensive platform designed specifically for university students to discover food spots, accommodation options, study zones, and other essential services around their campus. We aggregate and present information, reviews, and ratings to help you make informed decisions about places near your university."
+    title: "Who These Terms Apply To",
+    content:
+      "These Terms apply to anyone using UniEasy, including students, merchants, admins, and visitors. UniEasy is a campus-focused discovery platform for food, accommodation, study spots, and essential nearby services. By using the platform, you agree to follow these Terms, our Privacy Policy, and all applicable laws.",
   },
   {
     icon: Users,
-    title: "User Accounts & Responsibilities",
-    content: "To access certain features, you must create an account with accurate, complete information. You are solely responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must immediately notify us of any unauthorized use of your account or any other breach of security."
+    title: "Accounts, Roles, and Access",
+    content:
+      "To use protected features, you must sign in with accurate information. You are responsible for activities under your account and for keeping your login secure. UniEasy uses role-based access (such as student, merchant, admin, and superadmin), and attempting to bypass role permissions is prohibited.",
+    items: [
+      "Keep your profile details current and truthful",
+      "Do not share, sell, or transfer your account",
+      "Report unauthorized access immediately",
+    ],
+  },
+  {
+    icon: Star,
+    title: "Reviews, Ratings, and Community Content",
+    content:
+      "Reviews, ratings, reactions, and similar contributions must be based on real experiences and must not be misleading. Content you post should be respectful, relevant, and lawful.",
+    items: [
+      "No fake reviews, paid manipulation, or review spam",
+      "No harassment, hate speech, threats, or personal attacks",
+      "No posting private or sensitive information about others",
+      "No copied content that infringes third-party rights",
+    ],
+  },
+  {
+    icon: Store,
+    title: "Merchant Ads and Listings",
+    content:
+      "Merchants can create promotional ads and listings only through approved UniEasy workflows. Merchant content must be accurate, lawful, and supported by rights to text and images used.",
+    items: [
+      "Ad submissions may be reviewed, approved, rejected, or removed",
+      "Misleading claims, prohibited goods/services, and impersonation are not allowed",
+      "Merchants are responsible for pricing, availability, and offer fulfillment",
+      "Repeated violations can result in suspension or permanent removal of merchant access",
+    ],
   },
   {
     icon: AlertTriangle,
-    title: "Prohibited Conduct",
+    title: "Platform Safety and Prohibited Conduct",
     items: [
-      "Posting false, misleading, or defamatory information",
-      "Harassing, threatening, or abusing other users",
-      "Violating any applicable laws, regulations, or third-party rights",
-      "Attempting to gain unauthorized access to our systems or networks",
-      "Using the platform for commercial purposes without prior written consent",
-      "Uploading malicious code, viruses, or harmful content"
-    ]
+      "Attempting to access accounts, APIs, or data without permission",
+      "Using bots, scraping tools, or automation that degrades service performance",
+      "Uploading malware, harmful code, or security exploits",
+      "Circumventing moderation, rate limits, or access controls",
+      "Using UniEasy for illegal activity or fraud",
+    ],
+  },
+  {
+    icon: Lock,
+    title: "Moderation and Enforcement",
+    content:
+      "To keep UniEasy useful and safe, we may investigate reports and take action on accounts, ads, reviews, or other content that violate these Terms. Actions can include warnings, content removal, role downgrade, temporary suspension, or permanent ban.",
   },
   {
     icon: Scale,
-    title: "Disclaimer & Limitation of Liability",
-    content: "UniEasy provides information 'as is' without warranties of any kind, either express or implied. We do not guarantee the accuracy, completeness, reliability, or availability of any listings, reviews, or content. We shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform."
+    title: "Service Disclaimer and Liability Limits",
+    content:
+      "UniEasy provides discovery information and community-generated content on an 'as available' basis. While we work to keep information useful and up to date, we cannot guarantee completeness, accuracy, uninterrupted access, or outcomes from third-party merchants and places. To the extent allowed by law, UniEasy is not liable for indirect or consequential losses arising from platform use.",
+  },
+  {
+    icon: FileText,
+    title: "Changes to Terms",
+    content:
+      "We may update these Terms when features, policies, or legal requirements change. Material updates will be posted on this page with a revised date. Continued use of UniEasy after changes means you accept the updated Terms.",
   },
   {
     icon: Mail,
     title: "Contact Information",
-    content: "If you have any questions about these Terms of Service, please contact us at unieasy.app@gmail.com."
-  }
+    content:
+      "Questions about these Terms, moderation actions, or merchant compliance can be sent to unieasy.app@gmail.com.",
+  },
 ];
 
 const Terms = () => {
@@ -63,22 +112,24 @@ const Terms = () => {
               </div>
               <div>
                 <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-foreground">
-                  Terms of Service
+                  Terms and Conditions
                 </h1>
                 <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                  Last updated: January 19, 2026
+                  Last updated: March 19, 2026
                 </p>
               </div>
             </div>
             <p className="mt-4 text-muted-foreground text-sm md:text-base leading-relaxed max-w-3xl">
-              Please read these terms carefully before using UniEasy. By using our platform, you agree to these terms.
+              These terms are tailored to how UniEasy operates: campus
+              discovery, student-generated reviews, and moderated merchant
+              promotions.
             </p>
           </div>
-          
+
           {/* Sections */}
           <div className="space-y-5 md:space-y-6">
             {sections.map((section, index) => (
-              <div 
+              <div
                 key={index}
                 className="bg-card/70 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-border/80 shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
               >
@@ -98,7 +149,10 @@ const Terms = () => {
                     {section.items && (
                       <ul className="space-y-2 mt-3">
                         {section.items.map((item, i) => (
-                          <li key={i} className="flex items-start gap-3 text-muted-foreground text-sm md:text-base">
+                          <li
+                            key={i}
+                            className="flex items-start gap-3 text-muted-foreground text-sm md:text-base"
+                          >
                             <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 flex-shrink-0" />
                             <span className="leading-relaxed">{item}</span>
                           </li>
