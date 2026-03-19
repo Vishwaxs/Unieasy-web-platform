@@ -63,7 +63,12 @@ const PlaceItemDetails = () => {
   const photos = place.photo_refs || [];
   const amenities = place.amenities || [];
   const openingHours = place.extra?.opening_hours?.weekdayDescriptions || [];
-  const backPath = place.category === "study" ? "/study" : place.category === "explore" ? "/explore" : place.category === "campus" ? "/campus" : "/essentials";
+  // Derive back path from the URL section (/explore/:id → /explore, /study/:id → /study, etc.)
+  // Using location.pathname is more reliable than place.category since the DB category
+  // (e.g. "food", "hangout") often doesn't match the frontend section name.
+  const section = location.pathname.split("/")[1];
+  const VALID_SECTIONS = new Set(["explore", "study", "essentials", "campus", "food", "accommodation"]);
+  const backPath = VALID_SECTIONS.has(section) ? `/${section}` : "/home";
 
   return (
     <div className="min-h-screen bg-background">

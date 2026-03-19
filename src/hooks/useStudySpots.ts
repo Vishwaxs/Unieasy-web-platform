@@ -4,7 +4,7 @@ import { shortAddress } from "@/lib/utils";
 export interface StudySpot {
   id: string;
   name: string;
-  type: string;
+  type: string[];
   rating: number;
   reviews: number;
   address: string | null;
@@ -39,10 +39,68 @@ function formatNoise(raw: string | null | undefined): string {
   return raw ? labels[raw] || "Varies" : "Varies";
 }
 
+// Keyword-based type detection. Each entry lists words that, if found anywhere
+// in sub_type + type + name (case-insensitive), tag the place with that type.
+// A place can match multiple types (e.g. "Library Cafe" → ["Library","Cafe"]).
+const TYPE_KEYWORD_MAP: Array<{ keywords: string[]; type: string }> = [
+  {
+    keywords: ["library", "libraries"],
+    type: "Library",
+  },
+  {
+    keywords: ["cafe", "café", "coffee", "cafeteria", "canteen"],
+    type: "Cafe",
+  },
+  {
+    keywords: ["coworking", "co working", "cowork"],
+    type: "Coworking",
+  },
+  {
+    keywords: ["outdoor", "garden", "park", "courtyard", "terrace", "rooftop", "lawn"],
+    type: "Outdoor",
+  },
+  // "Lab" is the catch-all for dedicated study spaces: labs, circles, lounges, etc.
+  {
+    keywords: [
+      "lab", "laboratory",
+      "circle", "center", "centre",
+      "hall", "room", "zone",
+      "lounge", "hub", "study",
+    ],
+    type: "Lab",
+  },
+];
+
+/**
+ * Scans sub_type, type, and name fields for type keywords.
+ * Returns every matching canonical type (may be multiple).
+ * Returns an empty array if nothing matches — caller should discard the place.
+ */
+function detectTypes(place: Record<string, unknown>): string[] {
+  const raw = [place.sub_type, place.type, place.name]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/-/g, " ");
+
+  const matched = new Set<string>();
+  for (const { keywords, type } of TYPE_KEYWORD_MAP) {
+    if (keywords.some((kw) => raw.includes(kw))) {
+      matched.add(type);
+    }
+  }
+  return Array.from(matched);
+}
+
 /**
  * Adapter: Map a Place record to the StudySpot shape expected by UI components.
+ * Returns null if no study-relevant type can be detected (e.g. trading agencies).
  */
-function placeToStudySpot(place: Record<string, unknown>): StudySpot {
+function placeToStudySpot(place: Record<string, unknown>): StudySpot | null {
+  const types = detectTypes(place);
+  if (types.length === 0) return null;
+
   let timing = (place.timing as string) || "";
   if (!timing) {
     const extra = (place.extra as Record<string, unknown>) || {};
@@ -54,12 +112,11 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
 
   const idStr = (place.id as string) || "a";
   const fallbackIndex = idStr.charCodeAt(0) % STUDY_FALLBACK_IMAGES.length;
-  const rawType = (place.sub_type as string) || (place.type as string) || "library";
 
   return {
     id: place.id as string,
     name: (place.name as string) || "Unknown",
-    type: rawType.charAt(0).toUpperCase() + rawType.slice(1),
+    type: types,
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
     address: (place.address as string) || null,
@@ -80,7 +137,7 @@ async function fetchStudySpots(): Promise<StudySpot[]> {
   const json = await res.json();
   const places = json.data;
   if (!places || places.length === 0) return [];
-  return places.map(placeToStudySpot);
+  return places.map(placeToStudySpot).filter((s): s is StudySpot => s !== null);
 }
 
 export function useStudySpots() {

@@ -48,7 +48,7 @@ GOOGLE_TYPE_MAP = {
     "juice_shop":("food","juice"),"ice_cream_shop":("food","dessert"),
     "lodging":("accommodation","hostel"),"hotel":("accommodation","hotel"),
     "guest_house":("accommodation","guest_house"),
-    "library":("study","library"),"book_store":("study","bookstore"),
+    "library":("study","library"),"book_store":("services","bookstore"),
     "pharmacy":("health","pharmacy"),"hospital":("health","hospital"),
     "doctor":("health","clinic"),"dentist":("health","dental"),
     "gym":("fitness","gym"),"yoga_studio":("fitness","yoga"),

@@ -29,23 +29,6 @@ const STUDY_FILTER_GROUPS = [
       { value: "Lab", label: "Lab" },
     ],
   },
-  {
-    key: "noise",
-    label: "Noise Level",
-    options: [
-      { value: "all", label: "Any" },
-      { value: "Silent", label: "Quiet" },
-      { value: "Moderate", label: "Moderate" },
-    ],
-  },
-  {
-    key: "wifi",
-    label: "WiFi",
-    options: [
-      { value: "all", label: "Any" },
-      { value: "yes", label: "WiFi Available" },
-    ],
-  },
 ];
 
 const STUDY_SORT_OPTIONS = [
@@ -102,7 +85,11 @@ const StudyCard = ({
           referrerPolicy="no-referrer-when-downgrade"
           loading="lazy"
         />
-        <Badge className="absolute top-3 left-3 bg-primary">{item.type}</Badge>
+        <div className="absolute top-3 left-3 flex flex-wrap gap-1">
+          {item.type.map((t) => (
+            <Badge key={t} className="bg-primary text-xs">{t}</Badge>
+          ))}
+        </div>
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
           <span className="text-white text-sm">
@@ -176,19 +163,13 @@ const StudyCard = ({
 
 const StudyDetails = () => {
   const { items: studySpots, loading } = useStudySpots();
-  const [filters, setFilters] = useState<FilterState>({ type: "all", noise: "all", wifi: "all" });
+  const [filters, setFilters] = useState<FilterState>({ type: "all" });
   const [sort, setSort] = useState("default");
 
   const filteredItems = useMemo(() => {
     let result = studySpots.filter((item) => {
       const typeVal = filters.type as string;
-      if (typeVal !== "all" && item.type !== typeVal) return false;
-
-      const noiseVal = filters.noise as string;
-      if (noiseVal !== "all" && item.noise !== noiseVal) return false;
-
-      const wifiVal = filters.wifi as string;
-      if (wifiVal === "yes" && !item.has_wifi) return false;
+      if (typeVal !== "all" && !item.type.includes(typeVal)) return false;
 
       return true;
     });
