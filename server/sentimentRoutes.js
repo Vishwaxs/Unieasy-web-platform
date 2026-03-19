@@ -132,7 +132,17 @@ router.post("/sentiment/:placeId", verifyClerkToken(), async (req, res) => {
 
     if (existing) {
       if (existing.sentiment === sentiment) {
-        return res.json({ message: "Vote unchanged", sentiment });
+        // Toggle off — remove the vote
+        const { error: delErr } = await supabaseAdmin
+          .from("sentiment_polls")
+          .delete()
+          .eq("id", existing.id);
+        if (delErr) {
+          logger.error({ err: delErr }, "Sentiment delete error");
+          return res.status(500).json({ error: delErr.message });
+        }
+        await updateSentimentAggregates(placeId);
+        return res.json({ success: true, sentiment: null, removed: true });
       }
       // Update existing vote
       const { error: updateErr } = await supabaseAdmin

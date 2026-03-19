@@ -71,6 +71,7 @@ const HighlightSection = () => {
           "id, title, description, image_url, target_location, clerk_user_id, impression_count, created_at",
         )
         .eq("status", "active")
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .order("created_at", { ascending: false })
         .limit(5);
 

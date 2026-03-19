@@ -6,6 +6,7 @@ export interface PlaceDetail {
   id: string;
   name: string;
   category: string;
+  type: string | null;
   sub_type: string | null;
   address: string;
   lat: number;

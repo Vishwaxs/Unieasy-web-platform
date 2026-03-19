@@ -47,14 +47,14 @@ const AccommodationItemDetails = () => {
   const { data: place, isLoading, isError } = usePlaceDetail(id);
 
   useEffect(() => {
-    if (location.hash === "#reviews") {
+    if (location.hash === "#reviews" && place) {
       setTimeout(() => {
         document
           .getElementById("reviews")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 300);
+      }, 600);
     }
-  }, [location.hash]);
+  }, [location.hash, place]);
 
   if (isLoading) {
     return (
