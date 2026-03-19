@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
@@ -46,6 +46,7 @@ const ItemCard = ({
   item: EssentialItem;
   index: number;
 }) => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -99,6 +100,17 @@ const ItemCard = ({
           {item.comment && (
             <p className="text-muted-foreground text-xs line-clamp-2">{item.comment}</p>
           )}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/essentials/${item.id}#reviews`);
+            }}
+            className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
+          >
+            <Star className="w-3 h-3" />
+            {item.reviews > 0 ? `${item.reviews} reviews` : "Write a review"}
+          </button>
         </div>
       </div>
     </Link>
