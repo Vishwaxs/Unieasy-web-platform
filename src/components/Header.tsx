@@ -215,7 +215,12 @@ const Header = () => {
 
   // Category listing pages — back should land on home at the category section
   const CATEGORY_PATHS = new Set([
-    "/food", "/accommodation", "/explore", "/study", "/essentials", "/campus",
+    "/food",
+    "/accommodation",
+    "/explore",
+    "/study",
+    "/essentials",
+    "/campus",
   ]);
 
   const handleBack = () => {

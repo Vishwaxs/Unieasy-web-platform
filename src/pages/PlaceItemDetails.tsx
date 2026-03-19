@@ -109,6 +109,16 @@ const PlaceItemDetails = () => {
               {place.name}
             </h1>
             <div className="flex flex-wrap items-center gap-3 mt-2">
+              {!isCampus && (
+                <ReactionButtons
+                  placeId={place.id}
+                  initialCounts={{
+                    likes: place.like_count ?? 0,
+                    dislikes: place.dislike_count ?? 0,
+                    bookmarks: place.bookmark_count ?? 0,
+                  }}
+                />
+              )}
               {place.sub_type && (
                 <Badge className="bg-white/20 text-white border-0 capitalize">
                   {place.sub_type}
@@ -344,14 +354,6 @@ const PlaceItemDetails = () => {
                   neutral: place.sentiment_neutral ?? 0,
                   dislike: place.sentiment_dislike ?? 0,
                   terrible: place.sentiment_terrible ?? 0,
-                }}
-              />
-              <ReactionButtons
-                placeId={place.id}
-                initialCounts={{
-                  likes: place.like_count ?? 0,
-                  dislikes: place.dislike_count ?? 0,
-                  bookmarks: place.bookmark_count ?? 0,
                 }}
               />
               <ReviewSection placeId={place.id} placeName={place.name} />

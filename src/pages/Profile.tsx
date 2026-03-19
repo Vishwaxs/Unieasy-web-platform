@@ -119,7 +119,9 @@ const Profile = () => {
     setReviewsLoading(true);
     const { data } = await supabase
       .from("reviews")
-      .select("id, place_id, rating, body, status, created_at, places(id, name, category, sub_type)")
+      .select(
+        "id, place_id, rating, body, status, created_at, places(id, name, category, sub_type)",
+      )
       .eq("clerk_user_id", user.id)
       .order("created_at", { ascending: false });
     setUserReviews((data as UserReviewRow[] | null) ?? []);
@@ -562,25 +564,38 @@ const Profile = () => {
                   {reviewsLoading ? (
                     <div className="grid grid-cols-1 gap-3">
                       {[...Array(4)].map((_, i) => (
-                        <div key={i} className="h-24 bg-muted/40 rounded-xl animate-pulse" />
+                        <div
+                          key={i}
+                          className="h-24 bg-muted/40 rounded-xl animate-pulse"
+                        />
                       ))}
                     </div>
                   ) : userReviews.length === 0 ? (
                     <div className="text-center py-10">
                       <Star className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">You have not posted any reviews yet.</p>
+                      <p className="text-sm text-muted-foreground">
+                        You have not posted any reviews yet.
+                      </p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-3">
                       {userReviews.map((review) => {
                         const place = review.places?.[0] ?? null;
-                        const section = place?.category === "accommodation" ? "accommodation"
-                          : place?.category === "campus" ? "campus"
-                          : place?.category === "study" ? "study"
-                          : place?.category === "essentials" ? "essentials"
-                          : place?.category === "explore" ? "explore"
-                          : "food";
-                        const destination = place ? `/${section}/${place.id}` : "/home";
+                        const section =
+                          place?.category === "accommodation"
+                            ? "accommodation"
+                            : place?.category === "campus"
+                              ? "campus"
+                              : place?.category === "study"
+                                ? "study"
+                                : place?.category === "essentials"
+                                  ? "essentials"
+                                  : place?.category === "explore"
+                                    ? "explore"
+                                    : "food";
+                        const destination = place
+                          ? `/${section}/${place.id}`
+                          : "/home";
 
                         return (
                           <Link
@@ -594,7 +609,13 @@ const Profile = () => {
                                   {place?.name ?? "Reviewed place"}
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  {new Date(review.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                                  {new Date(
+                                    review.created_at,
+                                  ).toLocaleDateString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
                                 </p>
                               </div>
                               <div className="flex items-center gap-0.5 shrink-0">
@@ -606,7 +627,9 @@ const Profile = () => {
                                 ))}
                               </div>
                             </div>
-                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{review.body}</p>
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                              {review.body}
+                            </p>
                           </Link>
                         );
                       })}
