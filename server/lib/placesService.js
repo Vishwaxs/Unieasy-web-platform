@@ -217,6 +217,11 @@ export async function fetchAndUpdatePlaceDetails(supabaseAdmin, place) {
         }));
     }
 
+    // Vegetarian food signal (New API: servesVegetarianFood)
+    if (typeof data.servesVegetarianFood === "boolean") {
+        extra.serves_vegetarian_food = data.servesVegetarianFood;
+    }
+
     // Price level (New API: enum string → int)
     const priceLevel = data.priceLevel
         ? (PRICE_LEVEL_MAP[data.priceLevel] ?? place.price_level)

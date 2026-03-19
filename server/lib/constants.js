@@ -68,4 +68,5 @@ export const DETAIL_FIELD_MASK = [
     "websiteUri",
     "types",
     "priceLevel",
+    "servesVegetarianFood",
 ].join(",");

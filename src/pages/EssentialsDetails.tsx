@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
@@ -65,7 +66,7 @@ const ItemCard = ({
     <Link to={`/essentials/${item.id}`} className="block">
       <div
         ref={cardRef}
-        className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
+        className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}
         style={{ transitionDelay: `${index * 50}ms` }}
@@ -89,28 +90,31 @@ const ItemCard = ({
           )}
         </div>
 
-        <div className="p-4">
-          <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
+        <div className="p-4 flex flex-1 flex-col">
+          <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
             {item.name}
           </h3>
-          <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-            <MapPin className="w-3 h-3" />
-            <span>{item.distance}</span>
+          <div className="mb-3 flex min-h-6 items-center gap-2 text-muted-foreground text-sm">
+            <MapPin className="w-3 h-3 shrink-0" />
+            <span className="line-clamp-1">{item.distance}</span>
           </div>
-          {item.comment && (
-            <p className="text-muted-foreground text-xs line-clamp-2">{item.comment}</p>
-          )}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              navigate(`/essentials/${item.id}#reviews`);
-            }}
-            className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
-          >
-            <Star className="w-3 h-3" />
-            {item.reviews > 0 ? `${item.reviews} reviews` : "Write a review"}
-          </button>
+          <div className="mb-4 min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
+            <p className="line-clamp-3">{item.address || "Address unavailable"}</p>
+          </div>
+          <div className="mt-auto border-t border-border/60 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate(`/essentials/${item.id}`);
+              }}
+            >
+              View Details
+            </Button>
+          </div>
         </div>
       </div>
     </Link>

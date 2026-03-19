@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Clock, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +95,7 @@ const PlaceCard = ({
     <Link to={`/explore/${item.id}`} className="block">
     <div
       ref={cardRef}
-      className={`group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
+      className={`group h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
       style={{ transitionDelay: `${index * 50}ms` }}
@@ -121,18 +121,18 @@ const PlaceCard = ({
       </div>
 
       <div className="p-4 flex flex-1 flex-col">
-        <h3 className="font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
+        <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
           {item.name}
         </h3>
 
-        <div className="space-y-2 mb-3">
+        <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <MapPin className="w-3 h-3" />
-            <span>{item.distance}</span>
+            <MapPin className="w-3 h-3 shrink-0" />
+            <span className="line-clamp-1">{item.distance}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Clock className="w-3 h-3" />
-            <span>{item.timing}</span>
+            <Clock className="w-3 h-3 shrink-0" />
+            <span className="line-clamp-1">{item.timing}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Users className="w-3 h-3 text-muted-foreground" />
@@ -144,12 +144,17 @@ const PlaceCard = ({
           </div>
         </div>
 
-        <p className="text-muted-foreground text-xs italic">"{item.comment}"</p>
+        <div className="mb-4 min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
+          <p className="line-clamp-3">{item.address || "Address unavailable"}</p>
+        </div>
 
-        <div className="mt-auto pt-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
+        <div className="mt-auto border-t border-border/60 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="hidden text-xs text-muted-foreground">
               Google • {formatCompactCount(stats.totalReviews)} ratings
+            </span>
+            <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              {item.type}
             </span>
           </div>
           <Button
@@ -159,10 +164,10 @@ const PlaceCard = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              navigate(`/explore/${item.id}#reviews`);
+              navigate(`/explore/${item.id}`);
             }}
           >
-            Review
+            View Details
           </Button>
         </div>
       </div>

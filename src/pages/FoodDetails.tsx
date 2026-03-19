@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, MessageSquare, Leaf, Drumstick } from "lucide-react";
+import { ArrowLeft, Drumstick, Leaf, MapPin, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { computeCombinedReviewStats, formatCompactCount } from "@/lib/reviewStats";
@@ -38,13 +38,13 @@ const FOOD_FILTER_GROUPS = [
   },
   {
     key: "price",
-    label: "Price Range",
+    label: "Price for Two",
     options: [
       { value: "all", label: "Any" },
-      { value: "0-100", label: "Under \u20B9100" },
-      { value: "100-300", label: "\u20B9100\u2013\u20B9300" },
-      { value: "300-600", label: "\u20B9300\u2013\u20B9600" },
-      { value: "600+", label: "\u20B9600+" },
+      { value: "0-300", label: "Under ₹300" },
+      { value: "300-600", label: "₹300–₹600" },
+      { value: "600-1200", label: "₹600–₹1,200" },
+      { value: "1200+", label: "₹1,200+" },
     ],
   },
 ];
@@ -123,29 +123,31 @@ const FoodCard = ({
       </div>
 
       <div className="p-4 flex flex-1 flex-col">
-        <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
+        <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
           {item.name}
         </h3>
-        <div className="flex items-start gap-2 text-muted-foreground text-sm mb-3">
+        <div className="mb-3 flex min-h-6 items-start gap-2 text-muted-foreground text-sm">
           <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-          <p>{item.restaurant}</p>
+          <p className="line-clamp-1">{item.restaurant}</p>
         </div>
 
-        {item.comment && (
-          <div className="flex items-center gap-2 text-muted-foreground text-xs mb-3">
-            <MessageSquare className="w-3 h-3" />
-            <span className="italic">"{item.comment}"</span>
-          </div>
-        )}
+        <div className="mb-4 min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
+          <p>{item.address || "Address unavailable"}</p>
+        </div>
 
-        <div className="mt-auto">
-          <div className="flex items-center justify-between">
-            <span className="text-xl font-bold text-primary">
-              ₹{item.price}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Google • {formatCompactCount(stats.totalReviews)} ratings
-            </span>
+        <div className="mt-auto border-t border-border/60 pt-4">
+          <div className="flex items-center gap-2">
+            {(() => {
+              const raw = item.display_price_label ?? `₹${item.price}`;
+              const priceText = raw.replace(" for two", "").trim();
+              const isFree = priceText.toLowerCase() === "free";
+              return (
+                <>
+                  <span className="text-lg font-bold text-primary">{priceText}</span>
+                  {!isFree && <span className="text-xs text-muted-foreground">for two</span>}
+                </>
+              );
+            })()}
           </div>
           <Button
             variant="outline"
@@ -154,10 +156,10 @@ const FoodCard = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              navigate(`/food/${item.id}#reviews`);
+              navigate(`/food/${item.id}`);
             }}
           >
-            Review
+            View Details
           </Button>
         </div>
       </div>
@@ -175,8 +177,8 @@ const FoodDetails = () => {
     let result = foodItems.filter((item) => {
       // Diet filter
       const diet = filters.diet as string;
-      if (diet === "veg" && item.is_veg !== true && item.is_veg !== null) return false;
-      if (diet === "nonveg" && item.is_veg !== false && item.is_veg !== null) return false;
+      if (diet === "veg" && item.is_veg !== true) return false;
+      if (diet === "nonveg" && item.is_veg !== false) return false;
 
       // Rating filter
       const rating = filters.rating as string;
@@ -185,12 +187,12 @@ const FoodDetails = () => {
         if (item.rating < min) return false;
       }
 
-      // Price filter
+      // Price filter (price for two)
       const price = filters.price as string;
-      if (price === "0-100" && item.price > 100) return false;
-      if (price === "100-300" && (item.price < 100 || item.price > 300)) return false;
+      if (price === "0-300" && item.price > 300) return false;
       if (price === "300-600" && (item.price < 300 || item.price > 600)) return false;
-      if (price === "600+" && item.price < 600) return false;
+      if (price === "600-1200" && (item.price < 600 || item.price > 1200)) return false;
+      if (price === "1200+" && item.price < 1200) return false;
 
       return true;
     });

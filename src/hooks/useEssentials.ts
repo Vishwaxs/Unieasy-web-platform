@@ -7,6 +7,7 @@ export interface EssentialItem {
   category: string;
   rating: number;
   reviews: number;
+  address: string | null;
   distance: string;
   image: string;
   comment: string;
@@ -53,6 +54,7 @@ function placeToEssentialItem(place: Record<string, unknown>): EssentialItem {
     category: (place.category as string) || "essentials",
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
+    address: (place.address as string) || null,
     distance: (place.distance_from_campus as string) || "Nearby campus",
     image: getPhotoUrl(place, ESSENTIALS_FALLBACK_IMAGES[fallbackIndex]),
     comment: ((place.description as string)

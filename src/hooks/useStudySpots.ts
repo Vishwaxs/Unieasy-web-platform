@@ -7,6 +7,7 @@ export interface StudySpot {
   type: string;
   rating: number;
   reviews: number;
+  address: string | null;
   distance: string;
   timing: string;
   noise: string;
@@ -61,6 +62,7 @@ function placeToStudySpot(place: Record<string, unknown>): StudySpot {
     type: rawType.charAt(0).toUpperCase() + rawType.slice(1),
     rating: typeof place.rating === "number" ? place.rating : 0,
     reviews: typeof place.rating_count === "number" ? place.rating_count : 0,
+    address: (place.address as string) || null,
     distance: (place.distance_from_campus as string) || "Nearby campus",
     timing,
     noise: formatNoise(place.noise_level as string | null),

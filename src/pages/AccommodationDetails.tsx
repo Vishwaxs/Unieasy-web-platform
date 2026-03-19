@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Wifi, Car, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,6 @@ import Footer from "@/components/Footer";
 import FilterSortBar, { type FilterState } from "@/components/FilterSortBar";
 import { useAccommodations, type Accommodation } from "@/hooks/useAccommodations";
 import { AccommodationCardSkeleton, SkeletonGrid } from "@/components/CardSkeleton";
-import { shortAddress } from "@/lib/utils";
-
 const STAY_TYPE_OPTIONS = [
   { value: "hostel", label: "Hostel" },
   { value: "pg", label: "PG" },
@@ -28,6 +26,7 @@ const ACCOMMODATION_FILTER_GROUPS = [
       { value: "PG", label: "PG" },
       { value: "Apartment", label: "Apartment" },
       { value: "Co-living", label: "Co-living" },
+      { value: "Hotel", label: "Hotel" },
     ],
   },
   {
@@ -82,17 +81,10 @@ const AccommodationCard = ({
     return () => observer.disconnect();
   }, []);
 
-  const getAmenityIcon = (amenity: string) => {
-    switch (amenity) {
-      case "wifi":
-        return <Wifi className="w-4 h-4" />;
-      case "parking":
-        return <Car className="w-4 h-4" />;
-      case "security":
-        return <Shield className="w-4 h-4" />;
-      default:
-        return null;
-    }
+  const AMENITY_MAP: Record<string, { icon: React.ReactNode; label: string }> = {
+    wifi: { icon: <Wifi className="w-3 h-3" />, label: "WiFi" },
+    parking: { icon: <Car className="w-3 h-3" />, label: "Parking" },
+    security: { icon: <Shield className="w-3 h-3" />, label: "Security" },
   };
 
   return (
@@ -127,49 +119,53 @@ const AccommodationCard = ({
       </div>
 
       <div className="p-4 flex flex-1 flex-col">
-        <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
+        <h3 className="min-h-[3.5rem] line-clamp-2 font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
           {item.name}
         </h3>
 
-        <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
+        <div className="mb-3 flex min-h-6 items-center gap-1 text-muted-foreground text-sm">
           <MapPin className="w-4 h-4 shrink-0" />
-          <span>
+          <span className="line-clamp-1">
             {item.distance
               ? showsDistanceKm
                 ? `${item.distance} from campus`
                 : item.distance
-              : shortAddress(item.address)}
+              : "Nearby campus"}
           </span>
         </div>
 
-        <div className="flex gap-2 mb-3">
-          {item.amenities.slice(0, 3).map((amenity) => (
-            <div
-              key={amenity}
-              className="p-1.5 bg-secondary rounded-lg"
-              title={amenity}
-            >
-              {getAmenityIcon(amenity)}
-            </div>
-          ))}
+        <div className="mb-4 min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
+          <p className="line-clamp-3">{item.address || "Address unavailable"}</p>
         </div>
 
-        {item.comment && (
-          <p className="text-muted-foreground text-xs italic mb-3">
-            "{item.comment}"
-          </p>
-        )}
-
-        <div className="mt-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xl font-bold text-primary">
-                ₹{item.price.toLocaleString()}
+        <div className="mb-4 flex min-h-10 flex-wrap gap-2">
+          {item.amenities.slice(0, 3).map((amenity) => {
+            const info = AMENITY_MAP[amenity.toLowerCase()];
+            if (!info) return null;
+            return (
+              <span
+                key={amenity}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
+              >
+                {info.icon}
+                {info.label}
               </span>
-              <span className="text-muted-foreground text-xs">/month</span>
+            );
+          })}
+        </div>
+
+        <div className="mt-auto border-t border-border/60 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-primary">
+                {item.display_price_label ?? `₹${item.price.toLocaleString()}/mo`}
+              </span>
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="hidden text-xs text-muted-foreground">
               Google • {formatCompactCount(stats.totalReviews)} ratings
+            </span>
+            <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              {item.type}
             </span>
           </div>
           <Button
@@ -179,10 +175,10 @@ const AccommodationCard = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              navigate(`/accommodation/${item.id}#reviews`);
+              navigate(`/accommodation/${item.id}`);
             }}
           >
-            Review
+            View Details
           </Button>
         </div>
       </div>
@@ -199,14 +195,7 @@ const AccommodationDetails = () => {
   const filteredItems = useMemo(() => {
     let result = accommodations.filter((item) => {
       const typeVal = filters.type as string;
-      if (typeVal !== "all") {
-        // DB often stores "flat" while UI shows "Apartment"
-        if (typeVal === "Apartment" && (item.type === "Apartment" || item.type === "Flat")) {
-          // ok
-        } else if (item.type !== typeVal) {
-          return false;
-        }
-      }
+      if (typeVal !== "all" && item.type !== typeVal) return false;
 
       const priceVal = filters.price as string;
       if (priceVal === "under-8k" && item.price >= 8000) return false;
