@@ -437,7 +437,7 @@ return true;
               <div className="flex items-end justify-between">
                 <div>
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
-                    On Christ Central Campus
+                    On CHRIST Central Campus
                   </h1>
                   <p className="text-white/90 mt-2">
                     Find on-campus shops, cafes, and services
