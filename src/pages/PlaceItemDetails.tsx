@@ -20,7 +20,7 @@ import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionButtons from "@/components/ReactionButtons";
 import RatingBadge from "@/components/RatingBadge";
-import { usePlaceDetail, placePhotoUrl } from "@/hooks/usePlaceDetail";
+import { usePlaceDetail, placePhotoUrl, getMapsUrl } from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -100,11 +100,15 @@ const PlaceItemDetails = () => {
         <div className="container mx-auto px-4 py-6 max-w-4xl space-y-8">
           {/* Quick Actions */}
           <div className="flex flex-wrap gap-3">
-            {place.lat && place.lng && (
-              <a href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm" className="gap-2"><Navigation className="w-4 h-4" />Directions</Button>
-              </a>
-            )}
+            <a
+              href={getMapsUrl(place as unknown as Record<string, unknown>)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium transition-colors"
+            >
+              <MapPin className="w-4 h-4" />
+              Get Directions
+            </a>
             {place.phone && (
               <a href={`tel:${place.phone}`}>
                 <Button variant="outline" size="sm" className="gap-2"><Phone className="w-4 h-4" />Call</Button>

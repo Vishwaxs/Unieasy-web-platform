@@ -43,6 +43,8 @@ export interface PlaceDetail {
   sentiment_dislike: number;
   sentiment_terrible: number;
   data_source: string;
+  google_maps_url: string | null;
+  maps_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -63,4 +65,15 @@ export function usePlaceDetail(placeId: string | undefined) {
 
 export function placePhotoUrl(placeId: string, index = 0): string {
   return `${API_BASE}/api/places/${placeId}/photo/${index}`;
+}
+
+/** Build the best available Google Maps URL for a place */
+export function getMapsUrl(place: Record<string, unknown>): string {
+  if (place.google_maps_url) return place.google_maps_url as string;
+  if (place.maps_url) return place.maps_url as string;
+  if (place.lat && place.lng) {
+    return `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`;
+  }
+  const q = encodeURIComponent(`${place.name} ${place.address || 'Bangalore'}`);
+  return `https://www.google.com/maps/search/?api=1&query=${q}`;
 }

@@ -20,7 +20,7 @@ import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionButtons from "@/components/ReactionButtons";
 import RatingBadge from "@/components/RatingBadge";
-import { usePlaceDetail, placePhotoUrl } from "@/hooks/usePlaceDetail";
+import { usePlaceDetail, placePhotoUrl, getMapsUrl } from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -86,7 +86,7 @@ const FoodRestaurantDetails = () => {
     place.extra?.opening_hours?.weekdayDescriptions || [];
   const priceLabel =
     place.display_price_label || (place.price_inr ? `Rs. ${place.price_inr}` : null);
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`;
+  const mapsUrl = getMapsUrl(place as unknown as Record<string, unknown>);
 
   return (
     <div className="min-h-screen bg-background">
