@@ -19,7 +19,11 @@ import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionButtons from "@/components/ReactionButtons";
 import RatingBadge from "@/components/RatingBadge";
-import { usePlaceDetail, placePhotoUrl, getMapsUrl } from "@/hooks/usePlaceDetail";
+import {
+  usePlaceDetail,
+  placePhotoUrl,
+  getMapsUrl,
+} from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -57,9 +61,16 @@ const FoodRestaurantDetails = () => {
         <main className="pt-24 pb-12">
           <div className="container mx-auto px-4 md:px-6">
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h1 className="text-2xl font-semibold text-foreground">Restaurant not found</h1>
-              <p className="text-muted-foreground mt-2">Please go back and select another restaurant.</p>
-              <Link to="/food" className="text-primary mt-4 inline-block hover:underline">
+              <h1 className="text-2xl font-semibold text-foreground">
+                Restaurant not found
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Please go back and select another restaurant.
+              </p>
+              <Link
+                to="/food"
+                className="text-primary mt-4 inline-block hover:underline"
+              >
                 Go to Food
               </Link>
             </div>
@@ -70,16 +81,18 @@ const FoodRestaurantDetails = () => {
     );
   }
 
-  const heroImage = place.photo_refs?.length > 0
-    ? placePhotoUrl(place.id, 0)
-    : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200";
+  const heroImage =
+    place.photo_refs?.length > 0
+      ? placePhotoUrl(place.id, 0)
+      : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200";
 
   const cuisines = place.cuisine_tags || [];
   const amenities = place.amenities || [];
   const weekdayDescriptions: string[] =
     place.extra?.opening_hours?.weekdayDescriptions || [];
   const priceLabel =
-    place.display_price_label || (place.price_inr ? `Rs. ${place.price_inr}` : null);
+    place.display_price_label ||
+    (place.price_inr ? `Rs. ${place.price_inr}` : null);
   const mapsUrl = getMapsUrl(place as unknown as Record<string, unknown>);
 
   return (
@@ -98,7 +111,9 @@ const FoodRestaurantDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-orange-950/85 via-black/60 to-black/40 dark:from-orange-950/70 dark:via-background/50 dark:to-background/30" />
           <div className="absolute inset-0 flex items-end">
             <div className="container mx-auto px-4 md:px-6 pb-6">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">{place.name}</h1>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                {place.name}
+              </h1>
               {place.address && (
                 <p className="text-white/85 mt-2 max-w-2xl">{place.address}</p>
               )}
@@ -169,7 +184,11 @@ const FoodRestaurantDetails = () => {
                 </a>
               )}
               {place.website && (
-                <a href={place.website} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={place.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <Globe className="w-4 h-4" />
                     Website
@@ -181,7 +200,9 @@ const FoodRestaurantDetails = () => {
             {/* Cuisine Tags */}
             {cuisines.length > 0 && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-3">Cuisine</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-3">
+                  Cuisine
+                </h2>
                 <div className="flex flex-wrap gap-2">
                   {cuisines.map((tag) => (
                     <Badge key={tag} variant="outline" className="capitalize">
@@ -194,10 +215,13 @@ const FoodRestaurantDetails = () => {
 
             {/* About / Description */}
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-3">About</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-3">
+                About
+              </h2>
               <p className="text-muted-foreground leading-relaxed">
                 {place.name} is located at {place.address}.
-                {place.distance_from_campus && ` It's ${place.distance_from_campus} from campus.`}
+                {place.distance_from_campus &&
+                  ` It's ${place.distance_from_campus} from campus.`}
                 {priceLabel && ` Average cost: ${priceLabel}.`}
               </p>
             </div>
@@ -205,7 +229,9 @@ const FoodRestaurantDetails = () => {
             {/* Photo Gallery */}
             {place.photo_refs?.length > 1 && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Photos</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">
+                  Photos
+                </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {place.photo_refs.slice(0, 6).map((_, i) => (
                     <img
@@ -224,7 +250,9 @@ const FoodRestaurantDetails = () => {
             {/* Google Map Embed */}
             {place.lat && place.lng && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Location</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">
+                  Location
+                </h2>
                 <div className="rounded-xl overflow-hidden h-64">
                   <iframe
                     title="Location Map"
@@ -257,7 +285,9 @@ const FoodRestaurantDetails = () => {
           <div className="space-y-6 lg:sticky lg:top-24">
             {/* Quick Info */}
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-3">Quick Info</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                Quick Info
+              </h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 {place.distance_from_campus && (
                   <li className="flex items-center gap-2">
@@ -274,7 +304,10 @@ const FoodRestaurantDetails = () => {
                 {place.phone && (
                   <li className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href={`tel:${place.phone}`} className="hover:text-primary">
+                    <a
+                      href={`tel:${place.phone}`}
+                      className="hover:text-primary"
+                    >
                       {place.phone}
                     </a>
                   </li>
@@ -291,10 +324,16 @@ const FoodRestaurantDetails = () => {
             {/* Amenities */}
             {amenities.length > 0 && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-3">Amenities</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  Amenities
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {amenities.map((amenity) => (
-                    <Badge key={amenity} variant="secondary" className="bg-muted/70 capitalize">
+                    <Badge
+                      key={amenity}
+                      variant="secondary"
+                      className="bg-muted/70 capitalize"
+                    >
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       {amenity}
                     </Badge>
@@ -306,7 +345,9 @@ const FoodRestaurantDetails = () => {
             {/* Opening Hours */}
             {weekdayDescriptions.length > 0 && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-3">Hours</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  Hours
+                </h3>
                 <div className="space-y-1.5">
                   {weekdayDescriptions.map((line) => (
                     <p key={line} className="text-sm text-muted-foreground">

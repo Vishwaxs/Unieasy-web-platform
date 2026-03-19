@@ -25,7 +25,11 @@ import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionButtons from "@/components/ReactionButtons";
 import RatingBadge from "@/components/RatingBadge";
-import { usePlaceDetail, placePhotoUrl, getMapsUrl } from "@/hooks/usePlaceDetail";
+import {
+  usePlaceDetail,
+  placePhotoUrl,
+  getMapsUrl,
+} from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -33,7 +37,10 @@ const amenityMeta: Record<string, { icon: ReactNode; label: string }> = {
   wifi: { icon: <Wifi className="w-4 h-4" />, label: "High-Speed WiFi" },
   parking: { icon: <Car className="w-4 h-4" />, label: "Parking" },
   security: { icon: <Shield className="w-4 h-4" />, label: "24x7 Security" },
-  meals: { icon: <UtensilsCrossed className="w-4 h-4" />, label: "Meals Included" },
+  meals: {
+    icon: <UtensilsCrossed className="w-4 h-4" />,
+    label: "Meals Included",
+  },
   laundry: { icon: <Shirt className="w-4 h-4" />, label: "Laundry" },
   gym: { icon: <Dumbbell className="w-4 h-4" />, label: "Gym" },
   ac: { icon: <Snowflake className="w-4 h-4" />, label: "Air Conditioning" },
@@ -73,9 +80,16 @@ const AccommodationItemDetails = () => {
         <main className="pt-24 pb-12">
           <div className="container mx-auto px-4 md:px-6">
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h1 className="text-2xl font-semibold text-foreground">Accommodation not found</h1>
-              <p className="text-muted-foreground mt-2">Please go back and choose another accommodation option.</p>
-              <Link to="/accommodation" className="inline-block mt-4 text-primary hover:underline">
+              <h1 className="text-2xl font-semibold text-foreground">
+                Accommodation not found
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Please go back and choose another accommodation option.
+              </p>
+              <Link
+                to="/accommodation"
+                className="inline-block mt-4 text-primary hover:underline"
+              >
                 Go to Accommodation
               </Link>
             </div>
@@ -86,14 +100,16 @@ const AccommodationItemDetails = () => {
     );
   }
 
-  const heroImage = place.photo_refs?.length > 0
-    ? placePhotoUrl(place.id, 0)
-    : "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1200";
+  const heroImage =
+    place.photo_refs?.length > 0
+      ? placePhotoUrl(place.id, 0)
+      : "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1200";
 
   const amenities = place.amenities || [];
   const subType = place.sub_type || "Accommodation";
   const priceLabel =
-    place.display_price_label || (place.price_inr ? `Rs. ${place.price_inr.toLocaleString()}/month` : null);
+    place.display_price_label ||
+    (place.price_inr ? `Rs. ${place.price_inr.toLocaleString()}/month` : null);
   const mapsUrl = getMapsUrl(place as unknown as Record<string, unknown>);
 
   return (
@@ -112,7 +128,9 @@ const AccommodationItemDetails = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-violet-950/85 via-black/60 to-black/40 dark:from-violet-950/70 dark:via-background/50 dark:to-background/30" />
           <div className="absolute inset-0 flex items-end">
             <div className="container mx-auto px-4 md:px-6 pb-6">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">{place.name}</h1>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                {place.name}
+              </h1>
               {place.address && (
                 <p className="text-white/85 mt-2 max-w-2xl">{place.address}</p>
               )}
@@ -125,7 +143,9 @@ const AccommodationItemDetails = () => {
                     bookmarks: place.bookmark_count ?? 0,
                   }}
                 />
-                <Badge className="bg-primary text-primary-foreground capitalize">{subType}</Badge>
+                <Badge className="bg-primary text-primary-foreground capitalize">
+                  {subType}
+                </Badge>
                 <RatingBadge
                   rating={place.rating}
                   ratingCount={place.rating_count}
@@ -149,7 +169,12 @@ const AccommodationItemDetails = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Quick Actions */}
             <div className="flex flex-wrap gap-3">
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex">
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex"
+              >
                 <Button variant="outline" size="sm" className="gap-1.5">
                   <Navigation className="w-4 h-4" />
                   Directions
@@ -164,7 +189,11 @@ const AccommodationItemDetails = () => {
                 </a>
               )}
               {place.website && (
-                <a href={place.website} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={place.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <Globe className="w-4 h-4" />
                     Website
@@ -175,10 +204,14 @@ const AccommodationItemDetails = () => {
 
             {/* Overview */}
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-3">Overview</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-3">
+                Overview
+              </h2>
               <p className="text-muted-foreground leading-relaxed">
-                {place.name} is a {subType.toLowerCase()} located at {place.address}.
-                {place.distance_from_campus && ` It's ${place.distance_from_campus} from campus.`}
+                {place.name} is a {subType.toLowerCase()} located at{" "}
+                {place.address}.
+                {place.distance_from_campus &&
+                  ` It's ${place.distance_from_campus} from campus.`}
                 {priceLabel && ` Starting at ${priceLabel}.`}
               </p>
             </div>
@@ -186,14 +219,26 @@ const AccommodationItemDetails = () => {
             {/* Amenities */}
             {amenities.length > 0 && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Amenities</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">
+                  Amenities
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {amenities.map((amenity) => {
-                    const meta = amenityMeta[amenity] ?? { icon: <Building2 className="w-4 h-4" />, label: amenity };
+                    const meta = amenityMeta[amenity] ?? {
+                      icon: <Building2 className="w-4 h-4" />,
+                      label: amenity,
+                    };
                     return (
-                      <div key={amenity} className="rounded-xl border border-border p-3 bg-background/60 flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-muted">{meta.icon}</div>
-                        <span className="text-sm font-medium text-foreground capitalize">{meta.label}</span>
+                      <div
+                        key={amenity}
+                        className="rounded-xl border border-border p-3 bg-background/60 flex items-center gap-3"
+                      >
+                        <div className="p-2 rounded-lg bg-muted">
+                          {meta.icon}
+                        </div>
+                        <span className="text-sm font-medium text-foreground capitalize">
+                          {meta.label}
+                        </span>
                       </div>
                     );
                   })}
@@ -204,7 +249,9 @@ const AccommodationItemDetails = () => {
             {/* Photo Gallery */}
             {place.photo_refs?.length > 1 && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Photos</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">
+                  Photos
+                </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {place.photo_refs.slice(0, 6).map((_, i) => (
                     <img
@@ -223,7 +270,9 @@ const AccommodationItemDetails = () => {
             {/* Google Map */}
             {place.lat && place.lng && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Location</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">
+                  Location
+                </h2>
                 <div className="rounded-xl overflow-hidden h-64">
                   <iframe
                     title="Location Map"
@@ -255,7 +304,9 @@ const AccommodationItemDetails = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-3">Quick Facts</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                Quick Facts
+              </h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-primary" />
@@ -284,7 +335,9 @@ const AccommodationItemDetails = () => {
 
             {place.phone && (
               <div className="rounded-2xl border border-border bg-card p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-3">Contact</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-3">
+                  Contact
+                </h3>
                 <a href={`tel:${place.phone}`}>
                   <Button className="w-full">
                     <Phone className="w-4 h-4 mr-2" />
@@ -294,7 +347,10 @@ const AccommodationItemDetails = () => {
               </div>
             )}
 
-            <Link to="/accommodation" className="inline-flex text-primary hover:underline text-sm">
+            <Link
+              to="/accommodation"
+              className="inline-flex text-primary hover:underline text-sm"
+            >
               Browse more options
             </Link>
           </div>
