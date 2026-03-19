@@ -64,21 +64,46 @@ const Contact = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone || null,
+      subject: formData.subject,
+      message: formData.message,
+    };
+
     try {
-      const { error } = await supabase.from("contact_messages").insert({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || null,
-        subject: formData.subject,
-        message: formData.message,
-      });
+      let saved = false;
 
-      if (error) throw error;
+      // Strategy 1: Backend API (uses service_role key, bypasses RLS)
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+        const res = await fetch(`${API_BASE}/api/contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) saved = true;
+        else console.warn("[Contact] Backend API returned:", res.status);
+      } catch (fetchErr) {
+        console.warn("[Contact] Backend API unreachable, trying Supabase direct:", fetchErr);
+      }
 
-      toast.success("Message sent successfully! We'll get back to you soon.");
-      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+      // Strategy 2: Direct Supabase insert (may fail if RLS blocks anon key)
+      if (!saved) {
+        const { error } = await supabase.from("contact_messages").insert(payload);
+        if (error) {
+          console.error("[Contact] Supabase error:", JSON.stringify(error));
+          throw new Error(error.message);
+        }
+        saved = true;
+      }
+
+      if (saved) {
+        toast.success("Message sent successfully! We'll get back to you soon.");
+        setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+      }
+    } catch (err: unknown) {
       console.error("[Contact] Error sending message:", err);
       toast.error("Failed to send message. Please try again.");
     } finally {
