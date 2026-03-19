@@ -1,7 +1,6 @@
 import { useEffect } from "react";
-import { useLocation, useParams, Link } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   MapPin,
   Phone,
   Clock3,
@@ -10,8 +9,6 @@ import {
   Volume2,
   VolumeX,
   Users,
-  Loader2,
-  Navigation,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -80,16 +77,6 @@ const PlaceItemDetails = () => {
   // Using location.pathname is more reliable than place.category since the DB category
   // (e.g. "food", "hangout") often doesn't match the frontend section name.
   const section = location.pathname.split("/")[1];
-  const VALID_SECTIONS = new Set([
-    "explore",
-    "study",
-    "essentials",
-    "campus",
-    "food",
-    "accommodation",
-  ]);
-  const backPath = VALID_SECTIONS.has(section) ? `/${section}` : "/home";
-
   // Campus detail mode: when route is /campus/:id, we switch to campus-aware
   // content rules (fallback image/timing, optional static menu, no community widgets).
   const isCampus = section === "campus";
