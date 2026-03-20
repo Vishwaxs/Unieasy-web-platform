@@ -71,7 +71,13 @@ app.use(
 // ── Item 1: CORS — env-driven origin ────────────────────────────────────────
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "http://localhost:5173";
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "";
-const allowedOrigins = [ALLOWED_ORIGIN, CLIENT_ORIGIN]
+const EXTRA_ORIGINS = [
+  "http://unieasy.angelblessy.com",
+  "https://unieasy.angelblessy.com",
+  "http://unieasy-web-platform.vercel.app",
+  "https://unieasy-web-platform.vercel.app"
+];
+const allowedOrigins = [ALLOWED_ORIGIN, CLIENT_ORIGIN, ...EXTRA_ORIGINS]
   .join(",")
   .split(",")
   .map((o) => o.trim())
