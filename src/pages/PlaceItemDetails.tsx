@@ -29,6 +29,7 @@ import {
   getCampusMenu,
   getCampusTiming,
   isCampusFoodPlace,
+  canOpenCampusDetails,
   type MenuSection,
 } from "@/lib/campusData";
 
@@ -79,12 +80,31 @@ const PlaceItemDetails = () => {
   // content rules (fallback image/timing, optional static menu, no community widgets).
   const isCampus = section === "campus";
   // Menu is shown only for campus food counters/cafes.
-  const showMenu = isCampus && isCampusFoodPlace(place.type, place.sub_type);
+  const showMenu =
+    isCampus && isCampusFoodPlace(place.name, place.type, place.sub_type);
+  const canViewCampusDetails = !isCampus || canOpenCampusDetails(place.name);
   const campusMenu = showMenu ? getCampusMenu(place.name) : null;
   // Campus places use curated timing overrides when available.
   const displayTiming = isCampus
     ? (getCampusTiming(place.name, place.timing) ?? "Check on-site")
     : place.timing;
+
+  if (!canViewCampusDetails) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-24 pb-8">
+          <div className="container mx-auto px-4 max-w-2xl text-center">
+            <h1 className="text-2xl font-semibold text-foreground">Details unavailable</h1>
+            <p className="text-muted-foreground mt-2">
+              This campus location does not have a public detail page yet.
+            </p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,7 +117,7 @@ const PlaceItemDetails = () => {
               photos.length > 0
                 ? placePhotoUrl(place.id, 0)
                 : isCampus
-                  ? getCampusImage(place.name, place.sub_type)
+                  ? getCampusImage(place.name, place.sub_type, place.type)
                   : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200"
             }
             alt={place.name}

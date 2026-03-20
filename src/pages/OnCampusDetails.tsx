@@ -44,6 +44,7 @@ import {
   deleteCampusPlace,
   type CampusPlacePayload,
 } from "@/lib/adminApi";
+import { canOpenCampusDetails } from "@/lib/campusData";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -283,6 +284,7 @@ const CampusCard = ({
 }: CampusCardProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const canOpenDetails = canOpenCampusDetails(item.name);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -297,19 +299,97 @@ const CampusCard = ({
 
   return (
     <div className="relative group/card">
-      <Link to={`/campus/${item.id}`} className="block h-full">
+      {canOpenDetails ? (
+        <Link to={`/campus/${item.id}`} className="block h-full">
+          <div
+            ref={cardRef}
+            className={`h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+            style={{ transitionDelay: `${index * 50}ms` }}
+          >
+            <div className="relative h-44 overflow-hidden">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+                referrerPolicy="no-referrer-when-downgrade"
+                loading="lazy"
+              />
+              <Badge className="absolute top-3 left-3 bg-primary capitalize">
+                {item.subType || item.type}
+              </Badge>
+              {item.rating > 0 && (
+                <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
+                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  <span className="text-white text-sm">{item.rating}</span>
+                </div>
+              )}
+            </div>
+            <div className="p-4 flex flex-1 flex-col">
+              <div className="flex items-start justify-between gap-2 min-h-[3.5rem] mb-2">
+                <h3 className="line-clamp-2 font-bold text-lg text-foreground group-hover/card:text-primary transition-colors capitalize flex-1">
+                  {item.name}
+                </h3>
+                {isAdmin && (
+                  <div className="flex gap-1 shrink-0 mt-0.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onEdit(item);
+                      }}
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onDelete(item);
+                      }}
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  <span className="line-clamp-1">
+                    {shortAddress(item.address)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Clock className="w-3 h-3 shrink-0" />
+                  <span className="line-clamp-1">{item.timing}</span>
+                </div>
+              </div>
+              <div className="mt-auto min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
+                <p className="line-clamp-3">
+                  {item.address || "Address unavailable"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+      ) : (
         <div
           ref={cardRef}
-          className={`h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
+          className={`h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg transition-all duration-500 border border-border ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
           style={{ transitionDelay: `${index * 50}ms` }}
+          aria-disabled="true"
         >
           <div className="relative h-44 overflow-hidden">
             <img
               src={item.image}
               alt={item.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+              className="w-full h-full object-cover"
               referrerPolicy="no-referrer-when-downgrade"
               loading="lazy"
             />
@@ -325,27 +405,21 @@ const CampusCard = ({
           </div>
           <div className="p-4 flex flex-1 flex-col">
             <div className="flex items-start justify-between gap-2 min-h-[3.5rem] mb-2">
-              <h3 className="line-clamp-2 font-bold text-lg text-foreground group-hover/card:text-primary transition-colors capitalize flex-1">
+              <h3 className="line-clamp-2 font-bold text-lg text-foreground capitalize flex-1">
                 {item.name}
               </h3>
               {isAdmin && (
                 <div className="flex gap-1 shrink-0 mt-0.5">
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onEdit(item);
-                    }}
+                    onClick={() => onEdit(item)}
                     className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onDelete(item);
-                    }}
+                    onClick={() => onDelete(item)}
                     className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -356,9 +430,7 @@ const CampusCard = ({
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <MapPin className="w-3 h-3 shrink-0" />
-                <span className="line-clamp-1">
-                  {shortAddress(item.address)}
-                </span>
+                <span className="line-clamp-1">{shortAddress(item.address)}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Clock className="w-3 h-3 shrink-0" />
@@ -366,13 +438,11 @@ const CampusCard = ({
               </div>
             </div>
             <div className="mt-auto min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
-              <p className="line-clamp-3">
-                {item.address || "Address unavailable"}
-              </p>
+              <p className="line-clamp-3">{item.address || "Address unavailable"}</p>
             </div>
           </div>
         </div>
-      </Link>
+      )}
     </div>
   );
 };
@@ -417,7 +487,7 @@ function DeleteConfirmDialog({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const OnCampusDetails = () => {
-  const { items: places, loading } = useCampusPlaces();
+  const { items: places, loading, isError, error } = useCampusPlaces();
   const [filters, setFilters] = useState<FilterState>({ type: "all" });
   const [sort, setSort] = useState("default");
   const role = useUserRole();
@@ -592,7 +662,16 @@ const OnCampusDetails = () => {
             </div>
           )}
 
-          {!loading && filteredItems.length === 0 && (
+          {!loading && isError && (
+            <div className="text-center py-12 text-destructive">
+              Failed to load on-campus places. Please check the API/server connection.
+              {error instanceof Error && (
+                <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
+              )}
+            </div>
+          )}
+
+          {!loading && !isError && filteredItems.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               No on-campus places found matching your filters.
             </div>
