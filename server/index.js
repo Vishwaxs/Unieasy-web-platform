@@ -75,6 +75,10 @@ const EXTRA_ORIGINS = [
   "http://unieasy.angelblessy.com",
   "https://unieasy.angelblessy.com",
   "http://unieasy-web-platform.vercel.app",
+  "https://unieasy-web-platform-ilfkf9vr3-loosers.vercel.app/",
+  "https://unieasy-web-platform-git-main-loosers.vercel.app/",
+  "http://unieasy-web-platform-ilfkf9vr3-loosers.vercel.app/",
+  "http://unieasy-web-platform-git-main-loosers.vercel.app/",
   "https://unieasy-web-platform.vercel.app"
 ];
 const allowedOrigins = [ALLOWED_ORIGIN, CLIENT_ORIGIN, ...EXTRA_ORIGINS]
