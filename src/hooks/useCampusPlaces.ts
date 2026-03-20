@@ -29,12 +29,21 @@ function parsePhotoRefs(value: unknown): unknown[] {
   return [];
 }
 
-function isPrayerStylePlace(name: string, subType: string, type: string): boolean {
-  const normalized = `${normalizeCampusName(name)} ${subType} ${type}`.toLowerCase();
+function isPrayerStylePlace(
+  name: string,
+  subType: string,
+  type: string,
+): boolean {
+  const normalized =
+    `${normalizeCampusName(name)} ${subType} ${type}`.toLowerCase();
   return /(chapel|prayer|prayer room|oratory|worship)/.test(normalized);
 }
 
-function deriveCampusType(name: string, rawType: string, subType: string): string {
+function deriveCampusType(
+  name: string,
+  rawType: string,
+  subType: string,
+): string {
   if (isPrayerStylePlace(name, subType, rawType)) {
     return "Services";
   }
@@ -55,7 +64,11 @@ function placeToCampusPlace(place: Record<string, unknown>): CampusPlace {
   const subType = (place.sub_type as string) || "";
   const rawType = (place.type as string) || "";
   const type = deriveCampusType(name, rawType, subType);
-  const crowdLabels: Record<string, string> = { low: "Low", moderate: "Medium", high: "High" };
+  const crowdLabels: Record<string, string> = {
+    low: "Low",
+    moderate: "Medium",
+    high: "High",
+  };
 
   return {
     id: place.id as string,
@@ -64,18 +77,21 @@ function placeToCampusPlace(place: Record<string, unknown>): CampusPlace {
     subType,
     address: (place.address as string) || "",
     rating: typeof place.rating === "number" ? place.rating : 0,
-    ratingCount: typeof place.rating_count === "number" ? place.rating_count : 0,
+    ratingCount:
+      typeof place.rating_count === "number" ? place.rating_count : 0,
     // Prefer Google photo, then contextual name/subtype image
     image: hasPhoto
       ? `${API_BASE}/api/places/${place.id}/photo/0`
       : getCampusImage(name, subType, type),
     timing: (place.timing as string) || "Check on-site",
-    crowdLevel: crowdLabels[(place.crowd_level as string)] || "Varies",
+    crowdLevel: crowdLabels[place.crowd_level as string] || "Varies",
   };
 }
 
 async function fetchCampusPlaces(): Promise<CampusPlace[]> {
-  const res = await fetch(`${API_BASE}/api/places?category=campus&is_on_campus=true&limit=50`);
+  const res = await fetch(
+    `${API_BASE}/api/places?category=campus&is_on_campus=true&limit=50`,
+  );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
   const places = json.data;

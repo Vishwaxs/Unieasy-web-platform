@@ -17,9 +17,9 @@ function normalizedKey(value?: string | null): string {
 }
 
 const NAME_ALIASES: Record<string, string> = {
-  "freshteria": "fresheteria",
-  "michael": "michaels",
-  "michaels": "michaels",
+  freshteria: "fresheteria",
+  michael: "michaels",
+  michaels: "michaels",
 };
 
 export function normalizeCampusName(name: string): string {
@@ -111,11 +111,17 @@ function imagePoolFor(type?: string | null, subType?: string | null): string[] {
   if (/(sports|sport)/.test(haystack)) return IMAGE_POOLS.sports;
   if (/(department|dept)/.test(haystack)) return IMAGE_POOLS.department;
   if (/(theatre|theater|auditorium)/.test(haystack)) return IMAGE_POOLS.theatre;
-  if (/(classroom|class room|lecture|hall)/.test(haystack)) return IMAGE_POOLS.classroom;
+  if (/(classroom|class room|lecture|hall)/.test(haystack))
+    return IMAGE_POOLS.classroom;
   if (/(lab|laboratory)/.test(haystack)) return IMAGE_POOLS.lab;
   if (/(ground|field|court)/.test(haystack)) return IMAGE_POOLS.ground;
-  if (/(food|cafe|canteen|snacks|bakery|restaurant|mess)/.test(haystack)) return IMAGE_POOLS.food;
-  if (/(service|office|admin|health|stationery|store|shop|chapel|prayer)/.test(haystack)) {
+  if (/(food|cafe|canteen|snacks|bakery|restaurant|mess)/.test(haystack))
+    return IMAGE_POOLS.food;
+  if (
+    /(service|office|admin|health|stationery|store|shop|chapel|prayer)/.test(
+      haystack,
+    )
+  ) {
     return IMAGE_POOLS.services;
   }
   return IMAGE_POOLS.generic;
@@ -131,7 +137,10 @@ export function getCampusImage(
   if (nameImage) return nameImage;
 
   const pool = imagePoolFor(type, subType);
-  return pickSeeded(pool, `${normalizedName}|${normalizedKey(type)}|${normalizedKey(subType)}`);
+  return pickSeeded(
+    pool,
+    `${normalizedName}|${normalizedKey(type)}|${normalizedKey(subType)}`,
+  );
 }
 
 export interface MenuItem {

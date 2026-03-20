@@ -304,7 +304,9 @@ const CampusCard = ({
           <div
             ref={cardRef}
             className={`h-full flex flex-col bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/30 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-8"
             }`}
             style={{ transitionDelay: `${index * 50}ms` }}
           >
@@ -430,7 +432,9 @@ const CampusCard = ({
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <MapPin className="w-3 h-3 shrink-0" />
-                <span className="line-clamp-1">{shortAddress(item.address)}</span>
+                <span className="line-clamp-1">
+                  {shortAddress(item.address)}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Clock className="w-3 h-3 shrink-0" />
@@ -438,7 +442,9 @@ const CampusCard = ({
               </div>
             </div>
             <div className="mt-auto min-h-[4.5rem] rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
-              <p className="line-clamp-3">{item.address || "Address unavailable"}</p>
+              <p className="line-clamp-3">
+                {item.address || "Address unavailable"}
+              </p>
             </div>
           </div>
         </div>
@@ -664,9 +670,12 @@ const OnCampusDetails = () => {
 
           {!loading && isError && (
             <div className="text-center py-12 text-destructive">
-              Failed to load on-campus places. Please check the API/server connection.
+              Failed to load on-campus places. Please check the API/server
+              connection.
               {error instanceof Error && (
-                <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {error.message}
+                </p>
               )}
             </div>
           )}

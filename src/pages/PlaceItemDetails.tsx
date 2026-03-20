@@ -95,7 +95,9 @@ const PlaceItemDetails = () => {
         <Header />
         <main className="pt-24 pb-8">
           <div className="container mx-auto px-4 max-w-2xl text-center">
-            <h1 className="text-2xl font-semibold text-foreground">Details unavailable</h1>
+            <h1 className="text-2xl font-semibold text-foreground">
+              Details unavailable
+            </h1>
             <p className="text-muted-foreground mt-2">
               This campus location does not have a public detail page yet.
             </p>
