@@ -295,7 +295,7 @@ const PlaceItemDetails = () => {
                   height="300"
                   style={{ border: 0 }}
                   loading="lazy"
-                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${place.lat},${place.lng}&zoom=16`}
+                  src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY}&q=${place.lat},${place.lng}&zoom=16`}
                 />
               </div>
             </div>
