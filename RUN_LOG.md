@@ -19,6 +19,16 @@ so the suite had one failing test. Updated the assertion to expect
 
 **Now ready:** Test suite is green again.
 
+**CI note (PR #4):** The `frontend-ci` GitHub Actions job is RED, but the cause
+is pre-existing and repo-wide, not from this PR. It fails at the "Key leak
+check" step: a hardcoded Google Maps Embed key (`AIzaSyBFw0…`) is baked into the
+bundle from `src/pages/{PlaceItemDetails,FoodRestaurantDetails,AccommodationItemDetails}.tsx`.
+`master` fails identically. Surfaced to the maintainer in a PR comment for a
+decision (rotate key + drop hardcoded literal in favor of
+`VITE_GOOGLE_MAPS_EMBED_KEY`, and/or narrow the over-broad `grep "AIza"` gate
+since a Maps Embed key is legitimately client-side). Not auto-fixed: ambiguous,
+security-sensitive, and needs key rotation + Vercel env verification.
+
 **Next smallest step:** Clear ESLint errors one file at a time. Lowest-risk
 first: `tailwind.config.ts:110` (`@typescript-eslint/no-require-imports`) and
 `MerchantAuth.tsx:101` (`no-useless-escape`). The `react-hooks/rules-of-hooks`
