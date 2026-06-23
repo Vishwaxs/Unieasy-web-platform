@@ -52,6 +52,7 @@ describe("useSyncUser", () => {
         clerk_user_id: "clerk_123",
         email: "test@example.com",
         full_name: "Test User",
+        last_active_at: expect.any(String),
       },
       { onConflict: "clerk_user_id" }
     );
