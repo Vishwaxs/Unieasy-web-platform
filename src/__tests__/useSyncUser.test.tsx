@@ -48,13 +48,19 @@ describe("useSyncUser", () => {
     });
 
     expect(mockUpsert).toHaveBeenCalledWith(
-      {
+      expect.objectContaining({
         clerk_user_id: "clerk_123",
         email: "test@example.com",
         full_name: "Test User",
-      },
+      }),
       { onConflict: "clerk_user_id" }
     );
+
+    // The hook also stamps `last_active_at` with the current time; assert it is
+    // a valid ISO-8601 timestamp rather than pinning an exact (unstable) value.
+    const upsertedPayload = mockUpsert.mock.calls[0][0];
+    expect(typeof upsertedPayload.last_active_at).toBe("string");
+    expect(Number.isNaN(Date.parse(upsertedPayload.last_active_at))).toBe(false);
   });
 
   it("does not set or overwrite the role field", async () => {
