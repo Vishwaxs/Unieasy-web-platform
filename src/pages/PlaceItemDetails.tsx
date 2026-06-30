@@ -24,6 +24,7 @@ import {
 } from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { hasMapsEmbedKey, getMapEmbedUrl } from "@/lib/maps";
 import {
   getCampusImage,
   getCampusMenu,
@@ -289,14 +290,25 @@ const PlaceItemDetails = () => {
                 Location
               </h2>
               <div className="rounded-xl overflow-hidden border border-border">
-                <iframe
-                  title="Map"
-                  width="100%"
-                  height="300"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${place.lat},${place.lng}&zoom=16`}
-                />
+                {hasMapsEmbedKey() ? (
+                  <iframe
+                    title="Map"
+                    width="100%"
+                    height="300"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    src={getMapEmbedUrl(place.lat, place.lng)}
+                  />
+                ) : (
+                  <a
+                    href={getMapsUrl(place as unknown as Record<string, unknown>)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center h-[300px] text-sm text-primary hover:underline"
+                  >
+                    Open location in Google Maps
+                  </a>
+                )}
               </div>
             </div>
           )}

@@ -32,6 +32,7 @@ import {
 } from "@/hooks/usePlaceDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { hasMapsEmbedKey, getMapEmbedUrl } from "@/lib/maps";
 
 const amenityMeta: Record<string, { icon: ReactNode; label: string }> = {
   wifi: { icon: <Wifi className="w-4 h-4" />, label: "High-Speed WiFi" },
@@ -277,15 +278,26 @@ const AccommodationItemDetails = () => {
                   Location
                 </h2>
                 <div className="rounded-xl overflow-hidden h-64">
-                  <iframe
-                    title="Location Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY || "AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8"}&q=${place.lat},${place.lng}&zoom=16`}
-                  />
+                  {hasMapsEmbedKey() ? (
+                    <iframe
+                      title="Location Map"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={getMapEmbedUrl(place.lat, place.lng)}
+                    />
+                  ) : (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center h-full text-sm text-primary hover:underline"
+                    >
+                      Open location in Google Maps
+                    </a>
+                  )}
                 </div>
               </div>
             )}
