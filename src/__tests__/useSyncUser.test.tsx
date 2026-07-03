@@ -52,8 +52,18 @@ describe("useSyncUser", () => {
         clerk_user_id: "clerk_123",
         email: "test@example.com",
         full_name: "Test User",
+        // Timestamp is generated at call time; assert shape, not exact value.
+        last_active_at: expect.any(String),
       },
       { onConflict: "clerk_user_id" }
+    );
+
+    // The activity timestamp must be a valid ISO-8601 string.
+    const upsertedPayload = mockUpsert.mock.calls[0][0] as {
+      last_active_at: string;
+    };
+    expect(new Date(upsertedPayload.last_active_at).toISOString()).toBe(
+      upsertedPayload.last_active_at
     );
   });
 
