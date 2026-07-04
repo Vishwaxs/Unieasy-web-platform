@@ -16,7 +16,7 @@ export interface PlaceDetail {
   phone: string | null;
   website: string | null;
   photo_refs: string[];
-  extra: Record<string, any>;
+  extra: Record<string, unknown>;
   is_veg: boolean | null;
   price_inr: number | null;
   price_range_min: number | null;
