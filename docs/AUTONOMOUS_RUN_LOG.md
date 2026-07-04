@@ -21,6 +21,12 @@ Newest entry first.
 - `npx eslint .` → **5 errors** (was 9) / 16 warnings
 - `npx vite build` → built successfully (pre-existing chunk-size warning only)
 
+**CI outcome (PR #9):** `verify-migrations` ✅, `backend-ci` ✅. `frontend-ci` steps for this
+diff all pass (`tsc` ✅, `eslint` ✅, `vite build` ✅) but the **job is red at the pre-existing
+`Key leak check` step** — a hardcoded `AIzaSy…` Maps key on `master` (in `PlaceItemDetails.tsx`,
+`FoodRestaurantDetails.tsx`, `AccommodationItemDetails.tsx`) lands in `dist/`. This blocks
+`frontend-ci` on *every* PR cut from `master`. Fix already exists in open **PR #7** (unmerged).
+
 **Scope note:** Deliberately did not touch issues already covered by other open draft PRs:
 - useSyncUser test assertion (PRs #3, #4, #5, #8)
 - Google Maps key leak + reviewStats tests (PR #7)
