@@ -52,6 +52,9 @@ describe("useSyncUser", () => {
         clerk_user_id: "clerk_123",
         email: "test@example.com",
         full_name: "Test User",
+        // Written on every sync so admin dashboards can surface activity
+        // (column added in migration 014). Value is a fresh timestamp.
+        last_active_at: expect.any(String),
       },
       { onConflict: "clerk_user_id" }
     );
