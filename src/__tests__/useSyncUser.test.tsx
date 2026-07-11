@@ -52,8 +52,15 @@ describe("useSyncUser", () => {
         clerk_user_id: "clerk_123",
         email: "test@example.com",
         full_name: "Test User",
+        last_active_at: expect.any(String),
       },
       { onConflict: "clerk_user_id" }
+    );
+
+    // last_active_at should be a valid ISO-8601 timestamp
+    const payload = mockUpsert.mock.calls[0][0];
+    expect(new Date(payload.last_active_at).toISOString()).toBe(
+      payload.last_active_at
     );
   });
 
