@@ -18,3 +18,29 @@ ISO-8601 timestamp.
 **Next smallest step:** Add unit tests for `src/lib/reviewStats.ts`
 (`getAverageEmoji`, `computeCombinedReviewStats`, `formatCompactCount`) — pure,
 edge-case-heavy logic with no current coverage.
+
+---
+
+### Pre-existing CI blocker discovered (NOT caused by this PR)
+
+PR #13's `frontend-ci` job fails at the **key-leak gate**
+(`grep "AIza" dist/`), independent of this change (this PR touches only a
+test file + this summary). A hardcoded Google Maps **Embed** API key
+`AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8` is committed in source and bundled:
+
+- `src/pages/PlaceItemDetails.tsx:298` — raw hardcoded key, no env fallback
+- `src/pages/FoodRestaurantDetails.tsx:265` — `VITE_GOOGLE_MAPS_EMBED_KEY || "AIza…"`
+- `src/pages/AccommodationItemDetails.tsx:287` — `VITE_GOOGLE_MAPS_EMBED_KEY || "AIza…"`
+
+This also fails on `master`. Contradicts `CHECKLIST.md` item #4 ("API key not
+in frontend bundle"). **Owner decision needed** — options:
+
+1. Remove the hardcoded fallbacks and require `VITE_GOOGLE_MAPS_EMBED_KEY`
+   (green CI, but map embeds break anywhere the env var is unset).
+2. Restrict the key by HTTP referrer in Google Cloud and relax the CI gate
+   (Embed keys are inherently client-visible by design).
+3. Route map embeds through the existing backend places proxy.
+
+Recommended: **rotate the key** (it is public in git history) and adopt
+option 1 or 2. Not fixed here — out of scope for a test fix and changes
+runtime behavior.
