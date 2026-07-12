@@ -52,6 +52,9 @@ describe("useSyncUser", () => {
         clerk_user_id: "clerk_123",
         email: "test@example.com",
         full_name: "Test User",
+        // Written on every sync so the superadmin dashboard can surface
+        // activity; value is a dynamic ISO timestamp (migration 014).
+        last_active_at: expect.any(String),
       },
       { onConflict: "clerk_user_id" }
     );
