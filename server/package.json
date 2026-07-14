@@ -7,7 +7,7 @@
     "start": "node index.js",
     "dev": "node --watch index.js",
     "lint": "eslint .",
-    "test": "jest --runInBand"
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"
