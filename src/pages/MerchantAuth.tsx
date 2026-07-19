@@ -60,6 +60,9 @@ const MerchantAuth = () => {
   const [contactNumber, setContactNumber] = useState("");
   const [description, setDescription] = useState("");
 
+  // Track which fields the user has touched
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
   // If user is already a merchant or just got approved, redirect to dashboard
   useEffect(() => {
     if (isSignedIn && (role === "merchant" || requestStatus === "approved")) {
@@ -98,13 +101,11 @@ const MerchantAuth = () => {
   // Validation helpers
   const nameValid = businessName.trim().length >= 2;
   const typeValid = businessType.length > 0;
-  const phoneClean = contactNumber.replace(/[\s\-]/g, "");
+  const phoneClean = contactNumber.replace(/[\s-]/g, "");
   const phoneValid = /^\+?\d{10,15}$/.test(phoneClean);
   const descValid = description.trim().length >= 10;
   const allValid = nameValid && typeValid && phoneValid && descValid;
 
-  // Track which fields the user has touched
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const markTouched = (field: string) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
 
