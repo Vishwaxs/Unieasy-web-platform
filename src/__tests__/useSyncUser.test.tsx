@@ -48,11 +48,15 @@ describe("useSyncUser", () => {
     });
 
     expect(mockUpsert).toHaveBeenCalledWith(
-      {
+      expect.objectContaining({
         clerk_user_id: "clerk_123",
         email: "test@example.com",
         full_name: "Test User",
-      },
+        // `last_active_at` is a dynamic timestamp; assert it is a valid ISO string.
+        last_active_at: expect.stringMatching(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/
+        ),
+      }),
       { onConflict: "clerk_user_id" }
     );
   });
