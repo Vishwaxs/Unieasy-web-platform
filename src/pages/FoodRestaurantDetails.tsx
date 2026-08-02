@@ -19,6 +19,7 @@ import ReviewSection from "@/components/ReviewSection";
 import SentimentPoll from "@/components/SentimentPoll";
 import ReactionButtons from "@/components/ReactionButtons";
 import RatingBadge from "@/components/RatingBadge";
+import { getMapEmbedUrl, getMapsLink } from "@/lib/maps";
 import {
   usePlaceDetail,
   placePhotoUrl,
@@ -255,15 +256,29 @@ const FoodRestaurantDetails = () => {
                   Location
                 </h2>
                 <div className="rounded-xl overflow-hidden h-64">
-                  <iframe
-                    title="Location Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY || "AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8"}&q=${place.lat},${place.lng}&zoom=16`}
-                  />
+                  {(() => {
+                    const embedUrl = getMapEmbedUrl(place.lat, place.lng);
+                    return embedUrl ? (
+                      <iframe
+                        title="Location Map"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        src={embedUrl}
+                      />
+                    ) : (
+                      <a
+                        href={getMapsLink(place.lat, place.lng)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex h-full w-full items-center justify-center text-sm text-primary underline"
+                      >
+                        View location on Google Maps
+                      </a>
+                    );
+                  })()}
                 </div>
               </div>
             )}
