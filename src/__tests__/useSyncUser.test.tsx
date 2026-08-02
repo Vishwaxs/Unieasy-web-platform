@@ -48,11 +48,16 @@ describe("useSyncUser", () => {
     });
 
     expect(mockUpsert).toHaveBeenCalledWith(
-      {
+      expect.objectContaining({
         clerk_user_id: "clerk_123",
         email: "test@example.com",
         full_name: "Test User",
-      },
+        // Timestamp is generated at call time, so match its shape (ISO 8601)
+        // rather than a frozen instant to keep the test deterministic.
+        last_active_at: expect.stringMatching(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/
+        ),
+      }),
       { onConflict: "clerk_user_id" }
     );
   });
