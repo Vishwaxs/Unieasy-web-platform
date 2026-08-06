@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { shortAddress } from "@/lib/utils";
+import { API_BASE, getPhotoUrl } from "@/lib/places";
 
 export interface FoodItem {
   id: string;
@@ -20,15 +21,6 @@ export interface FoodItem {
   cuisine_tags?: string[];
   lat?: number;
   lng?: number;
-}
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
-
-function getPhotoUrl(place: Record<string, unknown>, fallback: string): string {
-  const refs = Array.isArray(place.photo_refs) ? place.photo_refs : [];
-  const placeId = typeof place.id === "string" ? place.id : null;
-  if (!placeId || refs.length === 0) return fallback;
-  return `${API_BASE}/api/places/${placeId}/photo/0`;
 }
 
 // Category-specific fallback images so different cards show different images (B4 fix)
