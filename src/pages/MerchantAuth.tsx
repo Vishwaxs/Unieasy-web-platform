@@ -60,6 +60,12 @@ const MerchantAuth = () => {
   const [contactNumber, setContactNumber] = useState("");
   const [description, setDescription] = useState("");
 
+  // Track which fields the user has touched (declared before any early return
+  // so hook order stays stable across renders — Rules of Hooks).
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const markTouched = (field: string) =>
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
   // If user is already a merchant or just got approved, redirect to dashboard
   useEffect(() => {
     if (isSignedIn && (role === "merchant" || requestStatus === "approved")) {
@@ -102,11 +108,6 @@ const MerchantAuth = () => {
   const phoneValid = /^\+?\d{10,15}$/.test(phoneClean);
   const descValid = description.trim().length >= 10;
   const allValid = nameValid && typeValid && phoneValid && descValid;
-
-  // Track which fields the user has touched
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const markTouched = (field: string) =>
-    setTouched((prev) => ({ ...prev, [field]: true }));
 
   const handleSubmitRequest = async () => {
     // Mark all as touched to show errors
